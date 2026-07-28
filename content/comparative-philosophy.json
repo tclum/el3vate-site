@@ -1,0 +1,43 @@
+{
+  "name": "Comparative Philosophy",
+  "slug": "comparative-philosophy",
+  "part": 4,
+  "hook": "The AI is the object of study, not the tool. Students are graded on catching where it flattens a tradition.",
+  "make": {
+    "tool": "Laser cut · engrave",
+    "body": "A physical apparatus that forces a commitment: engraved tiles for competing ethical frameworks that students must physically arrange and rank against a case, or a switchboard where the abstract choice becomes a lever you actually have to pull in front of people."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "An interlocutor instructed to argue from one specific tradition. The assignment is adversarial: students interrogate it against primary sources and document every place it substitutes a generic Western liberal position for the tradition it claims to hold. A student who has not read the text cannot do this."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Choose two traditions and one shared case. Students read the primary sources first. The AI stays closed."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Students build their interlocutor prompt and run it. They keep a failure log: quote from the AI, quote from the source, one sentence on what got lost."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Design the physical artifact. What distinction between the two traditions can only be shown by arranging objects in space? Cut file due end of week."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Present the artifact and the failure log together. The claim being assessed: here is what the machine could not hold, and here is why it matters."
+    }
+  ],
+  "prompt": "You are going to argue a case from within a single philosophical tradition, and I am going to check your work. Adopt the position of [name the tradition, e.g. classical Confucian ethics] as it is actually articulated in its primary texts, not a modern popularization. The case is: [describe it]. Argue the position fully. Do not hedge, do not present multiple perspectives, and do not add a balanced summary at the end. When I quote a primary source back at you that contradicts what you said, address the contradiction directly rather than conceding everything.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "tradition-critique",
+  "liveBuild": null
+}

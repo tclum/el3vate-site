@@ -1,0 +1,43 @@
+{
+  "name": "English Literature",
+  "slug": "english-literature",
+  "part": 10,
+  "hook": "The strongest case for humanities in an AI world is a student demonstrating exactly where the machine reads badly.",
+  "make": {
+    "tool": "Hana recording studio",
+    "body": "A produced literary podcast episode or recorded close reading. Audio rewards the things the discipline actually teaches: pacing, emphasis, the pause before the word that matters. It is also assessment that resists generated submission."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A machine reading of a passage, generated deliberately, then dismantled in writing. Students document where the AI produced a plausible reading that the text does not support. This is a career argument as much as a literary one."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Close reading of an assigned passage, written by hand, submitted before any AI use."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Generate the AI reading of the same passage. Students annotate it against the text: what it noticed, what it invented, what it could not see."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Record the podcast episode in the studio, arguing the reading the AI missed."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Publish the episode with the annotated comparison as show notes. The artifact is portfolio-ready, which is the point."
+    }
+  ],
+  "prompt": "Give me a close reading of this passage: [paste passage]. Be specific and confident. Make claims about what the language is doing and why it matters. Do not hedge and do not tell me interpretations vary. Then, separately, list the three claims in your reading that you are least able to support with direct textual evidence.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

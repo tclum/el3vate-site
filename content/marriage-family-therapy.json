@@ -1,0 +1,43 @@
+{
+  "name": "Marriage & Family Therapy",
+  "slug": "marriage-family-therapy",
+  "part": 12,
+  "hook": "Reps. Students get twenty practice intakes instead of two, before they ever sit with a person.",
+  "make": {
+    "tool": "Laser cut · Hana studio",
+    "body": "A physical genogram kit with cut, movable pieces that a family can rearrange themselves, plus recorded role-play sessions in the studio for supervision review. Watching yourself is the intervention."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A standardized client that stays in character, resists, and does not reward the student for saying the encouraging thing. Practice only, never as a stand-in for supervised clinical contact, and the assignment should say so explicitly."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Establish the boundary first: what this practice is and is not, written into the syllabus and discussed. Students draft the client profile."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Run practice intakes with the AI client. Minimum five, transcripts submitted with self-critique marked in the margin."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Studio role-play with a peer, recorded. Build the physical genogram kit file."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Supervision review comparing the AI transcripts against the recorded human session. What did the machine let them get away with?"
+    }
+  ],
+  "prompt": "Role-play as a standardized client for a therapy student’s practice intake. You are [age, presenting concern, family situation, what brought you in]. You are guarded. You test whether the therapist is safe before you disclose anything real. Do not open up because the student says something kind; open up only if they demonstrate they actually heard you. Stay in character until I type END SESSION. Then tell me the moment I lost you, and why.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "intake-branching",
+  "liveBuild": null
+}

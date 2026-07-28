@@ -1,0 +1,43 @@
+{
+  "name": "Family Business / Management",
+  "slug": "family-business",
+  "part": 14,
+  "hook": "Succession conversations are hard to teach because nobody wants to have one out loud.",
+  "make": {
+    "tool": "Laser cut · engrave",
+    "body": "A physical governance or succession decision board: roles, claims and constraints as pieces that have to be placed somewhere. Putting the pieces on the table forces the conversation the family has been avoiding."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A family council simulation with three generations at the table, each with different assumptions about what was promised. Students facilitate rather than solve, which is the actual job."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Case selection and stake mapping. Every party gets a written statement of what they believe they were promised."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Run the AI family council. Students facilitate. Transcript plus a written account of the moment it went sideways."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Design the physical decision board. Cut file due."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Live facilitation with the board, peers playing the family. Assessment is on the facilitation, not the outcome."
+    }
+  ],
+  "prompt": "Run a family business succession meeting simulation. Play three people at once, clearly labeled: the founder who has not actually decided to leave, the child who has been running operations for a decade, and the sibling who left the business but still owns shares. Each of them believes something different about what was promised. I am the facilitator, not a family member. Do not resolve the conflict for me. Let the meeting go badly if I facilitate badly.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

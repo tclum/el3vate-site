@@ -1,0 +1,43 @@
+{
+  "name": "Marketing / Strategic Communication",
+  "slug": "marketing",
+  "part": 5,
+  "hook": "Students generate ten campaigns in an hour, then have to defend why nine of them are bad.",
+  "make": {
+    "tool": "3D print · laser cut",
+    "body": "Physical packaging or a point-of-sale piece for a real local client. Holding a mockup surfaces every decision a slide deck hides: size, weight, what the customer reads first from arm’s length."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A message-testing harness. Students generate a wide spread of positioning variants, then build a simple landing page per variant and measure. The AI supplies volume; the student supplies the judgment about which variant is worth defending."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Land one real client, even a campus organization. Written brief, signed by the client."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Generate wide with AI in class, then cut down to three positions with a written rationale per cut. Submit packaging cut file."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Build one page per position, run whatever traffic is available for five days."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Client presentation with the physical mockup and the actual numbers. The client picks. Students debrief the gap between their favorite and the client’s."
+    }
+  ],
+  "prompt": "Generate twelve distinct positioning statements for this product, aimed at this audience: [describe product and audience]. Make them genuinely different from each other in strategy, not in wording: vary what need is being claimed, what the competition is, and what the customer has to believe. Number them. Then for each one, write the single sentence a skeptical customer would say to reject it.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

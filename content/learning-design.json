@@ -1,0 +1,43 @@
+{
+  "name": "Learning Design & Technology",
+  "slug": "learning-design",
+  "part": 8,
+  "hook": "Build the learning object, then audit it for accessibility before anyone sees it.",
+  "make": {
+    "tool": "3D print · laser cut",
+    "body": "A tactile manipulative for a concept students currently teach with a diagram. The design constraint that makes this a real assignment: it has to work for a learner who cannot see the diagram."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A working interactive module built in one sitting, then run against an accessibility checklist. The audit is where the learning is. Most AI-generated interfaces fail keyboard navigation and contrast on the first pass, and finding that is the skill."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Choose one concept and write the learning objective before touching a tool. Objective gets peer-reviewed for measurability."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build the digital module with AI. Ship a rough version fast."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Accessibility audit against WCAG basics: keyboard only, contrast, screen reader, reduced motion. Document every failure and fix it. Submit fabrication file for the tactile version."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "User test both versions with three learners outside the class. Revise once. The revision log is the deliverable."
+    }
+  ],
+  "prompt": "Build a single self-contained HTML page that teaches this concept interactively: [concept]. The learner is [describe them]. Requirements: it must be fully operable by keyboard alone, meet WCAG AA contrast, respect prefers-reduced-motion, and work on a phone. After you build it, list every accessibility decision you made and every place you are uncertain whether it passes.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "a11y-audit",
+  "liveBuild": null
+}

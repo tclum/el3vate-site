@@ -1,0 +1,43 @@
+{
+  "name": "Planetary Science",
+  "slug": "planetary-science",
+  "part": 15,
+  "hook": "For the stated goal of restoring curiosity in advanced courses: give them terrain they can run a hand across.",
+  "make": {
+    "tool": "3D print",
+    "body": "Printed terrain from real elevation data the student selected: a crater, a rift, a volcanic feature. Print the same feature at two exaggeration factors and let students argue about which one misleads."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "An interactive explainer or small simulation of the process that formed the feature. Change one parameter, see the outcome change. Built by the student in an afternoon, no coding background required."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Each student claims a feature and writes the formation question they want to answer."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Prepare and submit the print file, including the second exaggeration factor. Fabrication runs while they work on the model."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Build the interactive simulation. Requirement: one parameter that, when changed, produces a feature that does not exist in nature, and an explanation of why."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Show and tell with the printed terrain and the running model. Peers try to break the model."
+    }
+  ],
+  "prompt": "Build a single self-contained HTML page with an interactive simulation of this planetary process: [describe the process]. Include sliders for the parameters that matter physically. Show the resulting landform update live. Label the axes and give units. Then tell me which parameter ranges produce results that are physically implausible, and why the simulation still lets me set them.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "crater-sim",
+  "liveBuild": null
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Finance",
+  "slug": "finance",
+  "part": 11,
+  "hook": "Students build the model in ten minutes, so the class time goes to arguing about the assumptions.",
+  "make": {
+    "tool": "Laser cut · engrave",
+    "body": "Physical decision cards or a data object for a simulation: a term structure or a risk distribution rendered as something you can hold and compare side by side. Useful precisely because it slows the reading down."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A working interactive model for a real decision, built live. The assignment is not the model. It is the sensitivity analysis and the written defense of every assumption the model needed to make."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Pick a real decision with public filings. Students list every assumption required, before building anything."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build the interactive model with AI in class. Break it deliberately: what input makes the conclusion flip?"
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Sensitivity write-up plus fabrication of the physical comparison cards."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Defense session. Another team’s job is to find the assumption that carries the whole result."
+    }
+  ],
+  "prompt": "Build a single self-contained HTML page with an interactive model for this decision: [describe the decision]. Include sliders for every input that matters. Show the output updating live, and display the break-even point prominently. Then list every assumption you had to make to build it, and tell me which single assumption the conclusion is most sensitive to.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "break-even",
+  "liveBuild": null
+}

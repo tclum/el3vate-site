@@ -1,0 +1,43 @@
+{
+  "name": "Nutrition & Dietetics",
+  "slug": "nutrition",
+  "part": 6,
+  "hook": "Counseling practice at volume, plus a teaching tool students can hand to an actual community group.",
+  "make": {
+    "tool": "3D print",
+    "body": "Portion and plate-method models that students design for a specific community they are working with, in the foods that community actually eats. Generic food models exist commercially; models built around local staples do not, and making that argument is half the assignment."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A standardized client for motivational interviewing practice: someone with a real cultural food context, a budget constraint, and a reason to resist. Students run the session repeatedly, which is impossible with human volunteers."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Students select a community partner and a specific counseling scenario. Draft the client profile they will need."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build the AI client and run three sessions, submitting transcripts. Grade whether the student did more listening than telling."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Design and submit the physical teaching model. Requirement: justify every food choice against the partner community."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Field test the model with the partner and revise once based on what confused people."
+    }
+  ],
+  "prompt": "Role-play as a nutrition counseling client for a dietetics student. You are [age, situation, cultural food background, budget constraint]. You are here because someone else told you to come, and you are polite but not really convinced you need to change anything. Do not volunteer information unless I ask a good question. Do not become enthusiastic and cooperative just because I say something encouraging. Stay in character until I type END SESSION, then give me feedback on whether I actually listened.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

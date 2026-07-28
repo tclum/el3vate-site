@@ -1,0 +1,43 @@
+{
+  "name": "Entrepreneurship",
+  "slug": "entrepreneurship",
+  "part": 2,
+  "hook": "The business model canvas from Day 4 stays theoretical until a stranger holds the thing and says no.",
+  "make": {
+    "tool": "3D print · laser cut",
+    "body": "A physical MVP good enough to put in a customer’s hands. Not a finished product: a form study, a fit test, a packaging mockup. The point is that customer discovery interviews change completely when there is an object on the table."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A working landing page for the venture, built in one prompt, with an email capture and three headline variants. Students run traffic from their own networks and report the actual conversion rate, not their opinion of it."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Teams commit to one value proposition and write the riskiest assumption underneath it in a single sentence."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build the landing page live in class. Submit the print or cut file the same week so fabrication runs in parallel with the digital test."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Run the test: fifteen real interviews and whatever traffic they can generate. No pivoting yet, just collection."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Prototype in hand, data in hand, teams present what they were wrong about. Grade the quality of the disconfirmation, not the size of the number."
+    }
+  ],
+  "prompt": "Build me a single-page landing site for a new product, as one self-contained HTML file I can host anywhere. The product is: [describe it in two sentences]. The customer is: [describe them]. Include a headline, three short benefit statements, an email signup field, and nothing else. Then give me two alternate headlines that make a meaningfully different promise, not just reworded versions of the first. Keep the copy plain and specific; no marketing filler.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

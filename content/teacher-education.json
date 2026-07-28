@@ -1,0 +1,43 @@
+{
+  "name": "Teacher Education",
+  "slug": "teacher-education",
+  "part": 13,
+  "hook": "Pre-service teachers design for a real K–12 partner classroom and get told what did not work.",
+  "make": {
+    "tool": "3D print · laser cut",
+    "body": "A classroom manipulative designed for a specific partner teacher’s specific lesson. The constraint that makes it real: it has to survive thirty second-graders and cost almost nothing to reproduce."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "Differentiated versions of one lesson artifact, generated fast, then evaluated. Students see how quickly AI produces plausible-looking material and how much of it is subtly wrong for the grade level, which is the professional judgment being taught."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Secure the partner classroom and the specific lesson. Students observe before designing."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Generate differentiated variants with AI, then evaluate against the actual standard and the actual learners. Most get rejected."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Design and submit the manipulative file. Prototype in cardboard first so the fabrication is the second version, not the first."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Teach the lesson in the partner classroom. Debrief with the partner teacher, revise, hand it over."
+    }
+  ],
+  "prompt": "I am teaching this lesson to [grade level] students: [describe the lesson and standard]. Produce four versions of the main student activity, differentiated for: significantly below grade level, at grade level, above grade level, and an emerging multilingual learner. Keep the cognitive demand the same across all four; change the scaffolding, not the thinking. Then flag anything in your own versions that a teacher should check before using it.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}

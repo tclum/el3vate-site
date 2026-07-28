@@ -1,0 +1,43 @@
+{
+  "name": "Urban Planning",
+  "slug": "urban-planning",
+  "part": 7,
+  "hook": "A physical model changes a community meeting more than any rendering does.",
+  "make": {
+    "tool": "Laser cut · layered",
+    "body": "A layered site model of a real Honolulu parcel: topography, existing structures, proposed massing, each on its own removable layer. Residents can lift the proposal off and see what is underneath, which is exactly the conversation that renderings prevent."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "An interactive tradeoff explainer for the same parcel: move a slider for height or density and see the consequences a resident actually cares about, in plain language. Built in an afternoon, used in a real meeting."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Pick one contested parcel with public documentation. Students extract the actual constraints from the record."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build the interactive explainer. Test it on someone outside the major and rebuild the parts they did not understand."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Cut file due. While it fabricates, students prepare the meeting facilitation, not the presentation."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Run a mock community meeting with the model and the tool on the table. Invite the neighborhood board if the timing allows."
+    }
+  ],
+  "prompt": "Build me a single self-contained HTML page with sliders that shows planning tradeoffs for a site. The variables are: [building height, unit count, parking ratio, open space, whatever applies]. When a slider moves, update plain-language consequences that a resident would care about: shadow, traffic, who can afford to live there, what gets demolished. No jargon, no acronyms. Assume the reader has never been to a planning meeting.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "zoning-tradeoffs",
+  "liveBuild": null
+}

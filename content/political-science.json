@@ -1,0 +1,43 @@
+{
+  "name": "Political Science",
+  "slug": "political-science",
+  "part": 1,
+  "hook": "For the challenge named in this cohort: getting entrepreneurship into political theory without it feeling bolted on.",
+  "make": {
+    "tool": "Laser cut · engrave",
+    "body": "Students cut a real Hawaiʻi district or precinct as movable tiles, then physically redraw the boundaries to satisfy competing constraints (population equality, community of interest, incumbent protection). The map stops being an abstraction the moment they have to move a piece and tell the room who they just moved."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "A stakeholder simulator for a bill actually moving through the Hawaiʻi legislature. The AI plays a lobbyist, an agency head, and a constituent group in turn; students have to get a provision through and then account for what they traded away."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Pick one live bill from the current session. Students write a one-page stake map: who wins, who loses, who is invisible in the text."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "Build and run the stakeholder simulator in class. Students log the three moments the AI’s stakeholder said something they could not verify against the actual record. That log is the graded artifact, not the transcript."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Submit the cut file for the district tiles (due Monday, so the 7–10 day turnaround lands before finals). While it fabricates, students draft the defense of their map."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Physical redraw session and public defense. Each team hands their tiles to another team, who must find the choice that cannot be justified."
+    }
+  ],
+  "prompt": "You are running a legislative negotiation simulation for an undergraduate political science class. I will give you a bill. Play three stakeholders in turn: a paid lobbyist for the affected industry, a state agency director who has to implement it, and a community group that was not consulted. Stay in character, push back hard, and do not concede quickly. After each exchange, stop and ask me what I am willing to give up. Do not summarize or break character unless I type PAUSE. The bill is: [paste bill text or summary here].",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": "district-redraw",
+  "liveBuild": null
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Law",
+  "slug": "law",
+  "part": 3,
+  "hook": "Assessment that an AI cannot sit for: the student has to speak, be interrupted, and recover.",
+  "make": {
+    "tool": "Hana recording studio",
+    "body": "Students record oral argument or client counseling in the studio, then annotate their own recording. Production quality matters here: a clean recording makes students confront delivery, pacing and filler in a way a classroom run-through never does."
+  },
+  "build": {
+    "tool": "AI chat · no code",
+    "body": "An opposing counsel that never gets tired. Students argue a motion against an AI instructed to press the weakest point in their position and to interrupt. The unglamorous benefit is volume: every student gets ten rounds instead of one."
+  },
+  "plan": [
+    {
+      "wk": "Wk 1",
+      "txt": "Assign one fact pattern. Students brief it the traditional way. No AI yet."
+    },
+    {
+      "wk": "Wk 2",
+      "txt": "AI opposing counsel rounds, done as homework, minimum five exchanges. Students submit the transcript with their own margin notes marking where they conceded too fast."
+    },
+    {
+      "wk": "Wk 3",
+      "txt": "Studio recordings, scheduled in pairs. Ten minutes of argument, five of counseling."
+    },
+    {
+      "wk": "Wk 4",
+      "txt": "Students watch their own recording against the AI transcript and write a one-page delivery diagnosis. That reflection is the assessment."
+    }
+  ],
+  "prompt": "Act as opposing counsel in a moot court exercise for a law student. Here is the fact pattern and my position: [paste]. Your job is to find the weakest link in my argument and attack it repeatedly. Interrupt me when I am being evasive. Do not be collegial, do not concede a point unless I actually earn it, and do not offer to help me improve my argument. Ask one question at a time and wait for my answer.",
+  "tryTuesday": null,
+  "replaces": null,
+  "aiFailsHere": null,
+  "rubric": null,
+  "budget": null,
+  "scales": null,
+  "promptOutput": null,
+  "related": null,
+  "demo": null,
+  "liveBuild": null
+}
