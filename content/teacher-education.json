@@ -64,7 +64,7 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $4–10 per student in filament or cut stock for a durable manipulative in the four-week build.",
     "fileDueWeek": "Week 3 — fabrication file due after a cardboard prototype so the part is the second version.",
-    "calendarNote": "Material generation and evaluation need no lead time; the manipulative depends on the 7–10 day turnaround, timed for week-4 classroom teaching."
+    "calendarNote": "Material generation and evaluation need no lead time; the manipulative depends on the 7–10 business day turnaround, timed for week-4 classroom teaching."
   },
   "scales": {
     "oneSession": "The 90-minute generate-and-evaluate session producing an evaluation of the AI material; no fabrication.",
@@ -90,8 +90,8 @@
         "note": "Differentiated the scaffolding, not the thinking, as instructed — the design principle the rubric rewards."
       },
       {
-        "marker": "Offered the unverifiable translations anyway",
-        "note": "Despite the caveat, it still produced specific Ilocano words; a teacher who skims past the warning could print an error — the subtle-wrongness failure in miniature."
+        "marker": "We checked the Ilocano: all four words are correct",
+        "note": "danum (water), ulep (cloud), tudo (rain) and init (sun) are all attested Ilocano — tudo is the root behind agtudo, \"to rain,\" and init is the standard entry for sun. Ilocano also has uran for rain and aldaw for sun, so a fluent speaker may still prefer a different register for a specific classroom. Worth sitting with: the model was right, and it was still right to refuse to vouch for itself. The rubric grades the verification, not the outcome — a teacher who printed these unchecked got lucky, and would have no way of knowing which time was the unlucky one."
       }
     ]
   },

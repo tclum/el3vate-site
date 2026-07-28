@@ -12,10 +12,18 @@ const DIST = path.join(ROOT, 'dist');
 const SIM_THRESHOLD = 0.45;
 
 // ---------- shared ----------
+// claims.json is the phase-7 claim audit, not a discipline document.
+const NOT_A_DOC = new Set(['claims.json']);
+
 function loadDocs(dir) {
-  return fs.readdirSync(dir).filter(f => f.endsWith('.json'))
+  return fs.readdirSync(dir).filter(f => f.endsWith('.json') && !NOT_A_DOC.has(f))
     .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')))
     .sort((a, b) => a.part - b.part);
+}
+function loadClaims() {
+  const p = path.join(CONTENT, 'claims.json');
+  if (!fs.existsSync(p)) return null;
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 function textOf(v) {
   if (v == null) return '';
@@ -214,6 +222,65 @@ function completenessGate(docs) {
   return { pass: problems.length === 0, problems };
 }
 
+// ---------- GATE 7: claim audit (phase 7) ----------
+// Two obligations, both enforced here:
+//   (a) a claim audited `refuted` must not survive verbatim in dist/. The one
+//       exception is a claim inside a promptOutput transcript — those are real
+//       model output, preserved unedited on purpose — so instead we require that
+//       transcript's annotations to name the error explicitly.
+//   (b) a claim audited `unverifiable` and flagged `marker: true` must render
+//       inside its visible `unverified` marker, never bare.
+const escHtml = s => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function claimGate(claims, docs, distDir) {
+  const problems = [];
+  const counts = { verified: 0, refuted: 0, unverifiable: 0 };
+  if (!claims) return { pass: false, problems: ['content/claims.json not found — the phase 7 audit is missing'], counts };
+
+  const bySlug = Object.fromEntries(docs.map(d => [d.slug, d]));
+  const files = walk(distDir, '.html').concat(walk(distDir, '.md'))
+    .map(p => ({ name: path.relative(distDir, p), text: fs.readFileSync(p, 'utf8') }));
+
+  for (const c of (claims.claims || [])) {
+    if (counts[c.status] === undefined) { problems.push(`${c.id}: unknown status "${c.status}"`); continue; }
+    counts[c.status]++;
+
+    if (c.status === 'refuted') {
+      if (c.inTranscript) {
+        const slug = path.basename(String(c.file).split(',')[0].trim(), '.json');
+        const d = bySlug[slug];
+        const ann = d && d.promptOutput ? JSON.stringify(d.promptOutput.annotations || []) : '';
+        if (!c.annotationMustContain)
+          problems.push(`${c.id}: refuted + inTranscript but declares no annotationMustContain`);
+        else if (!ann.includes(c.annotationMustContain))
+          problems.push(`${c.id}: refuted claim preserved in ${slug} transcript, but no annotation names it (looking for "${c.annotationMustContain}")`);
+      } else {
+        for (const f of files) {
+          if (f.text.includes(c.claim) || f.text.includes(escHtml(c.claim)))
+            problems.push(`${c.id}: refuted claim still appears verbatim in dist/${f.name}`);
+        }
+      }
+    }
+
+    if (c.status === 'unverifiable' && c.marker) {
+      for (const s of (c.markedSpans || [])) {
+        const slug = path.basename(s.file, '.json');
+        const rendered = files.filter(f => f.name.startsWith(slug + '/'));
+        if (!rendered.length) { problems.push(`${c.id}: no rendered page found for ${slug}`); continue; }
+        for (const f of rendered) {
+          const needle = f.name.endsWith('.html') ? escHtml(s.text) : s.text;
+          const at = f.text.indexOf(needle);
+          if (at === -1) { problems.push(`${c.id}: marked span absent from dist/${f.name}`); continue; }
+          if (!/unverified/i.test(f.text.slice(at, at + needle.length + 240)))
+            problems.push(`${c.id}: unverifiable claim renders without its marker in dist/${f.name}`);
+        }
+      }
+    }
+  }
+  return { pass: problems.length === 0, problems, counts };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -253,6 +320,12 @@ function runAll() {
   console.log('\n[6] COMPLETENESS  ' + (comp.pass ? 'PASS' : 'FAIL'));
   comp.problems.forEach(p => console.log('    ' + p));
   results.push(['completeness', comp.pass]);
+
+  const cl = claimGate(loadClaims(), docs, DIST);
+  console.log('\n[7] CLAIM AUDIT  ' + (cl.pass ? 'PASS' : 'FAIL') +
+    `  (${cl.counts.verified} verified, ${cl.counts.refuted} refuted, ${cl.counts.unverifiable} unverifiable)`);
+  cl.problems.forEach(p => console.log('    ' + p));
+  results.push(['claim-audit', cl.pass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -298,6 +371,29 @@ function selftest() {
   d = JSON.parse(JSON.stringify(base));
   d[2].tryTuesday = '';
   check('completeness', completenessGate(d), `emptied ${base[2].slug}.tryTuesday`);
+
+  // 7 claim audit — three separate failure modes, each on its own fixture
+  const ctmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ctest-'));
+  fs.mkdirSync(path.join(ctmp, 'fake'), { recursive: true });
+  fs.writeFileSync(path.join(ctmp, 'fake', 'index.html'),
+    '<p>the moon is made of green cheese</p><p>roughly $99 per student in unobtanium</p>');
+
+  check('claim-audit (refuted survived)', claimGate(
+    { claims: [{ id: 'FIX-A', file: 'content/fake.json', field: 'hook', status: 'refuted', claim: 'the moon is made of green cheese' }] },
+    [{ slug: 'fake' }], ctmp), 'refuted claim still rendered verbatim in dist/');
+
+  check('claim-audit (marker missing)', claimGate(
+    { claims: [{ id: 'FIX-B', file: 'content/fake.json', field: 'budget.perStudentCost', status: 'unverifiable', marker: true,
+      markedSpans: [{ file: 'content/fake.json', text: 'roughly $99 per student in unobtanium' }] }] },
+    [{ slug: 'fake' }], ctmp), 'unverifiable claim rendered with no `unverified` marker');
+
+  check('claim-audit (transcript unannotated)', claimGate(
+    { claims: [{ id: 'FIX-C', file: 'content/fake.json', field: 'promptOutput.output', status: 'refuted',
+      claim: 'HRS §999-99 requires it', inTranscript: true, annotationMustContain: '§999-99' }] },
+    [{ slug: 'fake', promptOutput: { annotations: [{ marker: 'unrelated', note: 'says nothing about it' }] } }], ctmp),
+    'refuted transcript claim with no annotation naming it');
+
+  fs.rmSync(ctmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);

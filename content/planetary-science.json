@@ -30,7 +30,7 @@
     }
   ],
   "prompt": "Build a single self-contained HTML page with an interactive simulation of this planetary process: [describe the process]. Include sliders for the parameters that matter physically. Show the resulting landform update live. Label the axes and give units. Then tell me which parameter ranges produce results that are physically implausible, and why the simulation still lets me set them.",
-  "tryTuesday": "90 minutes. Minutes 0–15: each student picks a landform — a crater, a rift — and writes the formation question they want to answer. Minutes 15–55: they open the embedded crater-sim demo (or build a process simulation with the prompt), vary the physical parameters, and find a setting that produces something that cannot exist in nature. Minutes 55–90: students explain why the implausible result is implausible and what physics the model left out. The deliverable is the annotated implausible case; it grades physical reasoning about a model's limits, not the model itself.",
+  "tryTuesday": "90 minutes, and every student needs one crater somebody has already measured — Barringer, Tycho, anything with published dimensions they can look up. The task is not to explore the simulator. It is to make the simulator reproduce a crater that already exists. Open the embedded crater-sim demo (or generate one with the prompt), feed in the impactor size, speed and angle the literature proposes for that crater, and set the computed diameter and depth beside the surveyed ones. They will not agree. Everything after that belongs to the residual: how large the miss is, which direction it runs, and what the simulation leaves out that would account for it. Worth chasing — whether the scaling law was ever fitted at that size, what atmospheric passage did to the impactor before it arrived, whether the target rock resembles the material the constants came from. Each student turns in a one-page calibration note: observed numbers, computed numbers, the size of the disagreement, and their best physical account of where it comes from. A simulation that matches an observation has taught nobody anything. The disagreement is the entire lesson.",
   "replaces": {
     "assignment": "The problem set of cratering or orbital-mechanics calculations.",
     "lost": "The hand-computation practice with the governing equations.",
@@ -64,10 +64,10 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $6–14 per student in filament for terrain prints at two exaggeration factors in the four-week build.",
     "fileDueWeek": "Week 2 — print file, including the second exaggeration factor, due so terrain returns before the week-4 show-and-tell.",
-    "calendarNote": "Simulation work needs no lead time; the printed terrain depends on the 7–10 day turnaround."
+    "calendarNote": "Simulation work needs no lead time; the printed terrain depends on the 7–10 business day turnaround."
   },
   "scales": {
-    "oneSession": "The 90-minute break-the-model session producing an annotated implausible case; no fabrication.",
+    "oneSession": "The 90-minute calibration session producing a one-page note on why the simulator misses a surveyed crater; no fabrication.",
     "fourWeeks": "The seeded four-week plan: claim a feature and question, submit print files at two exaggerations, build the simulation with a documented implausible regime, then a show-and-tell where peers try to break each model.",
     "oneSemester": "A full project — a self-selected feature from real elevation data, printed terrain at two exaggerations, an interactive process simulation with a documented implausible regime, and a peer session trying to break each model."
   },

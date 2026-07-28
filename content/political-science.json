@@ -22,7 +22,7 @@
     },
     {
       "wk": "Wk 3",
-      "txt": "Submit the cut file for the district tiles (due Monday, so the 7–10 day turnaround lands before finals). While it fabricates, students draft the defense of their map."
+      "txt": "Submit the cut file for the district tiles (due Monday, so the 7–10 business day turnaround lands before finals). While it fabricates, students draft the defense of their map."
     },
     {
       "wk": "Wk 4",
@@ -63,7 +63,7 @@
     "prepHours": 2,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $6–9 per student in laser stock if the four-week district-tile build is run.",
-    "fileDueWeek": "Week 3 — cut file due Monday of week 3 so the 7–10 day turnaround returns tiles before the week-4 defense.",
+    "fileDueWeek": "Week 3 — cut file due Monday of week 3 so the 7–10 business day turnaround returns tiles before the week-4 defense.",
     "calendarNote": "The AI portion needs no lead time; only the physical redraw depends on fabrication turnaround."
   },
   "scales": {

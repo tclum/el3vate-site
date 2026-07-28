@@ -64,7 +64,7 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $5–12 per student in print or cut stock for a tactile manipulative in the four-week build.",
     "fileDueWeek": "Week 3 — fabrication file due after the accessibility audit.",
-    "calendarNote": "The digital build and audit need no lead time; the tactile version depends on the 7–10 day turnaround, timed for week-4 user testing."
+    "calendarNote": "The digital build and audit need no lead time; the tactile version depends on the 7–10 business day turnaround, timed for week-4 user testing."
   },
   "scales": {
     "oneSession": "The 90-minute build-then-audit session producing an audit log; no fabrication.",
@@ -86,8 +86,8 @@
         "note": "It flagged the exact claims it could not stand behind — the audit-first mindset the assignment teaches, modeled by the tool itself."
       },
       {
-        "marker": "Unverified contrast on #005a9c and #d40000",
-        "note": "These are the values a student must run through a checker; the a11y-audit demo exists precisely to catch a claim like 'both exceed 4.5:1' stated without measurement."
+        "marker": "We ran the numbers: #1a1a1a on white = 17.40:1, white on #005a9c = 7.14:1, #d40000 on white = 5.53:1",
+        "note": "Every contrast claim in this output holds, and the model's own hedge — that these were 'close to the 3:1/4.5:1 lines' — was wrong in the safe direction; none of them is close. The lesson survives intact and gets sharper: the model asserted 'both exceed 4.5:1' having measured nothing, and happened to be right. A student cannot tell a lucky assertion from a checked one by reading it, which is why the audit log, not the claim, is the graded artifact."
       },
       {
         "marker": "Untested touch-target size against the 44px guideline",

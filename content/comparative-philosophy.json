@@ -64,7 +64,7 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $5–10 per student in laser stock for engraved framework tiles in the four-week build.",
     "fileDueWeek": "Week 3 — cut file due end of week 3 so the apparatus returns for the week-4 presentation.",
-    "calendarNote": "The AI and reading need no lead time; only the engraved tile apparatus depends on the 7–10 day cut turnaround."
+    "calendarNote": "The AI and reading need no lead time; only the engraved tile apparatus depends on the 7–10 business day cut turnaround."
   },
   "scales": {
     "oneSession": "The 90-minute read-then-interrogate session producing one failure log; no fabrication.",
@@ -82,8 +82,12 @@
         "note": "A strong output — the model did NOT flatten into liberal individualism; it grounded the answer in role-ethics and filiality. Students should note when the AI gets it right, not only when it fails."
       },
       {
-        "marker": "Direct primary-source quotation in Chinese (父為子隱...)",
-        "note": "An accurate rendering of the Analects passage; a student should still verify the character text and translation against their own edition rather than trust it."
+        "marker": "VERIFIED WRONG: the Chinese quotation is corrupted — 子為子隱 should read 子為父隱",
+        "note": "The received text of Analects 13.18 is 父為子隱，子為父隱，直在其中矣 — the father conceals for the son, the son conceals for the FATHER. The transcript's second clause reads 子為子隱, \"the son conceals for the son,\" which is not the text and collapses the reciprocity the whole passage turns on. Note what makes this dangerous: the English gloss one line above it is correct, so the error is visible only to a reader who actually reads the characters. A student quoting this in a paper would be quoting a sentence Confucius never said, in a passage they cited correctly."
+      },
+      {
+        "marker": "VERIFIED WRONG: Analects 1.2 says the root is 孝弟, not xiao alone — and Youzi says it, not Confucius; Shun's father is Gusou, not \"Gushou\"",
+        "note": "Two smaller errors a reader with the text open will hit. First: Analects 1.2 names 孝弟 — filial piety AND fraternal respect together — as the root of ren; reporting it as filiality alone is a documented common misquotation, and the line is spoken by the disciple Youzi (有子), not by Confucius, which matters in an argument built to establish what Confucius himself held. Second: Shun's father is Gusou (瞽瞍, \"the Blind Man\"); \"Gushou\" romanizes neither character. The Mengzi 7A35 narrative itself checks out — Tao Ying's hypothetical, Gao Yao rightly arresting, the empire discarded like a worn sandal, the father carried to the coast. The pattern is worth naming: the model gets the argument right and the apparatus wrong."
       },
       {
         "marker": "Attribution to Xunzi's Lilun",

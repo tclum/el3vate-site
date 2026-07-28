@@ -22,10 +22,54 @@ const esc = s => String(s == null ? '' : s)
   .replace(/"/g, '&quot;');
 const escAttr = esc;
 
+// claims.json is the phase-7 claim audit, not a discipline document — never a page.
+const NOT_A_DOC = new Set(['claims.json']);
+
 function load() {
-  return fs.readdirSync(CONTENT).filter(f => f.endsWith('.json'))
+  return fs.readdirSync(CONTENT).filter(f => f.endsWith('.json') && !NOT_A_DOC.has(f))
     .map(f => JSON.parse(fs.readFileSync(path.join(CONTENT, f), 'utf8')))
     .sort((a, b) => a.part - b.part);
+}
+
+function loadClaims() {
+  const p = path.join(CONTENT, 'claims.json');
+  if (!fs.existsSync(p)) return { claims: [] };
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
+}
+
+// ---- phase 7: unverified-claim markers ----
+// Claims audited as `unverifiable` and flagged `marker: true` are kept in the
+// site but must render inside a visible marker. src/validate.js GATE 7 fails the
+// build if any of them renders bare.
+const CLAIMS = loadClaims();
+const MARKS = {};                       // slug -> [exact substrings to mark]
+for (const c of (CLAIMS.claims || [])) {
+  if (c.status !== 'unverifiable' || !c.marker) continue;
+  for (const s of (c.markedSpans || [])) {
+    const slug = path.basename(s.file, '.json');
+    (MARKS[slug] = MARKS[slug] || []).push(s.text);
+  }
+}
+const hasMarks = slug => (MARKS[slug] || []).length > 0;
+
+// escape, then splice the marker around each audited span
+function markHtml(raw, slug) {
+  let html = esc(raw);
+  for (const t of (MARKS[slug] || [])) {
+    const et = esc(t);
+    if (html.includes(et)) {
+      html = html.replace(et,
+        `<span class="unv">${et} <span class="unv__t">unverified</span></span>`);
+    }
+  }
+  return html;
+}
+function markMd(raw, slug) {
+  let out = String(raw == null ? '' : raw);
+  for (const t of (MARKS[slug] || [])) {
+    if (out.includes(t)) out = out.replace(t, `${t} **[unverified]**`);
+  }
+  return out;
 }
 
 // recursively copy a directory
@@ -171,6 +215,12 @@ table.rub td.w{font-family:var(--mono);white-space:nowrap;color:var(--ink)}
 .replaces .rg div{border-left:3px solid var(--rule);padding-left:12px}
 .replaces .rg .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cut-ink)}
 
+/* phase 7: unverified-claim marker */
+.unv{background:#FBEED9;color:#15211C;box-shadow:inset 0 -2px 0 #7A3E0B;padding:1px 3px}
+.unv__t{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;background:#7A3E0B;color:#FFFFFF;padding:2px 6px;margin-left:4px;white-space:nowrap}
+.unvnote{background:#FBEED9;color:#15211C;border-left:4px solid #7A3E0B;padding:14px 16px;margin:0 0 20px;font-size:14.5px;max-width:var(--measure)}
+.unvnote .hd{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5A2E08;display:block;margin-bottom:5px}
+
 footer{padding:30px 0 46px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--soft);border-top:1px solid var(--rule);margin-top:20px}
 
 @media (max-width:760px){
@@ -269,7 +319,7 @@ function renderHub(all) {
       <li><span class="k">3D printing</span><span class="v">Free for UH faculty. Students submit an .stl file; we print and return it.</span></li>
       <li><span class="k">Laser cutting</span><span class="v">Cut and engrave in acrylic, wood and paper stock. Same file-submission model.</span></li>
       <li><span class="k">Hana studio</span><span class="v">Recording space for podcasts, oral assessments and recorded role-play.</span></li>
-      <li><span class="k">Turnaround</span><span class="v">Plan on 7&ndash;10 days from file to finished part. Build that into your dates.</span></li>
+      <li><span class="k">Turnaround</span><span class="v">Plan on 7&ndash;10 <strong>business</strong> days &mdash; about two calendar weeks &mdash; from file to finished part. Build that into your dates.</span></li>
       <li><span class="k">Contact</span><span class="v">Tim Lum, PACE &middot; pace.shidler.hawaii.edu/maker</span></li>
     </ul>
   </div>
@@ -384,7 +434,7 @@ function sectionBudget(d) {
     <ul class="kv">
       <li><span class="k">Instructor prep</span><span class="v">${esc(b.prepHours)} hours</span></li>
       <li><span class="k">Class time</span><span class="v">${esc(b.classMinutes)} minutes</span></li>
-      <li><span class="k">Per-student cost</span><span class="v">${esc(b.perStudentCost)}</span></li>
+      <li><span class="k">Per-student cost</span><span class="v">${markHtml(b.perStudentCost, d.slug)}</span></li>
       <li><span class="k">Fabrication file due</span><span class="v">${esc(b.fileDueWeek)}</span></li>
       <li><span class="k">Calendar dependency</span><span class="v">${esc(b.calendarNote)}</span></li>
     </ul>
@@ -437,6 +487,7 @@ function renderDiscipline(d, all, bySlug) {
 ${jumpMenu(all, '../')}
 
 <main class="disc"><div class="wrap">
+  ${hasMarks(d.slug) ? `<p class="unvnote"><span class="hd">About the unverified marks on this page</span>Figures tagged <span class="unv__t">unverified</span> are PACE-local estimates that could not be confirmed against any published source, so they are labelled rather than quietly presented as fact. Every other factual claim on this page &mdash; statutes, standards codes, gene biology, primary-source citations &mdash; was independently checked; the full audit, including what came back wrong, is in <code>content/claims.json</code>.</p>` : ''}
   ${sectionTry(d)}
   ${sectionMakeBuild(d)}
   ${sectionDemo(d)}
@@ -497,7 +548,7 @@ ${rub}
 ## Budget & logistics
 - **Instructor prep:** ${b.prepHours} hours
 - **Class time:** ${b.classMinutes} minutes
-- **Per-student cost:** ${b.perStudentCost}
+- **Per-student cost:** ${markMd(b.perStudentCost, d.slug)}
 - **Fabrication file due:** ${b.fileDueWeek}
 - **Calendar dependency:** ${b.calendarNote}
 

@@ -64,7 +64,7 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $4–8 per student in filament for portion and plate-method models in the four-week build.",
     "fileDueWeek": "Week 3 — print file due end of week 3 so models return for the week-4 field test.",
-    "calendarNote": "Counseling reps need no lead time; the teaching models depend on the 7–10 day print turnaround."
+    "calendarNote": "Counseling reps need no lead time; the teaching models depend on the 7–10 business day print turnaround."
   },
   "scales": {
     "oneSession": "The 90-minute standardized-client session with a talk-time tally; no fabrication.",

@@ -64,7 +64,7 @@
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $15–30 per team in laser stock for a layered site model in the four-week build.",
     "fileDueWeek": "Week 3 — cut file due so the layered model returns before the week-4 mock meeting.",
-    "calendarNote": "The interactive tool needs no lead time; the layered physical model depends on the 7–10 day cut turnaround."
+    "calendarNote": "The interactive tool needs no lead time; the layered physical model depends on the 7–10 business day cut turnaround."
   },
   "scales": {
     "oneSession": "The 90-minute constraint-to-consequence session with a mock testimony round; no fabrication.",

@@ -1,0 +1,601 @@
+{
+  "_about": "Phase 7 claim audit. Every verifiable factual assertion extracted from content/*.json and src/build.js, with an independent verification result. Consumed by src/build.js (renders the `unverified` marker) and by src/validate.js GATE 7.",
+  "auditedAt": "2026-07-28",
+  "webAccess": true,
+  "webAccessNote": "Live web access was available for this audit. law.justia.com and capitol.hawaii.gov both return HTTP 403 to the fetch tool; statute text was verified against law.onecle.com and cca.hawaii.gov instead, and search-result extracts were cross-read before a status was assigned.",
+  "statusMeaning": {
+    "verified": "Confirmed against the cited URL. Left in the site unchanged.",
+    "refuted": "The claim as written is wrong. Rewritten out of editable prose, or — when it sits inside a promptOutput transcript, which must stay unedited — named explicitly in that transcript's annotations.",
+    "unverifiable": "No independent source found. Either rewritten out, or kept and rendered inside the visible `unverified` marker."
+  },
+  "markerPolicy": "The visible `unverified` marker is applied only to load-bearing unverifiable claims in editable prose. Transcript (promptOutput.output) claims never carry a marker — the transcripts are preserved verbatim and their annotations carry the correction instead.",
+  "claims": [
+    {
+      "id": "LAW-01",
+      "file": "content/law.json",
+      "field": "promptOutput.promptFilled, promptOutput.output",
+      "claim": "HRS §521-53",
+      "type": "statute",
+      "status": "verified",
+      "verifiedAgainst": "https://law.onecle.com/hawaii/title-28/chapter-521/index.html",
+      "note": "HRS §521-53 exists and is titled \"Access\". It is the landlord-entry / notice provision, exactly as the transcript uses it."
+    },
+    {
+      "id": "LAW-02",
+      "file": "content/law.json",
+      "field": "promptOutput.output",
+      "claim": "HRS §521-73",
+      "type": "statute",
+      "status": "verified",
+      "verifiedAgainst": "https://law.onecle.com/hawaii/title-28/chapter-521/index.html",
+      "note": "HRS §521-73 exists and is titled \"Landlord's and Tenant's Remedies for Abuse of Access\". The citation itself is real, not hallucinated."
+    },
+    {
+      "id": "LAW-03",
+      "file": "content/law.json",
+      "field": "promptOutput.output",
+      "claim": "§521-73 and the remedy provisions of the Landlord-Tenant Code lay out what a tenant actually gets when a landlord violates it — and termination is conditioned on specifics.",
+      "type": "statute-application",
+      "status": "refuted",
+      "inTranscript": true,
+      "verifiedAgainst": "https://cca.hawaii.gov/ocp/hrs-chapter-521/",
+      "note": "§521-73 supplies damages liability only — the tenant's liability for unreasonable refusal of access, and the landlord's liability for theft, casualty or damage caused by an entry. It says nothing about terminating a rental agreement and imposes no precondition on termination. A tenant's termination remedy lives in §521-63, \"Tenant's remedy of termination at any time; unlawful removal or exclusion.\" The transcript's follow-up question — what statutory precondition must be met before terminating over the entries — is therefore anchored to the wrong section.",
+      "annotationMustContain": "§521-63"
+    },
+    {
+      "id": "LAW-04",
+      "file": "content/law.json",
+      "field": "promptOutput.annotations[2]",
+      "claim": "A student MUST pull §521-73 and confirm it conditions termination as implied; the confident citation is precisely what the assignment teaches students never to trust unverified.",
+      "type": "statute-application",
+      "status": "refuted",
+      "verifiedAgainst": "https://cca.hawaii.gov/ocp/hrs-chapter-521/",
+      "note": "The annotation left the question open. It is now answered: §521-73 does not condition termination. Annotation rewritten to state the verified finding and name §521-63.",
+      "rewritten": true
+    },
+    {
+      "id": "LAW-05",
+      "file": "content/law.json, content/english-literature.json",
+      "field": "budget.perStudentCost",
+      "claim": "Hana studio time is free for UH faculty",
+      "type": "institution",
+      "status": "verified",
+      "verifiedAgainst": "https://pace.shidler.hawaii.edu/maker/",
+      "note": "PACE lists the Hana Recording Studio as free to all UH students, faculty and staff. Two conditions the site does not mention: users must complete a short online training and pass a quiz before booking, and reservations are in 2-hour blocks."
+    },
+    {
+      "id": "CP-01",
+      "file": "content/comparative-philosophy.json",
+      "field": "tryTuesday",
+      "claim": "Analects 13.18 and Mengzi 7A35",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://confucius.page/analects-13-18/",
+      "note": "Both loci are real and both are the standard passages for the conceal-your-father problem. Correctly cited."
+    },
+    {
+      "id": "CP-02",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "The governing text is *Analects* 13.18. The Duke of She tells Confucius of an \"upright\" man whose father stole a sheep, and the son testified against him.",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://confucius.page/analects-13-18/",
+      "note": "Accurate. 葉公語孔子曰：「吾黨有直躬者，其父攘羊，而子證之。」"
+    },
+    {
+      "id": "CP-03",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "父為子隱，子為子隱，直在其中矣",
+      "type": "primary-source",
+      "status": "refuted",
+      "inTranscript": true,
+      "verifiedAgainst": "https://confucius.page/analects-13-18/",
+      "note": "The received text is 父為子隱，子為父隱，直在其中矣 — \"the father conceals for the son, the son conceals for the FATHER.\" The transcript's second clause reads 子為子隱 (\"the son conceals for the son\"), which is not the text and destroys the reciprocity the passage turns on. The transcript's own English gloss immediately above it is correct, which is what makes the character error easy to skim past.",
+      "annotationMustContain": "子為父隱"
+    },
+    {
+      "id": "CP-04",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.annotations[1]",
+      "claim": "An accurate rendering of the Analects passage; a student should still verify the character text and translation against their own edition rather than trust it.",
+      "type": "primary-source",
+      "status": "refuted",
+      "verifiedAgainst": "https://confucius.page/analects-13-18/",
+      "note": "The annotation asserted the Chinese was accurate. It is not — see CP-03. Annotation rewritten to name the specific character error.",
+      "rewritten": true
+    },
+    {
+      "id": "CP-05",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "That root is *xiao*, filial piety, which *Analects* 1.2 calls the very foundation of *ren*—\"the root of humaneness.\"",
+      "type": "primary-source",
+      "status": "refuted",
+      "inTranscript": true,
+      "verifiedAgainst": "https://confucius.page/analects-1-2/",
+      "note": "Two errors. Analects 1.2 names 孝弟 — filial piety AND fraternal respect together — as the root of ren, not xiao alone; and the line is spoken by the disciple Youzi (有子), not by Confucius, which matters in a passage the transcript is otherwise using to establish what Confucius himself held. Reporting 1.2 as making filiality alone the root is a well-documented common misquotation.",
+      "annotationMustContain": "孝弟"
+    },
+    {
+      "id": "CP-06",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "In *Mengzi* 7A35, Tao Ying asks what the sage-king Shun would do if his father Gushou had committed murder. Mengzi answers that the officer Gao Yao would rightly arrest him—the law is not suspended—but that Shun \"would have abandoned the empire like a worn sandal, secretly carried his father on his back, fled to the coast, and lived there joyfully, forgetting the world.\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://hackettpublishing.com/pdfs/TextNotesMengzi_TSP1.pdf",
+      "note": "The substance is accurate: Tao Ying's hypothetical, Gao Yao as Minister of Crime rightly arresting, Shun discarding the empire like a worn sandal, carrying his father on his back and fleeing to the edge of the sea. The father's name is romanized Gusou (瞽瞍) — see CP-07."
+    },
+    {
+      "id": "CP-07",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "his father Gushou",
+      "type": "primary-source",
+      "status": "refuted",
+      "inTranscript": true,
+      "verifiedAgainst": "https://hackettpublishing.com/pdfs/TextNotesMengzi_TSP1.pdf",
+      "note": "Shun's father is Gusou (瞽瞍, \"the Blind Man\"). \"Gushou\" is not a standard romanization of either character. A small error, but the kind a reader checking the text will hit first.",
+      "annotationMustContain": "Gusou"
+    },
+    {
+      "id": "CP-08",
+      "file": "content/comparative-philosophy.json",
+      "field": "promptOutput.output",
+      "claim": "this is precisely the ingratitude the Xunzi condemns when it insists that ritual and duty exist to *cultivate* and order our affections toward kin (*Lilun*), not to override them in favor of an abstract legal accounting.",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://plato.stanford.edu/entries/xunzi/",
+      "note": "Lilun (禮論, \"Discourse on Ritual\") is Xunzi chapter 19 and does hold that the former kings established ritual and yi to apportion things and nurture human desires rather than suppress them. The attribution is looser than the Analects/Mengzi ones — the chapter is about desires and social order generally, not kin-affection specifically — but it is not a fabricated citation. The existing annotation already flags it as the place to press."
+    },
+    {
+      "id": "BIO-01",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "F508del is not a single-nucleotide variant. It is the deletion of three DNA letters (nucleotides), which removes one amino acid (a protein building block) at position 508.",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3643519/",
+      "note": "Correct. F508del is a three-nucleotide deletion causing loss of the phenylalanine residue at position 508. The model's correction of the prompt's premise is right."
+    },
+    {
+      "id": "BIO-02",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "The <b>CFTR gene</b> (Cystic Fibrosis Transmembrane conductance Regulator)",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3643519/",
+      "note": "Gene name and expansion correct; the protein is a cAMP-regulated chloride channel at the apical membrane."
+    },
+    {
+      "id": "BIO-03",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "Misfolds (wrong 3-D shape)",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8156943/",
+      "note": "F508del is a class II defect: misfolding, ER retention, premature degradation by the ubiquitin-proteasome system."
+    },
+    {
+      "id": "BIO-04",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "F508del protein is not simply destroyed — small amounts can reach the surface, and the channel that does arrive gates poorly and is unstable. Modern drugs (correctors and potentiators) exploit exactly this residual function",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8156943/",
+      "note": "Correct. A small fraction escapes early degradation, reaches the plasma membrane, and remains insufficiently active and unstable; correctors (VX-809, VX-661, VX-445) and potentiators target exactly that."
+    },
+    {
+      "id": "BIO-05",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "F508del causes misfolding, premature degradation, *and* faulty gating simultaneously",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3643519/",
+      "note": "Correct — F508del is associated with both misfolding and defective gating of the mutant protein."
+    },
+    {
+      "id": "BIO-06",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "You have two copies of CFTR; disease requires both to be affected, and the ~2,000 known variants produce a wide severity spectrum.",
+      "type": "biology",
+      "status": "verified",
+      "verifiedAgainst": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9014417/",
+      "note": "Correct on both counts. CF is autosomal recessive; more than 2,000 CFTR variants have been identified, grouped into six classes by functional consequence."
+    },
+    {
+      "id": "BIO-07",
+      "file": "content/bioinformatics.json",
+      "field": "promptOutput.output",
+      "claim": "…Ile-Phe-Gly-Val…",
+      "type": "biology",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "The local residue context around F508 was not checked against the UniProt CFTR sequence in this audit. It is consistent with the commonly cited I507-F508-G509-V510 stretch, but that was not independently confirmed, so it is recorded as unverified rather than asserted. No marker: this sits inside a preserved transcript."
+    },
+    {
+      "id": "TE-01",
+      "file": "content/teacher-education.json",
+      "field": "promptOutput.output",
+      "claim": "grade 2 (2-ESS2-3, water in solid/liquid form)",
+      "type": "standards-code",
+      "status": "verified",
+      "verifiedAgainst": "https://www.nextgenscience.org/pe/2-ess2-3-earths-systems",
+      "note": "2-ESS2-3 reads \"Obtain information to identify where water is found on Earth and that it can be solid or liquid.\" Code, grade and paraphrase all correct."
+    },
+    {
+      "id": "TE-02",
+      "file": "content/teacher-education.json",
+      "field": "promptOutput.output",
+      "claim": "grade 5 (5-ESS2-1, Earth's systems)",
+      "type": "standards-code",
+      "status": "verified",
+      "verifiedAgainst": "https://www.nextgenscience.org/pe/5-ess2-1-earths-systems",
+      "note": "5-ESS2-1 is a grade-5 Earth's Systems performance expectation: \"Develop a model using an example to describe ways the geosphere, biosphere, hydrosphere, and/or atmosphere interact.\" Code, grade and topic label correct."
+    },
+    {
+      "id": "TE-03",
+      "file": "content/teacher-education.json",
+      "field": "promptOutput.output, promptOutput.promptFilled",
+      "claim": "Hawaiʻi adopted NGSS",
+      "type": "standards-code",
+      "status": "verified",
+      "verifiedAgainst": "http://ngssblog.nsta.org/2016/02/18/hawaii-adopts-the-next-generation-science-standards/",
+      "note": "Hawaii's Board of Education voted to adopt NGSS in February 2016, phased in from 2016-17 and fully implemented by 2019-20."
+    },
+    {
+      "id": "TE-04",
+      "file": "content/teacher-education.json",
+      "field": "promptOutput.output",
+      "claim": "*danum* = water, *ulep* = cloud, *tudo* = rain, *init* = sun",
+      "type": "translation",
+      "status": "verified",
+      "verifiedAgainst": "https://ilocano.pinoydictionary.com/word/sun/",
+      "note": "All four are attested Ilocano. danum = water and ulep = cloud appear in the Ilocano Swadesh list; tudo = rain is the root behind agtudo (\"to rain\"); init = sun is the standard entry, and appears in compounds such as lawag ti init (sunshine). Ilocano has synonyms — the Swadesh list gives uran for rain and aldaw for sun — so a fluent speaker should still pick the register that fits the classroom, which is what the transcript told the teacher to do."
+    },
+    {
+      "id": "TE-05",
+      "file": "content/teacher-education.json",
+      "field": "promptOutput.annotations[3]",
+      "claim": "Despite the caveat, it still produced specific Ilocano words; a teacher who skims past the warning could print an error — the subtle-wrongness failure in miniature.",
+      "type": "translation",
+      "status": "refuted",
+      "verifiedAgainst": "https://ilocano.pinoydictionary.com/word/sun/",
+      "note": "The annotation implied the Ilocano was probably wrong. It is not — all four words check out (TE-04). Annotation rewritten so the site does not assert an error that this audit disproved, while keeping the pedagogical point that the verification is what is graded, not the outcome.",
+      "rewritten": true
+    },
+    {
+      "id": "EL-01",
+      "file": "content/english-literature.json",
+      "field": "promptOutput.output",
+      "claim": "\"Because I could not stop for Death – / He kindly stopped for me\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://poets.org/poem/because-i-could-not-stop-death-479",
+      "note": "Accurate quotation of the opening of Dickinson's poem 479."
+    },
+    {
+      "id": "EL-02",
+      "file": "content/english-literature.json",
+      "field": "promptOutput.output",
+      "claim": "\"The Carriage held but just Ourselves – / And Immortality\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://poets.org/poem/because-i-could-not-stop-death-479",
+      "note": "Accurate."
+    },
+    {
+      "id": "EL-03",
+      "file": "content/english-literature.json",
+      "field": "promptOutput.output",
+      "claim": "\"We slowly drove – He knew no haste\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://poets.org/poem/because-i-could-not-stop-death-479",
+      "note": "Accurate."
+    },
+    {
+      "id": "EL-04",
+      "file": "content/english-literature.json",
+      "field": "promptOutput.output",
+      "claim": "\"And I had put away / My labor and my leisure too.\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://poets.org/poem/because-i-could-not-stop-death-479",
+      "note": "Accurate. The 1890 regularized printing spells it \"labour\"; the manuscript-based texts the transcript follows read \"labor\"."
+    },
+    {
+      "id": "EL-05",
+      "file": "content/english-literature.json",
+      "field": "promptOutput.output",
+      "claim": "\"For His Civility\"",
+      "type": "primary-source",
+      "status": "verified",
+      "verifiedAgainst": "https://poets.org/poem/because-i-could-not-stop-death-479",
+      "note": "Accurate. The site's own annotation calling this \"the poem's most chilling turn\" is interpretation, not a factual claim."
+    },
+    {
+      "id": "PS-01",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output, promptOutput.annotations[1]",
+      "claim": "gravity-regime pi-scaling (Holsapple)",
+      "type": "physics",
+      "status": "verified",
+      "verifiedAgainst": "https://www.lpi.usra.edu/lunar/tools/lunarcratercalc/theory.pdf",
+      "note": "Pi-group crater scaling with a gravity-dominated and a strength-dominated regime is a real and standard approach associated with Holsapple, Schmidt and Housen. The attribution is correct."
+    },
+    {
+      "id": "PS-02",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output",
+      "claim": "const Dt=1.16*Math.pow(rho_i/rho_t,1/3)*Math.pow(L,0.78)*Math.pow(vz,0.44)*Math.pow(g,-0.22);",
+      "type": "physics",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": "https://www.lpi.usra.edu/lunar/tools/lunarcratercalc/theory.pdf",
+      "note": "The g exponent of -0.22 matches the commonly adopted beta = 0.22 for dense rock (Schmidt & Housen 1987). The leading constant 1.16 and the exponents 0.78 and 0.44 were not confirmed against the primary literature in this audit. The existing annotation already tells students to verify the exponents and constants against the source, which is the right instruction and is now backed by an audit that could not close it. No marker: preserved transcript."
+    },
+    {
+      "id": "PS-03",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output",
+      "claim": "Real impactors arrive at 11–72 km/s (Earth).",
+      "type": "physics",
+      "status": "verified",
+      "verifiedAgainst": "https://en.wikipedia.org/wiki/Comet_impact",
+      "note": "Correct. The floor is Earth's escape velocity, 11.2 km/s; the ceiling of about 72 km/s is Earth's orbital velocity plus the maximum heliocentric velocity, reached by retrograde comets."
+    },
+    {
+      "id": "PS-04",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output",
+      "claim": "Real low-angle impacts instead produce *elongated* craters and downrange ejecta",
+      "type": "physics",
+      "status": "verified",
+      "verifiedAgainst": "https://arxiv.org/pdf/2209.03903",
+      "note": "Consistent with the oblique-impact literature: below roughly 10-15 degrees from horizontal, craters become elongated and ejecta are distributed downrange."
+    },
+    {
+      "id": "PS-05",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output",
+      "claim": "pushes energy into the *strength* or *complex-crater* regime (central peaks, terracing)",
+      "type": "physics",
+      "status": "verified",
+      "verifiedAgainst": "https://www.lpi.usra.edu/lunar/tools/lunarcratercalc/theory.pdf",
+      "note": "Correct. Strength-dominated and gravity-dominated regimes are distinct, and complex craters do exhibit central peaks and terraced walls."
+    },
+    {
+      "id": "PS-06",
+      "file": "content/planetary-science.json",
+      "field": "promptOutput.output",
+      "claim": "const rho_i=3000, rho_t=2500;",
+      "type": "physics",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "Generic assumed densities in kg/m^3 for a rocky projectile and target. Plausible but not tied to any stated body, and the transcript does not say where they came from. No marker: preserved transcript."
+    },
+    {
+      "id": "LD-01",
+      "file": "content/learning-design.json",
+      "field": "promptOutput.output",
+      "claim": "Colors chosen for AA: `#1a1a1a` on white and white on `#005a9c` both exceed 4.5:1.",
+      "type": "accessibility-standard",
+      "status": "verified",
+      "verifiedAgainst": "https://www.w3.org/WAI/WCAG21/Understanding/target-size.html",
+      "note": "Computed directly with the WCAG 2.x relative-luminance formula: #1a1a1a on #ffffff = 17.40:1, #ffffff on #005a9c = 7.14:1. Both pass AA for normal text. The model's claim was correct and its own hedge (\"close to the 3:1/4.5:1 lines\") was over-cautious."
+    },
+    {
+      "id": "LD-02",
+      "file": "content/learning-design.json",
+      "field": "promptOutput.output",
+      "claim": "the `#d40000` focus ring against white are close to the 3:1/4.5:1 lines and should be verified",
+      "type": "accessibility-standard",
+      "status": "verified",
+      "verifiedAgainst": "https://www.w3.org/WAI/WCAG21/Understanding/target-size.html",
+      "note": "Computed: #d40000 on #ffffff = 5.53:1. Comfortably clears both the 3:1 non-text threshold and the 4.5:1 text threshold."
+    },
+    {
+      "id": "LD-03",
+      "file": "content/learning-design.json",
+      "field": "promptOutput.annotations[2]",
+      "claim": "These are the values a student must run through a checker; the a11y-audit demo exists precisely to catch a claim like 'both exceed 4.5:1' stated without measurement.",
+      "type": "accessibility-standard",
+      "status": "refuted",
+      "verifiedAgainst": "https://www.w3.org/WAI/WCAG21/Understanding/target-size.html",
+      "note": "The annotation framed the contrast claim as one the audit would likely catch. Measured, it holds (LD-01, LD-02). Annotation rewritten to record the measured ratios and keep the real lesson: the claim was true but was made without measurement, and the student's job is the measurement.",
+      "rewritten": true
+    },
+    {
+      "id": "LD-04",
+      "file": "content/learning-design.json",
+      "field": "promptOutput.output",
+      "claim": "Touch target sizes look adequate but weren't measured against the 44px guideline.",
+      "type": "accessibility-standard",
+      "status": "verified",
+      "verifiedAgainst": "https://dequeuniversity.com/resources/wcag2.1/2.5.5-target-size",
+      "note": "44 by 44 CSS pixels is real, but it is WCAG 2.5.5 Target Size (Enhanced), Level AAA. The Level AA requirement is 2.5.8 Target Size (Minimum), 24 by 24 CSS pixels with a spacing exception. Since the prompt asked only for AA, 44px is a stricter bar than the brief required — worth knowing, not an error."
+    },
+    {
+      "id": "LD-05",
+      "file": "content/learning-design.json",
+      "field": "promptOutput.output",
+      "claim": "Introduction / Committee / Floor Vote / Other Chamber / Conference / Governor — the Governor signs it, vetoes it, or lets it become law without a signature.",
+      "type": "civics",
+      "status": "verified",
+      "verifiedAgainst": "https://lrb.hawaii.gov/par/overview-of-the-legislative-process/a-bills-journey/",
+      "note": "The six-stage sequence and the Governor's three options are accurate for the Hawaii State Legislature. One simplification: the second reading usually occurs before a bill's last committee rather than alongside the third reading on the floor, and a veto can be overridden by two-thirds of each chamber, which the page does not mention."
+    },
+    {
+      "id": "LD-06",
+      "file": "content/learning-design.json",
+      "field": "tryTuesday",
+      "claim": "contrast below 4.5:1",
+      "type": "accessibility-standard",
+      "status": "verified",
+      "verifiedAgainst": "https://www.w3.org/WAI/WCAG21/Understanding/target-size.html",
+      "note": "4.5:1 is the correct WCAG AA minimum contrast ratio for normal-size text."
+    },
+    {
+      "id": "POL-01",
+      "file": "content/political-science.json",
+      "field": "tryTuesday",
+      "claim": "pull one from capitol.hawaii.gov the morning of class",
+      "type": "institution",
+      "status": "verified",
+      "verifiedAgainst": "https://lrb.hawaii.gov/par/engagement-101/tracking-bills-at-the-legislature/",
+      "note": "capitol.hawaii.gov is the official Hawaii State Legislature site and does carry current-session bill text, status and hearing notices, searchable by bill number or keyword. The instruction works."
+    },
+    {
+      "id": "POL-02",
+      "file": "content/political-science.json",
+      "field": "promptOutput.promptFilled",
+      "claim": "SB1421, a fictional Hawaiʻi bill",
+      "type": "disclosed-fiction",
+      "status": "verified",
+      "verifiedAgainst": null,
+      "note": "Explicitly labelled fictional in promptFilled, so it makes no factual assertion. Recorded here so a reader auditing the page does not mistake it for a real bill citation."
+    },
+    {
+      "id": "POL-03",
+      "file": "content/political-science.json",
+      "field": "promptOutput.output",
+      "claim": "You are taking 20,000-plus lawfully permitted properties and telling the owners their business model is illegal in 24 months.",
+      "type": "number-as-fact",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "Asserted about a bill that does not exist, so there is no record to check it against. The existing annotation already names it as the fabricated-record failure the assignment hunts. No marker: preserved transcript."
+    },
+    {
+      "id": "POL-04",
+      "file": "content/political-science.json",
+      "field": "promptOutput.output",
+      "claim": "I've already got three neighbor-island legislators who've told me privately this bill dies in conference if the 24-month cliff stays.",
+      "type": "number-as-fact",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "An unverifiable off-record vote count, by construction. Already annotated. No marker: preserved transcript."
+    },
+    {
+      "id": "POL-05",
+      "file": "content/political-science.json",
+      "field": "promptOutput.output",
+      "claim": "your county enforcement fund is insolvent by year three. I have the projections.",
+      "type": "number-as-fact",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "A fiscal claim with no model shown, about a fictional bill. Already annotated. No marker: preserved transcript."
+    },
+    {
+      "id": "UP-01",
+      "file": "content/urban-planning.json",
+      "field": "promptOutput.output",
+      "claim": "The numbers (11 feet per floor, cars = homes × parking ratio) are rough rules of thumb for conversation, not code-accurate figures.",
+      "type": "number-as-fact",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "verifiedAgainst": null,
+      "note": "11 feet floor-to-floor is a plausible residential rule of thumb but is not tied to Honolulu's Land Use Ordinance or to any Kakaʻako-specific height rule. The transcript flags this itself, and the annotation already carries the point. No marker: preserved transcript."
+    },
+    {
+      "id": "MK-01",
+      "file": "content/marketing.json",
+      "field": "promptOutput.output, promptOutput.annotations[1]",
+      "claim": "several of these (immunity, gut health) lean on claims that invite regulatory scrutiny and the sharpest skepticism",
+      "type": "regulatory",
+      "status": "verified",
+      "verifiedAgainst": "https://www.ftc.gov/business-guidance/resources/health-products-compliance-guidance",
+      "note": "Accurate. FDA and FTC share jurisdiction over health-related marketing — FDA over labeling, FTC over advertising — and unsubstantiated immune-support and digestive/probiotic claims are a documented enforcement target."
+    },
+    {
+      "id": "OPS-01",
+      "file": "content/*.json (14 fields), src/build.js",
+      "field": "budget.calendarNote, budget.fileDueWeek, plan[].txt, hub facts list",
+      "claim": "7–10 day turnaround",
+      "type": "program-operational",
+      "status": "refuted",
+      "verifiedAgainst": "https://pace.shidler.hawaii.edu/maker/",
+      "note": "PACE states \"Please allow for 7-10 BUSINESS days to complete your request\" for 3D printing and \"Please allow 7-10 business days for project completion\" for laser cutting. 7-10 business days is 9 to 14 calendar days. A faculty member building a four-week module against a 7-10 calendar-day estimate can miss the return date by up to a week. Rewritten to \"business days\" in all 14 content occurrences and in the hub's Turnaround fact.",
+      "rewritten": true
+    },
+    {
+      "id": "OPS-02",
+      "file": "src/build.js",
+      "field": "renderHub facts list",
+      "claim": "3D printing — Free for UH faculty. Students submit an .stl file; we print and return it.",
+      "type": "program-operational",
+      "status": "verified",
+      "verifiedAgainst": "https://pace.shidler.hawaii.edu/maker/",
+      "note": "PACE lists 3D printing as free to UH students and faculty, with up to 1kg of filament included in the starter pack. PLA only; fiber-reinforced and flexible filaments are not permitted."
+    },
+    {
+      "id": "OPS-03",
+      "file": "src/build.js",
+      "field": "renderHub facts list",
+      "claim": "Laser cutting — Cut and engrave in acrylic, wood and paper stock. Same file-submission model.",
+      "type": "program-operational",
+      "status": "verified",
+      "verifiedAgainst": "https://pace.shidler.hawaii.edu/maker/",
+      "note": "Laser cutting is free to UH students, but users provide their own materials beyond a starter pack of 1 sq ft of 1/8\" plywood, approved materials only, and requests over $20 require the requester to be present during cutting. The per-student stock costs quoted on the discipline pages are consistent with a bring-your-own-material model."
+    },
+    {
+      "id": "OPS-04",
+      "file": "content/*.json (13 fields)",
+      "field": "budget.perStudentCost",
+      "claim": "per-student and per-team material cost estimates",
+      "type": "program-operational",
+      "status": "unverifiable",
+      "marker": true,
+      "verifiedAgainst": null,
+      "note": "PACE publishes no material price list, so the dollar ranges on each discipline page could not be confirmed against any source. They are load-bearing — a faculty member decides whether to run the four-week version on them — so they are kept and rendered inside the visible `unverified` marker rather than removed.",
+      "markedSpans": [
+        { "file": "content/bioinformatics.json", "text": "roughly $6–12 per student in filament" },
+        { "file": "content/comparative-philosophy.json", "text": "roughly $5–10 per student in laser stock" },
+        { "file": "content/entrepreneurship.json", "text": "roughly $8–15 per team in print or cut stock" },
+        { "file": "content/family-business.json", "text": "roughly $8–15 per team in laser stock" },
+        { "file": "content/finance.json", "text": "roughly $8–15 per team in laser stock" },
+        { "file": "content/learning-design.json", "text": "roughly $5–12 per student in print or cut stock" },
+        { "file": "content/marketing.json", "text": "roughly $10–20 per team in print or cut stock" },
+        { "file": "content/marriage-family-therapy.json", "text": "roughly $8–15 per student in laser stock" },
+        { "file": "content/nutrition.json", "text": "roughly $4–8 per student in filament" },
+        { "file": "content/planetary-science.json", "text": "roughly $6–14 per student in filament" },
+        { "file": "content/political-science.json", "text": "roughly $6–9 per student in laser stock" },
+        { "file": "content/teacher-education.json", "text": "roughly $4–10 per student in filament or cut stock" },
+        { "file": "content/urban-planning.json", "text": "roughly $15–30 per team in laser stock" }
+      ]
+    },
+    {
+      "id": "OPS-05",
+      "file": "content/*.json (15 fields)",
+      "field": "budget.prepHours",
+      "claim": "instructor prep hours of 1, 1.5 or 2",
+      "type": "program-operational",
+      "status": "unverifiable",
+      "marker": false,
+      "verifiedAgainst": null,
+      "note": "Author estimates with no external referent and no way to confirm one. Not marked: a prep-time estimate reads as an estimate, is not a citation, and marking all fifteen would dilute the marker where it matters. Flagged in BLOCKERS.md instead."
+    },
+    {
+      "id": "OPS-06",
+      "file": "content/nutrition.json, content/entrepreneurship.json, content/urban-planning.json",
+      "field": "tryTuesday, promptOutput.promptFilled",
+      "claim": "Waipahu, UH Mānoa, Kakaʻako as Oʻahu place names",
+      "type": "place",
+      "status": "verified",
+      "verifiedAgainst": "https://pace.shidler.hawaii.edu/maker/",
+      "note": "All three are real Oʻahu locations and are used only as scenario settings, not as sources of fact."
+    }
+  ]
+}
