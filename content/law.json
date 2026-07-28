@@ -30,14 +30,85 @@
     }
   ],
   "prompt": "Act as opposing counsel in a moot court exercise for a law student. Here is the fact pattern and my position: [paste]. Your job is to find the weakest link in my argument and attack it repeatedly. Interrupt me when I am being evasive. Do not be collegial, do not concede a point unless I actually earn it, and do not offer to help me improve my argument. Ask one question at a time and wait for my answer.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, no studio, no fabrication. Give every student the same one-paragraph fact pattern at the start of class. Minutes 0–20: students outline their strongest argument on paper, no AI. Minutes 20–70: each student runs the opposing-counsel prompt and argues the motion against it for at least eight exchanges on their own device, marking in the margin every point where they conceded and whether the concession was earned. Minutes 70–90: pairs swap transcripts and each finds the one place the other gave ground too early. The graded artifact is the annotated transcript — specifically the margin notes, which assess whether the student can recognize a weak concession under pressure.",
+  "replaces": {
+    "assignment": "The single graded moot-court oral argument, where each student gets one live round in front of the class.",
+    "lost": "The pressure and authenticity of arguing before a human panel.",
+    "gained": "Volume — every student gets eight to ten adversarial rounds in one session instead of one, plus a written record of exactly where the argument broke, which a single live round never produces."
+  },
+  "aiFailsHere": "In legal drafting the model fabricates case citations carrying correct-looking reporter formatting — a plausible volume number, a real-sounding court, a pincite — for cases that do not exist, and it defends the fabrication with equally fluent reasoning. The failure is dangerous precisely because the format is impeccable; the citation looks verified to anyone who does not pull the case.",
+  "rubric": [
+    {
+      "criterion": "Doctrinal accuracy",
+      "weight": 25,
+      "description": "The argument correctly states the governing rule and applies it to the facts."
+    },
+    {
+      "criterion": "Response to the weakest-point attack",
+      "weight": 30,
+      "description": "Grades whether the student defended the genuinely weak link under repeated pressure rather than restating the strong part of the argument."
+    },
+    {
+      "criterion": "Concession discipline",
+      "weight": 25,
+      "description": "Margin notes correctly identify where a point was conceded and whether the concession was doctrinally earned or merely a retreat."
+    },
+    {
+      "criterion": "Citation verification",
+      "weight": 20,
+      "description": "Any authority the student relied on — theirs or the AI's — is confirmed to exist and to say what it is cited for."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; Hana studio time is free for UH faculty in the four-week version.",
+    "fileDueWeek": "No fabrication dependency; schedule paired studio sessions in week 3.",
+    "calendarNote": "The only scheduling constraint is booking Hana studio recording slots; there is no fabrication turnaround to plan around."
+  },
+  "scales": {
+    "oneSession": "The 90-minute annotated eight-round transcript above; no studio or fabrication.",
+    "fourWeeks": "The seeded four-week plan: traditional brief, AI opposing-counsel rounds, studio recording, then a one-page delivery diagnosis.",
+    "oneSemester": "A full simulated matter — pleadings, motion practice against the AI, a recorded oral argument and client-counseling session, and a final reflection comparing AI opposition to a live human panel."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "The fact pattern was filled in as a Honolulu landlord's repeated unnoticed entries under HRS §521-53, with the tenant (the student's client) seeking to terminate the lease.",
+    "output": "Counsel, before you get comfortable, one question.\n\nYou say two unnoticed entries constitute a *material* breach justifying *termination*. HRS §521-53 sets the notice requirement, but §521-73 and the remedy provisions of the Landlord-Tenant Code lay out what a tenant actually gets when a landlord violates it — and termination is conditioned on specifics.\n\nSo here is my question, and I want a statute-anchored answer, not a policy speech:\n\nUnder the Code, what precise statutory precondition must your client satisfy *before* she can terminate this lease over the entries — and did she satisfy it?",
+    "annotations": [
+      {
+        "marker": "Correct statutory anchor: cites HRS §521-53 and §521-73",
+        "note": "The model named the notice statute and remedies section — real Hawaiʻi Landlord-Tenant Code provisions, not fabricated ones. Worth noting as the opposite of the citation-hallucination failure."
+      },
+      {
+        "marker": "Genuinely adversarial: 'I want a statute-anchored answer, not a policy speech'",
+        "note": "It attacked the weakest link — whether the statutory precondition for termination was met — instead of conceding, exactly as instructed."
+      },
+      {
+        "marker": "Unverified specificity to check: what §521-73 actually requires before termination",
+        "note": "A student MUST pull §521-73 and confirm it conditions termination as implied; the confident citation is precisely what the assignment teaches students never to trust unverified."
+      },
+      {
+        "marker": "Held one question at a time",
+        "note": "Followed the interactive constraint, which keeps the student arguing rather than receiving a memo."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "marriage-family-therapy",
+      "reason": "Both rehearse a high-stakes human encounter against a standardized AI counterpart that refuses to make it easy, at a volume supervised human practice cannot supply."
+    },
+    {
+      "slug": "comparative-philosophy",
+      "reason": "Both stage an AI arguing a committed position and grade the student on pinning its claims against the authoritative source — the case record or the primary text."
+    },
+    {
+      "slug": "english-literature",
+      "reason": "Both turn on whether a confident, well-formed claim is actually supported by the source it purports to rest on."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }

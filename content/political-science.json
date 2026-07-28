@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "You are running a legislative negotiation simulation for an undergraduate political science class. I will give you a bill. Play three stakeholders in turn: a paid lobbyist for the affected industry, a state agency director who has to implement it, and a community group that was not consulted. Stay in character, push back hard, and do not concede quickly. After each exchange, stop and ask me what I am willing to give up. Do not summarize or break character unless I type PAUSE. The bill is: [paste bill text or summary here].",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "In one 90-minute session, hand each student a printed one-page summary of a live Hawaiʻi bill (pull one from capitol.hawaii.gov the morning of class). First 20 minutes: students silently write a stake map — three columns for who wins, who loses, and who is absent from the text entirely. Next 40 minutes: in pairs, one student runs the stakeholder-simulator prompt on a phone or laptop while the other keeps a tally sheet of every claim the AI's lobbyist or agency head makes that they cannot verify against the actual bill text in front of them. Last 30 minutes: each pair reports the single most consequential unverifiable claim and names who benefits if the room believes it. No fabrication, no accounts, no prep beyond reading this page — the graded artifact is the tally sheet, not the transcript.",
+  "replaces": {
+    "assignment": "The end-of-term policy analysis paper, where students pick a bill and argue for or against it in twelve to fifteen pages.",
+    "lost": "The sustained written argument and the citation practice a long paper builds.",
+    "gained": "Students confront the bill as a contested negotiation among real parties instead of a thesis to defend, and they practice the harder civic skill of catching a confident, well-formatted claim the record does not support."
+  },
+  "aiFailsHere": "Asked to speak for a stakeholder in a specific bill, the model invents plausible legislative history — a committee amendment, a fiscal note, a prior vote count — with the exact texture of the real record and no basis in it. It will confidently attribute a position to an agency or caucus that never took one, because the shape of the claim is more available to it than the Hawaiʻi-specific fact.",
+  "rubric": [
+    {
+      "criterion": "Stake map completeness",
+      "weight": 20,
+      "description": "Identifies winners, losers, and the parties the bill's text renders invisible, with the invisible party named specifically rather than gestured at."
+    },
+    {
+      "criterion": "Verification against the record",
+      "weight": 35,
+      "description": "Each flagged AI claim is checked against the actual bill or public record; the log distinguishes 'unsupported' from 'contradicted' and cites where it looked."
+    },
+    {
+      "criterion": "Consequence reasoning",
+      "weight": 25,
+      "description": "Explains who benefits if an unverified claim is believed, connecting the fabrication to a real distributive stake."
+    },
+    {
+      "criterion": "Defense under challenge",
+      "weight": 20,
+      "description": "When another team attacks the student's own map, the student defends the choices that are defensible and concedes the one that is not."
+    }
+  ],
+  "budget": {
+    "prepHours": 2,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $6–9 per student in laser stock if the four-week district-tile build is run.",
+    "fileDueWeek": "Week 3 — cut file due Monday of week 3 so the 7–10 day turnaround returns tiles before the week-4 defense.",
+    "calendarNote": "The AI portion needs no lead time; only the physical redraw depends on fabrication turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute stake-map plus verification-tally session above; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: stake map, simulator run and verification log, cut-file submission, then the physical redraw and public defense.",
+    "oneSemester": "Track one bill from introduction to its actual fate, running the simulator at each hearing stage with a running verification log, and fabricate a district model for the districting-related bills; the final artifact is a defensible redistricting proposal presented to a mock neighborhood board."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "The bill was filled in as SB1421, a fictional Hawaiʻi bill converting short-term vacation rentals to 180-day minimum leases with a 3% enforcement surcharge.",
+    "output": "Setting the scene: SB1421 is on the table. I'll bring in the stakeholders one at a time, starting with the industry's paid representative. When you're ready to move to the agency director and then the community group, just address them or tell me to bring them in.\n\n---\n\n**MARCUS REYES — Contract Lobbyist, Hawai'i Vacation Rental Alliance**\n\nRepresentative, let me be direct, because my clients pay me to be. SB1421 doesn't \"regulate\" short-term rentals — it eliminates them. A mandatory 180-day minimum lease isn't a lease requirement, it's a conversion order dressed up in tenant-friendly language. You are taking 20,000-plus lawfully permitted properties and telling the owners their business model is illegal in 24 months. Half of those owners are local families who leveraged an ohana unit or a second property to stay afloat against your cost of living — not the offshore hedge funds your press release keeps invoking.\n\nAnd then, having gutted the industry, you tax the survivors 3% to fund the very enforcement squad that's coming for them next. You're asking a shrinking base to finance its own policing. The math doesn't even close — as inventory converts, your surcharge revenue collapses, and your county enforcement fund is insolvent by year three. I have the projections. I'll table them.\n\nHere's where I plant my flag. My clients could conceivably live with a phased occupancy cap and a real registration regime. What we will not accept is a blanket conversion mandate and a punitive surcharge stacked on top. Take one; you don't get both. I've already got three neighbor-island legislators who've told me privately this bill dies in conference if the 24-month cliff stays. So before we pretend this is a done deal — I'd rather negotiate than litigate, but I'm fully prepared to do both.\n\n---\n\nBefore I bring in the next stakeholder, I need to hear from you as the bill's sponsor.\n\n**What are you willing to give up to Marcus?** For example:\n- The 24-month timeline (extend it? phase it by county or property type?)\n- The blanket conversion mandate (carve-outs for owner-occupants, resident-owned units, or a hardship class?)\n- The 3% surcharge (lower it, sunset it, or restructure who pays?)\n\nTell me your opening concession — or tell me you're giving up nothing and want him to keep talking. Then we'll test it against the agency director and the community group, who will each have very different problems with what you just offered.\n\n(Type PAUSE anytime to step out of the simulation.)",
+    "annotations": [
+      {
+        "marker": "Invented specificity: '20,000-plus lawfully permitted properties' and 'three neighbor-island legislators who told me privately'",
+        "note": "Confident numbers and off-record vote-counts with no citation — the fabricated-record failure students are told to hunt. Neither is verifiable against SB1421 (a prompt fiction) or any real record."
+      },
+      {
+        "marker": "Strong in-character pushback: 'take one; you don't get both'",
+        "note": "The model holds a hard negotiating line instead of conceding, which is what the assignment needs from the opposing party."
+      },
+      {
+        "marker": "Insolvency claim: 'your county enforcement fund is insolvent by year three... I have the projections'",
+        "note": "A plausible fiscal argument stated as fact with no model shown — a claim a student should force it to produce or retract."
+      },
+      {
+        "marker": "Kept the negotiation open by asking the sponsor what they will give up",
+        "note": "Followed the prompt's structural instruction, preserving the student's decision rather than resolving it for them."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "urban-planning",
+      "reason": "Both put contested stakeholders around a single physical map and grade the student on defending a boundary choice to the people it affects."
+    },
+    {
+      "slug": "family-business",
+      "reason": "Both run a multi-party simulation where each party believes something different about what was promised, and assess accounting for the tradeoff rather than winning."
+    }
+  ],
   "demo": "district-redraw",
   "liveBuild": null
 }

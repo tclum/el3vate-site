@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Build me a single-page landing site for a new product, as one self-contained HTML file I can host anywhere. The product is: [describe it in two sentences]. The customer is: [describe them]. Include a headline, three short benefit statements, an email signup field, and nothing else. Then give me two alternate headlines that make a meaningfully different promise, not just reworded versions of the first. Keep the copy plain and specific; no marketing filler.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, no fabrication. Minutes 0–15: each team writes one value proposition and, beneath it, the single riskiest assumption it depends on, in one sentence. Minutes 15–45: teams use the landing-page prompt to generate a one-file site plus two headlines that make genuinely different promises, then paste all three headlines into a shared doc. Minutes 45–75: a hallway test — every student walks to another team, shows the three headlines cold, and records which one the stranger understood first and what they thought the product was. Minutes 75–90: teams report the gap between the headline they loved and the one that actually communicated. The deliverable is the hallway-test notes, which grade whether the team can tell traction from self-flattery.",
+  "replaces": {
+    "assignment": "The written business plan, or the polished pitch deck, submitted at the end of the venture course.",
+    "lost": "The comprehensive financial and operational planning a full business plan forces.",
+    "gained": "Students get a real signal from a stranger in one session instead of a graded document nobody outside the class will read; the assignment rewards disconfirmation over presentation polish."
+  },
+  "aiFailsHere": "Ask a model to build a landing page and it produces confident, conversion-optimized copy for a market it has never observed — asserting benefits, inventing a target-customer objection, and implying demand no interview has established. Its fluency at marketing language makes an untested idea look validated, which is the precise opposite of what customer discovery is for.",
+  "rubric": [
+    {
+      "criterion": "Riskiest-assumption clarity",
+      "weight": 20,
+      "description": "The stated riskiest assumption is genuinely the thing most likely to sink the venture, specific enough to be tested."
+    },
+    {
+      "criterion": "Quality of disconfirmation",
+      "weight": 35,
+      "description": "Grades whether the team sought evidence that would prove them wrong and reported it honestly, rather than counting vanity signals."
+    },
+    {
+      "criterion": "Signal vs. noise interpretation",
+      "weight": 25,
+      "description": "Distinguishes a real preference signal from politeness, curiosity, or the team's own hope."
+    },
+    {
+      "criterion": "Iteration decision",
+      "weight": 20,
+      "description": "The pivot-or-persevere call is justified by the evidence collected, not by attachment to the original idea."
+    }
+  ],
+  "budget": {
+    "prepHours": 1,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in print or cut stock for a physical MVP in the four-week version.",
+    "fileDueWeek": "Week 2 — submit the print or cut file the same week the landing page goes live so fabrication runs in parallel with the digital test.",
+    "calendarNote": "The digital test needs no lead time; the physical MVP arrives in about 7–10 days, in time for the week-4 presentation."
+  },
+  "scales": {
+    "oneSession": "The 90-minute value-proposition and hallway-test session above; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: riskiest assumption, live landing page plus fabrication file, real interviews and traffic, then a what-we-were-wrong-about presentation.",
+    "oneSemester": "Run a real venture through a full build-measure-learn loop with multiple pivots, a fabricated MVP iterated twice, and a final report graded on what the team was demonstrably wrong about."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "The product was filled in as a reusable collapsible silicone poke bowl for UH Mānoa students; customer, budget-conscious students who eat on the go.",
+    "output": "Here's the file. Save it as `index.html` and host anywhere.\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Split Bowl</title>\n<style>\n  :root { color-scheme: light dark; }\n  * { box-sizing: border-box; }\n  body {\n    margin: 0; font-family: system-ui, sans-serif;\n    display: grid; place-items: center; min-height: 100vh;\n    padding: 24px; line-height: 1.5;\n  }\n  main { max-width: 440px; width: 100%; }\n  h1 { font-size: 1.9rem; margin: 0 0 24px; }\n  ul { list-style: none; padding: 0; margin: 0 0 28px; }\n  li { padding: 10px 0; border-top: 1px solid #8884; }\n  form { display: flex; gap: 8px; }\n  input {\n    flex: 1; padding: 12px; font-size: 1rem;\n    border: 1px solid #8888; border-radius: 6px; background: transparent; color: inherit;\n  }\n  button {\n    padding: 12px 18px; font-size: 1rem; border: 0; border-radius: 6px;\n    background: #1a1a1a; color: #fff; cursor: pointer;\n  }\n  @media (prefers-color-scheme: dark) { button { background: #fff; color: #111; } }\n</style>\n</head>\n<body>\n<main>\n  <h1>Grab plate lunch. The rice stays crisp, not soggy.</h1>\n  <ul>\n    <li>Two sealed compartments keep rice and toppings apart until you eat.</li>\n    <li>Collapses flat to fit in a backpack between classes.</li>\n    <li>Reusable silicone — skip the styrofoam takeout box every time.</li>\n  </ul>\n  <form onsubmit=\"this.innerHTML='<p>Thanks — we\\'ll email you.</p>';return false;\">\n    <input type=\"email\" required placeholder=\"you@hawaii.edu\" aria-label=\"Email\">\n    <button type=\"submit\">Notify me</button>\n  </form>\n</main>\n</body>\n</html>\n```\n\nThe form just shows a confirmation on submit — wire the input up to Mailchimp, Buttondown, or a Google Form action when you're ready to actually collect addresses.\n\n**Two alternate headlines** (different promise, not reworded):\n\n1. **\"Eat between classes without buying another takeout box.\"**\n   Leads on cost and waste reduction — the recurring-savings angle — rather than food quality.\n\n2. **\"Packs flat. Holds a full plate lunch. Fits your backpack.\"**\n   Leads on portability and capacity — the \"it actually fits in your bag\" objection — rather than freshness or waste.\n\nThe original headline promises food quality (crisp rice); these two promise saving money and fitting your gear. Pick based on which objection you think stops students from buying.",
+    "annotations": [
+      {
+        "marker": "Unsupported benefit claim in the headline: 'The rice stays crisp, not soggy'",
+        "note": "Asserted as a product fact before any prototype exists — the model manufactures a benefit the founder has not tested."
+      },
+      {
+        "marker": "Genuinely different alternate headlines (cost/waste vs. portability)",
+        "note": "The two alternates make distinct promises rather than reworded versions, which is what the prompt demanded and what makes them worth A/B testing."
+      },
+      {
+        "marker": "Honest scaffolding note: 'wire the input up to Mailchimp... when you're ready to actually collect addresses'",
+        "note": "The model flagged that the email capture is non-functional — a place it correctly declined to fake capability."
+      },
+      {
+        "marker": "Fabricated audience psychology: 'the objection you think stops students from buying'",
+        "note": "Presents a hypothesis about customers as if known; a student should treat it as the thing to test, not a finding."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "marketing",
+      "reason": "Both use AI to generate a wide spread fast, then grade the judgment about which few survive contact with a real audience."
+    },
+    {
+      "slug": "finance",
+      "reason": "Both build a live artifact in minutes so class time goes to interrogating the numbers behind it rather than to construction."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }
