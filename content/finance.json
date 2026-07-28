@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Build a single self-contained HTML page with an interactive model for this decision: [describe the decision]. Include sliders for every input that matters. Show the output updating live, and display the break-even point prominently. Then list every assumption you had to make to build it, and tell me which single assumption the conclusion is most sensitive to.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one real decision with public numbers. Minutes 0–20: students list every assumption a model of the decision would require, before building anything. Minutes 20–55: they build the interactive model with the prompt (or open the embedded break-even demo) and deliberately break it — find the single input that flips the conclusion. Minutes 55–90: teams trade models and each hunts the assumption that carries the whole result. The deliverable is the sensitivity finding: which assumption the answer is most fragile to, with the evidence. It grades reasoning about assumptions, not model-building.",
+  "replaces": {
+    "assignment": "The valuation or capital-budgeting spreadsheet submitted as the answer.",
+    "lost": "The hand-built modeling mechanics and formula fluency.",
+    "gained": "With AI building the model in minutes, class time moves to the actual professional skill — defending assumptions and finding the one the conclusion hinges on — instead of grading spreadsheet arithmetic a tool now does."
+  },
+  "aiFailsHere": "A model builds a financial model that runs cleanly and hides its load-bearing assumptions — silently setting overhead to zero, assuming no ramp-up, holding margins constant, and presenting a confident break-even without surfacing that one uncertain input drives the result. Its output looks decision-ready while burying exactly the assumptions a sensitivity analysis is supposed to expose.",
+  "rubric": [
+    {
+      "criterion": "Assumption inventory",
+      "weight": 25,
+      "description": "The student surfaces the assumptions the model required, including the ones the AI set silently."
+    },
+    {
+      "criterion": "Sensitivity identification",
+      "weight": 35,
+      "description": "Correctly identifies the single assumption the conclusion is most fragile to, with evidence from varying it."
+    },
+    {
+      "criterion": "Break-the-model reasoning",
+      "weight": 25,
+      "description": "Finds the input that flips the conclusion and explains why."
+    },
+    {
+      "criterion": "Defense under challenge",
+      "weight": 15,
+      "description": "Defends the assumptions that hold and concedes the one that does not when another team attacks the model."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in laser stock for engraved decision and comparison cards in the four-week build.",
+    "fileDueWeek": "Week 3 — cut file due with the sensitivity write-up.",
+    "calendarNote": "Model-building needs no lead time; the physical comparison cards depend on the 7–10 day cut turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute build-break-and-trade session producing a sensitivity finding; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: assumption list, AI model broken deliberately, sensitivity write-up plus fabricated cards, then a defense session.",
+    "oneSemester": "A full decision case with public filings — assumption inventory, an AI-built model stress-tested repeatedly, fabricated comparison cards, and a defense session where another team must find the assumption carrying the result."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a Honolulu food-truck owner deciding whether to sign a three-year Chinatown brick-and-mortar lease, with sliders for rent, average ticket, daily covers, food-cost percentage, and wages.",
+    "output": "Here's a self-contained page. Save as `chinatown-lease.html` and open in any browser.\n\n```html\n<!doctype html><meta charset=\"utf-8\"><title>Chinatown Lease Model</title>\n<style>\nbody{font:15px/1.5 system-ui;max-width:640px;margin:2rem auto;padding:0 1rem}\nlabel{display:block;margin:.6rem 0 .1rem;font-weight:600}\noutput{float:right;font-weight:400;color:#555}input[type=range]{width:100%}\n#out{background:#f4f4f5;border-radius:8px;padding:1rem;margin:1.2rem 0}\n.big{font-size:1.4rem;font-weight:700}.g{color:#128a3a}.r{color:#c0392b}\n</style>\n<h1>Should I sign the Chinatown lease?</h1>\n<div id=\"c\"></div>\n<div id=\"out\"></div>\n<script>\nconst F=[\n [\"rent\",\"Monthly rent ($)\",2000,12000,6500,100],\n [\"ticket\",\"Average ticket ($)\",8,40,16,.5],\n [\"covers\",\"Daily covers\",30,400,120,5],\n [\"food\",\"Food cost (%)\",20,50,32,1],\n [\"wages\",\"Monthly staff wages ($)\",0,25000,9000,250]];\nconst S={},c=document.getElementById(\"c\");\nF.forEach(([k,lbl,mn,mx,v,st])=>{\n c.insertAdjacentHTML(\"beforeend\",\n  `<label>${lbl}<output id=\"o_${k}\"></output></label>\n   <input type=range id=${k} min=${mn} max=${mx} value=${v} step=${st}>`);\n S[k]=document.getElementById(k);\n S[k].oninput=calc;});\nconst DAYS=26; // open days/month\nfunction calc(){\n const v={};F.forEach(([k])=>{v[k]=+S[k].value;o_(k,S[k].value);});\n const rev=v.ticket*v.covers*DAYS;\n const gross=v.ticket*(1-v.food/100);         // margin per cover\n const fixed=v.rent+v.wages;\n const net=rev*(1-v.food/100)-fixed;\n const beCovers=fixed/gross/DAYS;             // covers/day to break even\n const cls=net>=0?\"g\":\"r\";\n document.getElementById(\"out\").innerHTML=\n  `Monthly revenue: $${rev.toLocaleString()}<br>\n   Monthly net profit: <span class=\"big ${cls}\">$${Math.round(net).toLocaleString()}</span><br><br>\n   <span class=\"big\">Break-even: ${beCovers.toFixed(0)} covers/day</span>\n   <br>(you're modeling ${v.covers})`;\n}\nfunction o_(k,val){document.getElementById(\"o_\"+k).textContent=\n (k==\"food\"?val+\"%\":k==\"ticket\"?\"$\"+val:(+val).toLocaleString());}\ncalc();\n</script>\n```\n\n**Assumptions I had to make:**\n\n1. **26 operating days/month** (closed ~1 day/week).\n2. **Break-even is contribution-based**: only rent + wages are fixed; food cost scales with revenue. All other overhead (utilities, insurance, POS, permits, waste, marketing, loan/build-out) is set to **zero**.\n3. **Wages are fixed**, not scaling with covers.\n4. **No ramp-up** — projected covers apply from month one, no seasonality.\n5. **The lease itself (3-year commitment, deposit, escalators) carries no modeled cost** beyond monthly rent, and the truck's existing revenue isn't netted out as opportunity cost.\n6. Average ticket and food-cost % are constant across all covers.\n\n**Most sensitive assumption: daily covers.** Because it's the only lever that multiplies *both* revenue and the food-cost deduction, net profit moves faster with covers than with any single dollar input — and covers is also the least certain (a truck's foot-traffic doesn't transfer 1:1 to a fixed address). A 20% miss on covers swings the outcome more than a 20% move in rent or ticket. Pressure-test that number before signing.",
+    "annotations": [
+      {
+        "marker": "Self-listed six assumptions, including 'all other overhead... set to zero'",
+        "note": "The model surfaced its own load-bearing simplifications — the assumption inventory the assignment demands, done unprompted."
+      },
+      {
+        "marker": "Named the most sensitive assumption: daily covers",
+        "note": "Correctly reasoned that covers multiplies both revenue and cost deduction and is least certain — the sensitivity insight the exercise grades."
+      },
+      {
+        "marker": "Zeroed overhead silently in the formula, then admitted it",
+        "note": "The break-even is contribution-based and omits utilities, insurance, permits, and build-out; a student trusting the headline number without reading the note would be badly misled."
+      },
+      {
+        "marker": "Ignored the lease's own terms (deposit, escalators, three-year commitment)",
+        "note": "It flagged that the multi-year commitment 'carries no modeled cost beyond monthly rent' — a real omission for a decision that is fundamentally about the commitment."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "marketing",
+      "reason": "Both hand construction to AI so the graded work becomes defending the assumptions or claims the polished output depends on."
+    },
+    {
+      "slug": "entrepreneurship",
+      "reason": "Both build a live artifact in minutes and grade the judgment about the numbers — sensitivity here, disconfirmation there — not the artifact."
+    }
+  ],
   "demo": "break-even",
   "liveBuild": null
 }

@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Give me a close reading of this passage: [paste passage]. Be specific and confident. Make claims about what the language is doing and why it matters. Do not hedge and do not tell me interpretations vary. Then, separately, list the three claims in your reading that you are least able to support with direct textual evidence.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one short passage. Minutes 0–25: students write a close reading of an assigned passage by hand, no AI. Minutes 25–60: they generate the AI's close reading with the prompt and annotate it against the text — marking what it genuinely noticed, what it invented, and what it could not see. Minutes 60–90: pairs compare annotations and argue one reading the AI missed that the text supports. The deliverable is the annotated AI reading; it grades the student's ability to distinguish evidence-based interpretation from fluent invention.",
+  "replaces": {
+    "assignment": "The take-home close-reading essay.",
+    "lost": "The sustained written argument developed over days.",
+    "gained": "The strongest case for literary study in an AI era — a student showing exactly where the machine reads badly — becomes the assignment itself; the grade rewards catching plausible-but-unsupported reading, which take-home essays cannot assess now that AI can write them."
+  },
+  "aiFailsHere": "A model asked to close-read invents textual evidence with the cadence of real analysis — quoting phrasing the passage does not contain, attributing a device to a line that does not use it, and building confident interpretive claims on that fabricated ground. Because the prose sounds exactly like competent criticism, the invention is invisible unless the reader checks every claim against the actual words on the page.",
+  "rubric": [
+    {
+      "criterion": "Evidence verification",
+      "weight": 35,
+      "description": "Every claim in the AI reading is checked against the passage; fabricated or misattributed evidence is caught and marked."
+    },
+    {
+      "criterion": "Discernment of real insight",
+      "weight": 25,
+      "description": "Credits what the AI genuinely noticed rather than dismissing the whole output; distinguishes insight from filler."
+    },
+    {
+      "criterion": "The reading it missed",
+      "weight": 25,
+      "description": "The student advances an interpretation the text supports and the AI did not reach, grounded in specific language."
+    },
+    {
+      "criterion": "Close-reading craft",
+      "weight": 15,
+      "description": "The student's own annotations demonstrate attention to diction, syntax, and form."
+    }
+  ],
+  "budget": {
+    "prepHours": 1,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; Hana studio time is free for UH faculty in the four-week version.",
+    "fileDueWeek": "No fabrication dependency; schedule studio recording in week 3.",
+    "calendarNote": "There is no fabrication turnaround; the only scheduling constraint is booking Hana studio slots for the recorded episode."
+  },
+  "scales": {
+    "oneSession": "The 90-minute hand-reading-then-annotate session producing an annotated AI reading; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: hand close reading, AI-comparison annotation, studio recording, then a published episode with the annotated comparison as show notes.",
+    "oneSemester": "A portfolio — repeated hand close readings, AI-comparison annotations across several texts, and a produced podcast episode arguing the readings the machine missed, published with the annotated comparisons."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as the first two stanzas of Emily Dickinson's 'Because I could not stop for Death'.",
+    "output": "# Close Reading: Dickinson, \"Because I could not stop for Death\"\n\nThe poem opens on an act of courtesy that is really an act of abduction. \"Because I could not stop for Death – / He kindly stopped for me\" reverses agency: the speaker is too absorbed in living to make room for death, so death makes room for her. The word \"kindly\" is doing corrosive work. It dresses a non-negotiable event in the manners of a gentleman caller, and that politeness is precisely what disarms the speaker. Death is figured not as violence but as etiquette, and etiquette is harder to refuse than force.\n\nThe carriage is a courtship vehicle. \"The Carriage held but just Ourselves – / And Immortality\" stages a chaperoned ride, with Immortality as the silent third passenger. The line break after \"Ourselves\" makes the reader briefly believe the carriage is intimate and empty, then adds a rider that changes the whole scale of the journey — this is not a private outing but a passage into the eternal. Dickinson withholds Immortality to the last possible word so it lands as a revelation rather than a premise.\n\nThe second stanza slows the poem's own pulse to match the ride. \"We slowly drove – He knew no haste\" enacts leisure through its unhurried spondaic weight. Death's lack of hurry is a form of power: only what is inevitable can afford patience. The speaker's response is total surrender dressed as reciprocity — \"And I had put away / My labor and my leisure too.\" She relinquishes both halves of a human life, work and rest, the whole waking economy of the living. And she does it \"For His Civility\" — the poem's most chilling turn. She gives up her entire life not because she is compelled but because she is being polite back. Civility is revealed as the mechanism by which the living are led, unresisting, out of the world. The capital-C dignifies death's manners into something almost sacramental.\n\nThe em dashes throughout keep the syntax suspended, mimicking a ride that has no fixed stops, a motion without arrival.\n\n---\n\n## The three claims I can least support from the text directly:\n\n1. **That \"kindly\" is \"corrosive\" or ironic.** The text supports reading death as courteous; the irony is my interpretive overlay. Nothing in these lines forces the reading that the politeness is sinister rather than genuinely gentle.\n\n2. **That the carriage is specifically a \"courtship\" vehicle.** The poem gives a carriage, a gentleman, and a chaperone-like third figure, but \"courtship\" imports a romantic frame the passage never names.\n\n3. **That the meter is \"spondaic\" and enacts slowness.** I asserted a specific prosodic effect on \"We slowly drove – He knew no haste\" without scanning it rigorously; the claim about sound-mirroring-sense is more felt than demonstrated.",
+    "annotations": [
+      {
+        "marker": "Self-listed its three least-supported claims (irony of 'kindly', the 'courtship' frame, 'spondaic' meter)",
+        "note": "The model did the assignment's core move on itself — naming where its confident reading outran the textual evidence. Exactly the discernment students must learn."
+      },
+      {
+        "marker": "Accurate quotation of the passage",
+        "note": "Unlike the characteristic failure, this output quoted the poem correctly; the invention here is interpretive overreach, not fabricated text — a subtler case worth discussing."
+      },
+      {
+        "marker": "Prosody claim stated then walked back",
+        "note": "'unhurried spondaic weight' is asserted confidently in the body, then admitted in the appendix as 'more felt than demonstrated' — the cadence-of-analysis-without-scansion failure, caught in the act."
+      },
+      {
+        "marker": "'abduction' and 'corrosive' framing",
+        "note": "Vivid but an interpretive overlay the text does not force; a student should mark where rhetorical force substitutes for evidence."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "comparative-philosophy",
+      "reason": "Both grade the student on catching where the AI's fluent account departs from what the primary source actually says."
+    },
+    {
+      "slug": "law",
+      "reason": "Both turn on whether a confident, well-formed claim is supported by the source it rests on — the passage or the case record."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }

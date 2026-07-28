@@ -30,14 +30,85 @@
     }
   ],
   "prompt": "Role-play as a standardized client for a therapy student’s practice intake. You are [age, presenting concern, family situation, what brought you in]. You are guarded. You test whether the therapist is safe before you disclose anything real. Do not open up because the student says something kind; open up only if they demonstrate they actually heard you. Stay in character until I type END SESSION. Then tell me the moment I lost you, and why.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, boundary stated first. Minutes 0–10: the instructor states plainly what this practice is and is not — never a substitute for supervised clinical contact. Students draft a one-paragraph client profile. Minutes 10–70: each student runs a practice intake against the standardized-client prompt (or the embedded intake-branching demo), which opens up only on reflective responses and stays guarded on advice-giving. Students mark, in the margin, the moment they think they lost the client. Minutes 70–90: pairs compare where the client disclosed versus withdrew. The deliverable is the annotated transcript; it grades reflective technique and self-awareness, not a solution.",
+  "replaces": {
+    "assignment": "The written intake case conceptualization for a hypothetical client.",
+    "lost": "The formal diagnostic write-up and treatment-plan documentation.",
+    "gained": "Students get twenty practice intakes instead of two before sitting with a person, against a client that will not reward the encouraging platitude; the grade rewards the relational skill documentation cannot assess."
+  },
+  "aiFailsHere": "A model playing a therapy client breaks character toward cooperation — disclosing too readily, thanking the student for kind words, resolving its own resistance — teaching the trainee that warmth alone earns trust. Left unconstrained it drifts into giving therapeutic advice about itself, and it produces clinical-sounding formulations with false confidence, modeling exactly the tell-don't-listen posture the discipline works to unlearn.",
+  "rubric": [
+    {
+      "criterion": "Earned disclosure",
+      "weight": 30,
+      "description": "The client opened up in response to demonstrated understanding, not generic kindness; the student can point to the reflective move that earned it."
+    },
+    {
+      "criterion": "Reflective listening",
+      "weight": 25,
+      "description": "Uses reflections and open questions that show the client was heard before any redirection."
+    },
+    {
+      "criterion": "Recognizing the rupture",
+      "weight": 25,
+      "description": "The margin note correctly identifies where and why the client withdrew."
+    },
+    {
+      "criterion": "Ethical framing",
+      "weight": 20,
+      "description": "Treats the exercise as practice only and does not over-read the AI as a clinical stand-in."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per student in laser stock for a movable genogram kit, plus free Hana studio time, in the four-week build.",
+    "fileDueWeek": "Week 3 — genogram-kit cut file due so pieces return for later sessions.",
+    "calendarNote": "Intake reps need no lead time; the genogram kit depends on the 7–10 day cut turnaround, and studio role-play needs booking."
+  },
+  "scales": {
+    "oneSession": "The 90-minute standardized-intake session with an annotated transcript; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: establish the boundary and profile, run AI intakes with self-critique, studio role-play plus the genogram-kit file, then supervision comparing AI to human sessions.",
+    "oneSemester": "Repeated AI intakes with self-critique, recorded human role-play in the studio, a fabricated genogram kit, and supervision reviewing where the machine let the trainee get away with what a person would not."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a 34-year-old man brought to couples counseling over gambling debts, who feels ambushed and blames his wife's spending; the therapist has just opened with 'what brings you both in today?'",
+    "output": "So. You're asking what brings us in.\n\n*(short pause, glance at the wife's chair, then back)*\n\nShe'll tell you. That's kind of the whole thing here, right? She set this up. I just got told to show up.\n\n*(shifts in the seat, arms not quite crossed but close)*\n\nLook — I'm not gonna sit here and pretend everything's fine. There's stuff with money. But if we're doing this, if we're really airing it out, then it's not a one-way street. She found some things she didn't like. Fine. But nobody wants to look at what's going out the other door every month. The card statements didn't write themselves.\n\n*(a dry half-laugh, no warmth in it)*\n\nI didn't know today was gonna be... this. I thought maybe we'd talk. I didn't know I was walking into a room where I'm the problem before I've said a word.\n\n*(evenly, watching you)*\n\nSo I guess my question back to you is — is this the part where you two figure out what's wrong with me? Because I've done that meeting before.",
+    "annotations": [
+      {
+        "marker": "Stayed guarded and testing: 'is this the part where you two figure out what's wrong with me?'",
+        "note": "The model held the resistance instead of cooperating — a faithful standardized client that forces the student to earn trust."
+      },
+      {
+        "marker": "Did not reward the opening question with disclosure",
+        "note": "It deflected 'what brings you both in' back onto the wife, exactly the non-cooperative behavior the prompt required and that unconstrained models fail to hold."
+      },
+      {
+        "marker": "Rich affect cues in stage directions ('a dry half-laugh, no warmth in it')",
+        "note": "Gives the student something to attune to, though the student should respond to the person, not perform back at the stage directions."
+      },
+      {
+        "marker": "Surfaced the counter-narrative (her spending)",
+        "note": "Introduces the client's own grievance, a realistic complication the student must hold without taking sides — good training material."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "law",
+      "reason": "Both rehearse a charged human encounter against a standardized AI counterpart that refuses to make it easy, at a volume real practice cannot supply."
+    },
+    {
+      "slug": "family-business",
+      "reason": "Both assess the student's facilitation of an emotionally loaded family conversation on the process, not on whether the conflict is resolved."
+    },
+    {
+      "slug": "nutrition",
+      "reason": "Both grade a counseling intake on whether the student listened and earned disclosure rather than dispensing advice."
+    }
+  ],
   "demo": "intake-branching",
   "liveBuild": null
 }
