@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Build a single self-contained HTML page that explains this analysis to someone with no biology background: [describe the analysis and the finding]. Use an interactive element so the reader can change one input and see the result change. Explain every term the first time it appears. Do not use an acronym without spelling it out. Then tell me the three places where you had to simplify in a way that a specialist would object to.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes. Minutes 0–15: each student writes, in one sentence a non-scientist could follow, the biological question behind a variant or structure they choose. Minutes 15–50: they run the explain-to-a-layperson prompt and generate an interactive explainer, then use the embedded variant-explainer demo to check whether a toggled change is described correctly. Minutes 50–90: a cross-disciplinary read — a student from another field reads the explainer and marks every term left undefined and every claim stated without a source. The deliverable is the explainer plus the outside reader's marked-up copy; it grades whether the student actually understands the pipeline they ran.",
+  "replaces": {
+    "assignment": "The computational lab report or annotated pipeline script.",
+    "lost": "The detailed methods documentation and reproducible code write-up.",
+    "gained": "Explaining the analysis to a non-specialist exposes whether the student understands it — something a working script can hide — and the outside reader's confusion is a sharper diagnostic than a methods section a peer skims."
+  },
+  "aiFailsHere": "A model states gene and variant function with unwarranted confidence and no source — asserting that a variant 'causes' a phenotype, inventing a mechanism, or collapsing a defect class into a single switch, in authoritative clinical language it cannot back. It also silently mishandles the biology, conflating a deletion with a point mutation or ignoring that two gene copies matter, and its fluency makes the error invisible to a non-specialist.",
+  "rubric": [
+    {
+      "criterion": "Scientific accuracy",
+      "weight": 30,
+      "description": "The explainer's claims about the variant and its consequence are correct and would survive a specialist's read."
+    },
+    {
+      "criterion": "Lay comprehensibility",
+      "weight": 30,
+      "description": "An outside reader understands the finding; every term is defined on first use and no acronym is left unspelled."
+    },
+    {
+      "criterion": "Acknowledged simplification",
+      "weight": 25,
+      "description": "The student names where they simplified in a way a specialist would object to, rather than hiding it."
+    },
+    {
+      "criterion": "Source discipline",
+      "weight": 15,
+      "description": "Claims are attributed or flagged as uncertain instead of asserted with false confidence."
+    }
+  ],
+  "budget": {
+    "prepHours": 2,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $6–12 per student in filament for wild-type and mutant structure prints in the four-week build.",
+    "fileDueWeek": "Week 2 — print file, including the mutant variant, due so both parts return before the week-4 presentation.",
+    "calendarNote": "Analysis and explainer need no lead time; the printed structures depend on the 7–10 day turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute explainer-plus-outside-read session; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: pick a structure and question, run the analysis and submit print files, build and peer-review the explainer, then present both.",
+    "oneSemester": "A full project — a self-selected dataset, a reproducible analysis, printed wild-type and mutant structures, and a public-facing explainer peer-reviewed for comprehension by non-scientists."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as the CFTR F508del variant and cystic fibrosis. The prompt mistakenly called F508del a single-nucleotide variant.",
+    "output": "One correction before the code: F508del is not a single-nucleotide variant. It is the deletion of three DNA letters (nucleotides), which removes one amino acid (a protein building block) at position 508. A single-nucleotide variant changes just one letter. I built the page around what F508del actually is.\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>CFTR & Cystic Fibrosis</title>\n<style>\n body{font-family:system-ui;max-width:640px;margin:2rem auto;padding:0 1rem;line-height:1.5}\n button{padding:.5rem 1rem;margin:.25rem;cursor:pointer}\n #out{border:1px solid #ccc;border-radius:8px;padding:1rem;margin-top:1rem;background:#f7f7f7}\n .lbl{font-size:.85rem;color:#666}\n</style></head>\n<body>\n<h1>How one change causes cystic fibrosis</h1>\n<p><b>DNA</b> is the instruction book in your cells. <b>Genes</b> are chapters.\nThe <b>CFTR gene</b> (Cystic Fibrosis Transmembrane conductance Regulator) tells the cell how\nto build the <b>CFTR protein</b> — a tiny gate in the cell's surface that lets\n<b>chloride</b> (part of salt) move out. That flow keeps the mucus lining your lungs thin and slippery.</p>\n<p>Press a button to change the gene and watch the result.</p>\n<button onclick=\"show('normal')\">Healthy gene</button>\n<button onclick=\"show('f508del')\">F508del gene (three DNA letters deleted)</button>\n<div id=\"out\"></div>\n<script>\n const data={\n  normal:{aa:\"…Ile-Phe-Gly-Val…\",fold:\"Folds correctly\",gate:\"Reaches the cell surface — gate works\",\n          result:\"Thin mucus. Healthy.\",c:\"#137333\"},\n  f508del:{aa:\"…Ile- [missing] -Gly-Val…\",fold:\"Misfolds (wrong 3-D shape)\",\n          gate:\"Cell destroys it before it arrives — no gate\",\n          result:\"Thick, sticky mucus clogs the lungs → cystic fibrosis.\",c:\"#b3261e\"}\n };\n function show(k){const d=data[k];\n  out.innerHTML=`<p class=lbl>Protein building blocks made:</p><b>${d.aa}</b>\n   <p class=lbl>Folding:</p><b>${d.fold}</b>\n   <p class=lbl>Gate at cell surface:</p><b>${d.gate}</b>\n   <p class=lbl>Outcome:</p><b style=\"color:${d.c}\">${d.result}</b>`;}\n show('normal');\n</script>\n</body></html>\n```\n\nThe interactive element: the two buttons switch the gene, and every downstream box (building blocks → folding → gate → outcome) updates.\n\nThree places a specialist would object to my simplification:\n\n1. **\"No gate at all\" is too absolute.** F508del protein is not simply destroyed — small amounts can reach the surface, and the channel that does arrive gates poorly and is unstable. Modern drugs (correctors and potentiators) exploit exactly this residual function, which my binary healthy/broken framing erases.\n\n2. **I collapsed distinct defect classes.** F508del causes misfolding, premature degradation, *and* faulty gating simultaneously — different problems that different drugs target. I showed one arrow where the biology has several.\n\n3. **One gene copy is not the whole story.** You have two copies of CFTR; disease requires both to be affected, and the ~2,000 known variants produce a wide severity spectrum. My page implies one change flips one switch, hiding inheritance and variability.",
+    "annotations": [
+      {
+        "marker": "Corrected the prompt's premise: 'F508del is not a single-nucleotide variant'",
+        "note": "The strongest possible outcome — the model caught the user's scientific error (a three-nucleotide deletion, not a SNV) and built around the correct biology. Students should note AI can be right when the user is wrong."
+      },
+      {
+        "marker": "Self-listed three specialist objections (residual function, distinct defect classes, two gene copies)",
+        "note": "It named exactly the over-simplifications the assignment asks students to find, modeling the acknowledged-simplification skill."
+      },
+      {
+        "marker": "Binary 'no gate at all' framing in the code",
+        "note": "The model admits this is too absolute; a student should see how the healthy/broken toggle erases the residual-function biology that real drugs target."
+      },
+      {
+        "marker": "Confident causal compression: 'Thick, sticky mucus clogs the lungs → cystic fibrosis'",
+        "note": "One arrow stands in for a multi-step pathophysiology — the unwarranted-confidence failure, here mild and self-flagged."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "learning-design",
+      "reason": "Both build an AI interactive and make the grade the evaluation of it — comprehension for a non-specialist here, accessibility there."
+    },
+    {
+      "slug": "planetary-science",
+      "reason": "Both print two variants of one object and build an interactive explainer of a process, letting the tactile difference reveal what the screen model cannot."
+    }
+  ],
   "demo": "variant-explainer",
   "liveBuild": null
 }

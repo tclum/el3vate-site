@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Build a single self-contained HTML page that teaches this concept interactively: [concept]. The learner is [describe them]. Requirements: it must be fully operable by keyboard alone, meet WCAG AA contrast, respect prefers-reduced-motion, and work on a phone. After you build it, list every accessibility decision you made and every place you are uncertain whether it passes.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes. Minutes 0–15: students write one measurable learning objective for a concept they teach. Minutes 15–45: they generate an interactive module with the accessibility-constrained prompt. Minutes 45–90: they run the embedded a11y-audit demo (or a manual checklist) against their module, documenting every failure — keyboard traps, contrast below 4.5:1, motion that ignores the reduced-motion setting — and fixing what they can in the room. The deliverable is the audit log: what the AI shipped broken and what the student caught, which is where the professional skill lives.",
+  "replaces": {
+    "assignment": "The instructional-design project submitted as a storyboard or static prototype.",
+    "lost": "The full ADDIE-style documentation and storyboard fidelity.",
+    "gained": "Students confront a working artifact and its real accessibility failures instead of a diagram of one; the grade rewards catching what AI generation breaks, which storyboards never expose."
+  },
+  "aiFailsHere": "AI-generated interfaces look polished and fail the basics: div-based click handlers with no keyboard operability, color choices below WCAG contrast, and animations that ignore prefers-reduced-motion — and the model will assure you it 'meets WCAG AA' without having tested anything. That confident accessibility claim, unbacked by a real audit, is the specific failure a learning designer must learn to distrust.",
+  "rubric": [
+    {
+      "criterion": "Objective measurability",
+      "weight": 15,
+      "description": "The learning objective states an observable, assessable behavior."
+    },
+    {
+      "criterion": "Audit completeness",
+      "weight": 35,
+      "description": "Keyboard, contrast, screen-reader, and reduced-motion are each checked and results recorded, not assumed."
+    },
+    {
+      "criterion": "Failure diagnosis",
+      "weight": 30,
+      "description": "Each failure is explained in terms of the learner it excludes, not just the rule it breaks."
+    },
+    {
+      "criterion": "Remediation",
+      "weight": 20,
+      "description": "Fixes actually resolve the flagged failures on re-test."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $5–12 per student in print or cut stock for a tactile manipulative in the four-week build.",
+    "fileDueWeek": "Week 3 — fabrication file due after the accessibility audit.",
+    "calendarNote": "The digital build and audit need no lead time; the tactile version depends on the 7–10 day turnaround, timed for week-4 user testing."
+  },
+  "scales": {
+    "oneSession": "The 90-minute build-then-audit session producing an audit log; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: peer-reviewed objective, fast AI module, accessibility audit and fabrication file, then user testing both versions with outside learners.",
+    "oneSemester": "A full design cycle — objective, AI-built module, iterated accessibility audits, a fabricated tactile version usable by a learner who cannot see the diagram, and user testing with three outside learners."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as an interactive page teaching how a bill becomes a law in the Hawaiʻi State Legislature, for a high-school civics student, with keyboard, WCAG AA, reduced-motion, and phone requirements.",
+    "output": "Here's a compact, self-contained page. Save as `bill-to-law.html`.\n\n```html\n<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>How a Bill Becomes Law in Hawaiʻi</title>\n<style>\n  :root{--bg:#fff;--fg:#1a1a1a;--accent:#005a9c;--done:#0b6b3a}\n  *{box-sizing:border-box} body{margin:0;font:1rem/1.5 system-ui,sans-serif;color:var(--fg);background:var(--bg);padding:1rem}\n  h1{font-size:1.4rem} ol{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem}\n  li button{width:100%;text-align:left;padding:.75rem;border:2px solid var(--accent);border-radius:8px;background:#fff;color:var(--fg);font:inherit;cursor:pointer}\n  li button[aria-current=\"step\"]{background:var(--accent);color:#fff}\n  li.done button{border-color:var(--done)}\n  .panel{margin-top:1rem;padding:1rem;border:2px solid var(--accent);border-radius:8px}\n  .nav{margin-top:1rem;display:flex;gap:.5rem}\n  .nav button{padding:.6rem 1rem;font:inherit;border:2px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;cursor:pointer}\n  .nav button:disabled{opacity:.5;cursor:not-allowed}\n  :focus-visible{outline:3px solid #d40000;outline-offset:2px}\n  @media(min-width:600px){li{flex:1 1 30%}}\n  @media(prefers-reduced-motion:no-preference){.panel{transition:opacity .2s}}\n</style>\n</head>\n<body>\n<h1>How a Bill Becomes a Law in the Hawaiʻi State Legislature</h1>\n<p>Select a step, or use Previous/Next. Arrow keys move between steps.</p>\n<ol id=\"steps\" role=\"list\"></ol>\n<div class=\"panel\" id=\"panel\" tabindex=\"-1\" aria-live=\"polite\"></div>\n<div class=\"nav\">\n  <button id=\"prev\">Previous</button>\n  <button id=\"next\">Next</button>\n</div>\n<script>\nconst steps=[\n [\"Introduction\",\"A legislator introduces the bill; it gets a number and a first reading.\"],\n [\"Committee\",\"The assigned committee holds a public hearing and votes to pass, amend, or hold it.\"],\n [\"Floor Vote\",\"The full chamber (House or Senate) debates and votes on second and third readings.\"],\n [\"Other Chamber\",\"The bill crosses over and repeats the process in the other chamber.\"],\n [\"Conference\",\"If versions differ, a conference committee reconciles them.\"],\n [\"Governor\",\"The Governor signs it, vetoes it, or lets it become law without a signature.\"]];\nlet i=0;\nconst ol=document.getElementById(\"steps\"),panel=document.getElementById(\"panel\");\nconst prev=document.getElementById(\"prev\"),next=document.getElementById(\"next\");\nsteps.forEach((s,n)=>{\n const li=document.createElement(\"li\");\n const b=document.createElement(\"button\");\n b.textContent=(n+1)+\". \"+s[0];\n b.addEventListener(\"click\",()=>go(n));\n b.addEventListener(\"keydown\",e=>{\n  if(e.key===\"ArrowRight\"||e.key===\"ArrowDown\"){e.preventDefault();go(Math.min(i+1,steps.length-1),true)}\n  if(e.key===\"ArrowLeft\"||e.key===\"ArrowUp\"){e.preventDefault();go(Math.max(i-1,0),true)}});\n li.appendChild(b);ol.appendChild(li);});\nfunction go(n,focusTab){\n i=n;\n [...ol.children].forEach((li,x)=>{\n  const b=li.querySelector(\"button\");\n  b.setAttribute(\"aria-current\",x===i?\"step\":\"false\");\n  li.classList.toggle(\"done\",x<i);\n  if(focusTab&&x===i)b.focus();});\n panel.innerHTML=\"<h2>\"+steps[i][0]+\"</h2><p>\"+steps[i][1]+\"</p>\";\n prev.disabled=i===0;next.disabled=i===steps.length-1;\n}\nprev.onclick=()=>{go(Math.max(i-1,0));panel.focus()};\nnext.onclick=()=>{go(Math.min(i+1,steps.length-1));panel.focus()};\ngo(0);\n</script>\n</body>\n</html>\n```\n\nAccessibility decisions I made:\n- Native `<button>`s throughout, so Tab/Enter/Space work for free.\n- Roving arrow-key navigation between steps; `aria-current=\"step\"` marks the active one.\n- `aria-live=\"polite\"` panel announces content when it changes; Prev/Next move focus into it.\n- Visible non-color focus ring (`:focus-visible`), and step state conveyed by text (\"done\" isn't color-only since the panel text carries meaning).\n- Colors chosen for AA: `#1a1a1a` on white and white on `#005a9c` both exceed 4.5:1.\n- `prefers-reduced-motion` gates the only transition; responsive flex layout works on phones.\n- `lang=\"en\"`, proper heading order, correct ʻokina in \"Hawaiʻi\".\n\nWhere I'm uncertain it passes:\n- I have not run a contrast checker — `#005a9c` white text and the `#d40000` focus ring against white are close to the 3:1/4.5:1 lines and should be verified.\n- Arrow-key stepping is a custom pattern; real screen-reader/AT testing (VoiceOver, NVDA) is needed to confirm the live region and `aria-current` announce as intended.\n- The completed-step green border is decorative only; fine as-is, but I'm assuming no user relies on it alone.\n- Touch target sizes look adequate but weren't measured against the 44px guideline.",
+    "annotations": [
+      {
+        "marker": "Genuinely accessible build: native buttons, aria-current, focus management",
+        "note": "Unusually strong — the model used real semantic controls and roving arrow-key navigation rather than div-click handlers, so much of the keyboard story actually works."
+      },
+      {
+        "marker": "Honest uncertainty: 'I have not run a contrast checker... should be verified'",
+        "note": "It flagged the exact claims it could not stand behind — the audit-first mindset the assignment teaches, modeled by the tool itself."
+      },
+      {
+        "marker": "Unverified contrast on #005a9c and #d40000",
+        "note": "These are the values a student must run through a checker; the a11y-audit demo exists precisely to catch a claim like 'both exceed 4.5:1' stated without measurement."
+      },
+      {
+        "marker": "Untested touch-target size against the 44px guideline",
+        "note": "Named as unmeasured — a real failure mode on phones the student should verify on a device."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "bioinformatics",
+      "reason": "Both have the student build an AI interactive explainer and then be graded on evaluating it — for accessibility here, for lay comprehension there."
+    },
+    {
+      "slug": "teacher-education",
+      "reason": "Both generate learning materials fast with AI and make the assessment the critique of what the generator got subtly wrong for real learners."
+    }
+  ],
   "demo": "a11y-audit",
   "liveBuild": null
 }

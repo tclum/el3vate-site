@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Build me a single self-contained HTML page with sliders that shows planning tradeoffs for a site. The variables are: [building height, unit count, parking ratio, open space, whatever applies]. When a slider moves, update plain-language consequences that a resident would care about: shadow, traffic, who can afford to live there, what gets demolished. No jargon, no acronyms. Assume the reader has never been to a planning meeting.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one contested Honolulu parcel with public documentation. Minutes 0–20: students pull the actual constraints from the record — zoning, height limit, existing use. Minutes 20–55: they open the embedded tradeoffs demo (or build one with the prompt) and, for three different height and density settings, write the plain-language consequence a resident would feel — shadow, traffic, who gets priced out, what is demolished. Minutes 55–90: a mock testimony round — half the room plays residents and reacts to each scenario; planners revise the wording of any consequence the residents did not understand. The deliverable is the revised consequence sheet, graded on whether a non-planner could act on it.",
+  "replaces": {
+    "assignment": "The studio site-analysis report with rendered massing diagrams.",
+    "lost": "The comprehensive drawn analysis and the rendering craft.",
+    "gained": "Students translate zoning into consequences residents can weigh, and learn that a rendering hides the tradeoff a slider exposes; the grade rewards communication with the affected public over presentation graphics."
+  },
+  "aiFailsHere": "Ask a model for planning consequences and it produces authoritative-sounding figures — trip-generation counts, shadow lengths, affordability thresholds — with no siting data and no acknowledgment of local code, presenting rules of thumb as parcel-specific findings. It also strips the politics, describing a tradeoff in neutral technocratic language that hides who wins and who is displaced — exactly the information a community meeting needs surfaced.",
+  "rubric": [
+    {
+      "criterion": "Fidelity to the actual constraints",
+      "weight": 25,
+      "description": "Consequences are tied to the parcel's real zoning and documented conditions, not generic assumptions."
+    },
+    {
+      "criterion": "Plain-language accessibility",
+      "weight": 30,
+      "description": "A resident with no planning background can understand and act on each stated consequence; jargon and acronyms are removed."
+    },
+    {
+      "criterion": "Distributional honesty",
+      "weight": 25,
+      "description": "Names who benefits and who is displaced under each scenario rather than describing tradeoffs neutrally."
+    },
+    {
+      "criterion": "Revision from feedback",
+      "weight": 20,
+      "description": "The consequence sheet is measurably clearer after the mock-testimony reactions."
+    }
+  ],
+  "budget": {
+    "prepHours": 2,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $15–30 per team in laser stock for a layered site model in the four-week build.",
+    "fileDueWeek": "Week 3 — cut file due so the layered model returns before the week-4 mock meeting.",
+    "calendarNote": "The interactive tool needs no lead time; the layered physical model depends on the 7–10 day cut turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute constraint-to-consequence session with a mock testimony round; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: extract constraints, build and test the explainer on non-planners, submit the cut file, then run a mock community meeting with the model and tool on the table.",
+    "oneSemester": "A full charrette on a real parcel — constraint extraction, an iterated public-facing tool tested on non-planners, a layered fabricated model, and a facilitated neighborhood-board session."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a Kakaʻako, Honolulu site with sliders for building height, unit count, parking ratio, and open-space percentage.",
+    "output": "Here's a single file. Save it as `kakaako-tradeoffs.html` and open it in any browser.\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Kaka‘ako Site Tradeoffs</title>\n<style>\n  body{font-family:system-ui,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1a1a1a}\n  h1{font-size:1.4rem}\n  .ctrl{margin:1rem 0}\n  label{font-weight:600;display:block}\n  output{color:#0a6}\n  input[type=range]{width:100%}\n  .out{background:#f4f6f8;border-radius:10px;padding:1rem;margin-top:1.2rem}\n  .out p{margin:.6rem 0}\n</style>\n</head>\n<body>\n<h1>What this building would mean for the block</h1>\n<p>Move the sliders. The notes below tell you what a neighbor would notice.</p>\n\n<div class=\"ctrl\"><label>How tall: <output id=\"hV\"></output></label>\n<input type=\"range\" id=\"h\" min=\"3\" max=\"40\" value=\"12\"></div>\n\n<div class=\"ctrl\"><label>How many homes: <output id=\"uV\"></output></label>\n<input type=\"range\" id=\"u\" min=\"10\" max=\"400\" value=\"120\"></div>\n\n<div class=\"ctrl\"><label>Parking spots per home: <output id=\"pV\"></output></label>\n<input type=\"range\" id=\"p\" min=\"0\" max=\"2\" step=\"0.25\" value=\"1\"></div>\n\n<div class=\"ctrl\"><label>Share kept as open ground: <output id=\"oV\"></output></label>\n<input type=\"range\" id=\"o\" min=\"0\" max=\"60\" value=\"15\"></div>\n\n<div class=\"out\" id=\"out\"></div>\n\n<script>\nconst $=id=>document.getElementById(id);\nfunction upd(){\n  const h=+$('h').value,u=+$('u').value,p=+$('p').value,o=+$('o').value;\n  $('hV').textContent=h+\" floors (~\"+(h*11)+\" feet)\";\n  $('uV').textContent=u+\" homes\";\n  $('pV').textContent=p+\" spots each\";\n  $('oV').textContent=o+\"% open\";\n  const shadow=h<8?\"Barely changes sunlight next door.\":h<20?\"An afternoon shadow reaches the sidewalk and nearest homes.\":\"A long shadow crosses the street for much of the day; some yards lose direct sun.\";\n  const cars=Math.round(u*p);\n  const traffic=cars<50?\"Adds a light trickle of cars—hardly noticeable.\":cars<200?\"Roughly \"+cars+\" more cars come and go daily; expect busier mornings.\":cars+\" more cars means real backups at the driveway and corner.\";\n  const afford=p>=1.5?\"Every home pays for a parking spot, so rents run higher—aimed at people with cars and money.\":p<=0.5?\"Fewer parking spots keeps costs down; friendlier to people who bus, bike, or walk.\":\"Middle-of-the-road costs; some renters priced in, some priced out.\";\n  const foot=Math.round(u/(h)*3);\n  const demo=o>40?\"Most of the lot stays as yard, trees, and walkways—little is paved over.\":o>15?\"A courtyard or lawn survives, but much of the lot becomes building and pavement.\":\"Almost the whole lot is built on; existing trees, parking, or low buildings there get torn down.\";\n  $('out').innerHTML=`<p><b>Sunlight:</b> ${shadow}</p><p><b>Traffic:</b> ${traffic}</p>\n  <p><b>Who can live here:</b> ${afford}</p><p><b>What gets torn down:</b> ${demo}</p>`;\n}\ndocument.querySelectorAll('input').forEach(i=>i.addEventListener('input',upd));upd();\n</script>\n</body>\n</html>\n```\n\nThe numbers (11 feet per floor, cars = homes × parking ratio) are rough rules of thumb for conversation, not code-accurate figures. Want me to add a fifth factor like noise or school crowding, or tune it to a specific parcel?",
+    "annotations": [
+      {
+        "marker": "Self-flagged rules of thumb: '11 feet per floor... not code-accurate figures'",
+        "note": "The model warned its numbers are conversational, not siting-grade — the honesty a student should preserve and a planner should replace with real data."
+      },
+      {
+        "marker": "Kept the distributional point: 'aimed at people with cars and money' vs. 'friendlier to people who bus'",
+        "note": "It surfaced who is priced in or out by the parking ratio — the political content technocratic language usually hides."
+      },
+      {
+        "marker": "Plain-language output, no acronyms",
+        "note": "Consequences are written for a resident, following the prompt; this is the accessibility the assignment grades."
+      },
+      {
+        "marker": "Dead code: a 'foot' variable computed but never displayed",
+        "note": "A small artifact revealing the model padded logic it did not wire in — a reminder that AI-built tools need inspection, not trust."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "political-science",
+      "reason": "Both put contested stakeholders around a physical map and grade defending a spatial choice to the people it affects."
+    },
+    {
+      "slug": "planetary-science",
+      "reason": "Both build a slider-driven model of consequences and must make its edge cases and assumptions legible rather than hidden behind a clean output."
+    }
+  ],
   "demo": "zoning-tradeoffs",
   "liveBuild": null
 }
