@@ -549,6 +549,192 @@ async function traditionCritique(page) {
 }
 
 // ============================================================
+// presenter kit — must work with the network completely down
+// ============================================================
+// The claim on this page is not "it loads" but "it loads on conference wifi
+// that is not working". So it is loaded with every http(s) request aborted at
+// the network layer, and any attempt to reach out is recorded as a failure.
+// The timer is driven against a stubbed clock rather than real elapsed time.
+async function presenterKit(browser) {
+  const t = suite('presenter-kit');
+  const url = 'file://' + path.join(DIST, 'presenter', 'index.html');
+
+  const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
+  const attempted = [];
+  await ctx.route('**', route => {
+    const u = route.request().url();
+    if (/^https?:/i.test(u)) { attempted.push(u); return route.abort(); }
+    return route.continue();
+  });
+
+  // A clock we fully control, installed before any page script runs. Frozen
+  // rather than offset from real time: if real seconds leaked in, every timer
+  // assertion would sit a fraction of a second off a minute boundary and the
+  // suite would flake instead of testing the arithmetic.
+  await ctx.addInitScript(() => {
+    window.__t0 = 1700000000000;
+    window.__now = window.__t0;
+    Date.now = () => window.__now;
+  });
+
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e)));
+  await page.goto(url, { waitUntil: 'load' });
+
+  t.ok('page renders with every network request aborted', attempted.length === 0,
+    `attempted ${attempted.length} external requests: ${attempted.slice(0, 3).join(', ')}`);
+  t.ok('no page errors offline', errors.length === 0, errors.join(' | '));
+
+  // --- structure ---
+  const struct = await page.evaluate(() => ({
+    noindex: (document.querySelector('meta[name="robots"]') || {}).content || null,
+    demoLinks: Array.prototype.map.call(document.querySelectorAll('a[href^="../demos/"]'),
+      a => ({ href: a.getAttribute('href'), target: a.target, rel: a.rel })),
+    stills: document.querySelectorAll('img[src^="data:image/png;base64,"]').length,
+    qr: !!document.querySelector('svg[viewBox]'),
+    prompts: Array.prototype.map.call(document.querySelectorAll('.pr__t'), p => p.textContent.length),
+    copyBtns: document.querySelectorAll('.copy').length,
+    siteUrl: (document.querySelector('.urlbox .u') || {}).textContent,
+    segments: document.querySelectorAll('.ros li').length,
+  }));
+
+  t.ok('marked noindex', /noindex/.test(struct.noindex || ''), String(struct.noindex));
+  t.eq('links all eight demos', struct.demoLinks.length, 8);
+  t.ok('every demo link opens in a new tab', struct.demoLinks.every(l => l.target === '_blank'),
+    JSON.stringify(struct.demoLinks.map(l => l.target)));
+  t.ok('every demo link is rel=noopener', struct.demoLinks.every(l => /noopener/.test(l.rel)),
+    JSON.stringify(struct.demoLinks.map(l => l.rel)));
+  t.eq('embeds a fallback still for each demo', struct.stills, 8);
+  t.ok('QR is inline SVG', struct.qr);
+  t.eq('shows the two rehearsed prompts', struct.prompts.length, 2);
+  t.ok('both prompts are shown in full', struct.prompts.every(n => n > 200), JSON.stringify(struct.prompts));
+  t.eq('each prompt has a copy button', struct.copyBtns, 2);
+  t.eq('shows the public site URL', struct.siteUrl, 'https://el3vate.vercel.app');
+  t.eq('run of show has six segments', struct.segments, 6);
+
+  // every demo the page links to must actually resolve on disk
+  for (const l of struct.demoLinks) {
+    const target = path.resolve(path.join(DIST, 'presenter'), l.href);
+    t.ok(`linked demo exists: ${l.href}`, fs.existsSync(target), target);
+  }
+
+  // --- the fallback stills are real images, not broken references ---
+  const imgOk = await page.evaluate(() => Array.prototype.map.call(
+    document.querySelectorAll('img[src^="data:image/png;base64,"]'),
+    i => ({ w: i.naturalWidth, h: i.naturalHeight })));
+  t.ok('every fallback still decodes to a real image',
+    imgOk.length === 8 && imgOk.every(i => i.w > 400 && i.h > 200),
+    JSON.stringify(imgOk));
+
+  // --- timer ---
+  const clock = async () => page.evaluate(() => ({
+    clock: document.getElementById('clock').textContent,
+    seg: document.getElementById('segTitle').textContent,
+    remain: document.getElementById('remain').textContent,
+    status: document.getElementById('status').textContent,
+    statusClass: document.getElementById('status').className,
+    paused: /paused/.test(document.getElementById('clock').className),
+    startLabel: document.getElementById('startBtn').textContent,
+  }));
+  // advance the frozen clock to an absolute number of seconds since page load,
+  // then let one 250ms tick land
+  const at = async s => {
+    await page.evaluate(v => { window.__now = window.__t0 + v * 1000; }, s);
+    await page.waitForTimeout(320);
+  };
+
+  let c = await clock();
+  t.eq('starts paused at zero', c.clock, '0:00');
+  t.ok('clock reads as paused before start', c.paused, c.startLabel);
+  t.eq('first segment is Framing', c.seg, 'Framing');
+
+  await page.locator('#startBtn').click();
+  await at(60);
+  c = await clock();
+  t.eq('clock advances while running', c.clock, '1:00');
+  t.ok('clock no longer reads paused', !c.paused);
+  t.eq('shows time remaining in the current segment', c.remain, '4:00 left');
+  t.eq('reports on plan when inside the segment budget', c.status, 'On plan');
+
+  // overrun the 5-minute framing segment
+  await at(400);
+  c = await clock();
+  t.eq('clock at 6:40', c.clock, '6:40');
+  t.eq('reports the overrun rather than rolling on silently', c.remain, '1:40 OVER');
+  t.ok('running-long state is flagged', /Running long by 1:40/.test(c.status), c.status);
+  t.ok('running-long state is styled distinctly', /\blong\b/.test(c.statusClass), c.statusClass);
+
+  // moving on late keeps the drift
+  await page.locator('#nextBtn').click();
+  c = await clock();
+  t.eq('advancing a segment updates the current segment', c.seg, 'Maker space tour');
+  t.eq('new segment gets its own budget', c.remain, '20:00 left');
+  t.ok('lateness carries into the next segment', /Running long by 1:40/.test(c.status), c.status);
+
+  // pause actually stops the clock
+  await page.locator('#startBtn').click();
+  const beforePause = (await clock()).clock;
+  await at(900);
+  c = await clock();
+  t.eq('pause stops the clock', c.clock, beforePause);
+  t.ok('paused state is visible', c.paused, c.startLabel);
+  t.eq('button offers to resume', c.startLabel, 'Resume');
+
+  // reset takes two clicks — no modal dialog on a page being driven live
+  await page.locator('#resetBtn').click();
+  t.eq('a single reset click only arms it', (await clock()).clock, beforePause);
+  t.ok('armed reset says so', /click again/i.test(await page.locator('#resetBtn').textContent()),
+    await page.locator('#resetBtn').textContent());
+  await page.locator('#resetBtn').click();
+  c = await clock();
+  t.eq('a second reset click clears the clock', c.clock, '0:00');
+  t.eq('reset returns to the first segment', c.seg, 'Framing');
+
+  // finishing a segment early reports ahead of plan
+  await page.locator('#startBtn').click();
+  await at(910);
+  await page.locator('#nextBtn').click();
+  c = await clock();
+  t.eq('early finish still advances the segment', c.seg, 'Maker space tour');
+  t.eq('ahead of plan by the full unused budget', c.status, 'Ahead by 4:50');
+  t.ok('ahead state is styled distinctly', /\bahead\b/.test(c.statusClass), c.statusClass);
+
+  // --- keyboard control ---
+  await page.locator('#resetBtn').click(); await page.locator('#resetBtn').click();
+  await page.locator('h1').click();                 // move focus off the controls
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(320);
+  t.ok('space bar starts the timer', !(await clock()).paused, JSON.stringify(await clock()));
+  await page.keyboard.press('n');
+  t.eq('n advances a segment', (await clock()).seg, 'Maker space tour');
+  await page.keyboard.press('p');
+  t.eq('p goes back a segment', (await clock()).seg, 'Framing');
+
+  // The real session starts with a trackpad click on Start, so the shortcuts
+  // have to survive a control holding focus — the bug this asserts against made
+  // N and P silently dead for the rest of the session.
+  await page.locator('#nextBtn').click();
+  t.eq('mouse click advanced the segment', (await clock()).seg, 'Maker space tour');
+  await page.keyboard.press('n');
+  t.eq('n still works while a button holds focus', (await clock()).seg,
+    'Access logistics and recording studio');
+  await page.keyboard.press('ArrowLeft');
+  t.eq('arrow keys work while a button holds focus', (await clock()).seg, 'Maker space tour');
+
+  // --- the fallback stills open without leaving the page ---
+  const before = page.url();
+  await page.locator('.dm details summary').first().click();
+  const open = await page.evaluate(() => document.querySelector('.dm details').open);
+  t.ok('a fallback still opens in place', open === true, String(open));
+  t.eq('opening a still does not navigate away', page.url(), before);
+
+  t.ok('still no external requests after driving the whole page', attempted.length === 0,
+    attempted.join(', '));
+  await ctx.close();
+}
+
+// ============================================================
 // runner
 // ============================================================
 async function main() {
@@ -608,6 +794,7 @@ async function main() {
     await a11yAudit(page);
     await intakeBranching(page);
     await traditionCritique(page);
+    await presenterKit(browser);
   } finally {
     await browser.close();
   }

@@ -763,6 +763,421 @@ ${inner}
 `;
 }
 
+// ============================================================
+// phase 10 — presenter kit (dist/presenter/index.html)
+// ============================================================
+// The page the session is driven from, on conference wifi, possibly with no
+// network at all. Everything is inlined: system fonts only, the QR as inline
+// SVG, every demo still as a base64 data URI. Nothing on this page fetches
+// anything. It is linked from nowhere on the public site and marked noindex;
+// GATE 9 in src/validate.js enforces both of those, plus the no-subresource
+// rule, so a later edit cannot quietly make it depend on the network.
+
+const RUN_OF_SHOW = [
+  { at: 0, mins: 5, title: 'Framing',
+    detail: 'Who this is for and what they leave with. Two builds per assignment: one they make with their hands, one they build with AI. Nothing here needs them to learn a tool first.' },
+  { at: 5, mins: 20, title: 'Maker space tour',
+    detail: '3D printing, laser cutting, the Hana recording studio. Show the machines, not the slides. Point at what a student file turns into.' },
+  { at: 25, mins: 5, title: 'Access logistics and recording studio',
+    detail: 'Files go through the PACE request form from a UH email address. In-person access is by appointment and is separate from submitting a file — nobody has to come in to have something made. Turnaround is 7–10 BUSINESS days; say the word "business" out loud. Tim has the form link.' },
+  { at: 30, mins: 20, title: 'AI live build',
+    detail: 'Run the live-build prompt in a chat window and build a working interactive page in front of the room. Every discipline page has an empty live-build section reserved for whatever comes out.' },
+  { at: 50, mins: 10, title: 'Challenge and prompt exercise',
+    detail: 'They run the second prompt themselves, on their own course, on their own device. The graded skill is catching where the model is confidently wrong — every discipline page has a real annotated model output showing exactly that.' },
+  { at: 60, mins: 5, title: 'Close',
+    detail: 'The Day 10 challenge in one sentence, the URL and the QR on screen. Share the closing card full-screen.' },
+];
+
+// The two prompts rehearsed for the session. Both are real starter prompts from
+// the site's own content — nothing here is written for the presenter page — and
+// both are deliberately domain-neutral so every discipline in the room can run
+// them. If Tim rehearsed different ones, change the two slugs; nothing else
+// needs to move. Logged in BLOCKERS.md because the brief named "the two
+// rehearsed prompts" without saying which they are.
+const REHEARSED = [
+  { slug: 'learning-design', at: '0:30', role: 'Live build',
+    why: 'Built live in front of the room. Every faculty member has a concept and a learner, so the bracket fills itself from the audience. The a11y-audit demo further down this page is what this prompt produced.' },
+  { slug: 'finance', at: '0:50', role: 'Challenge exercise',
+    why: 'What they run themselves. Same build shape, applied to a decision in their own field — the break-even demo is what it produced, and its "every assumption this model makes" panel is the thing to point at.' },
+];
+
+const PRESENTER_CSS = `
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#0D211B;color:#EAF0EA;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.5}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+h1{font-size:1.8rem;line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:1.15rem;margin:0 0 14px;letter-spacing:-.01em}
+a{color:#8FE3C0}
+:focus-visible{outline:3px solid #FF6A4D;outline-offset:2px}
+
+.top{border-bottom:1px solid #2A4A3E;padding:22px 0 20px}
+.top__grid{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:#7FB79B;margin:0 0 10px}
+.urlbox{display:flex;align-items:center;gap:18px;background:#123028;border:1px solid #2A4A3E;padding:14px 18px;border-radius:4px}
+.urlbox .qr{width:132px;height:132px;background:#fff;padding:7px;border-radius:3px;flex:none}
+.urlbox .qr svg{display:block;width:100%;height:100%}
+.urlbox .u{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.35rem;color:#fff;word-break:break-all}
+.urlbox .l{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:#7FB79B;margin:0 0 6px}
+
+/* ---- timer ---- */
+.timer{position:sticky;top:0;z-index:50;background:#0A1A15;border-bottom:2px solid #2A4A3E}
+.timer__grid{display:grid;grid-template-columns:auto 1fr auto;gap:26px;align-items:center;padding:14px 0}
+.clock{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:3.1rem;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#fff}
+.clock.paused{color:#7FB79B}
+.now__l{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:#7FB79B;margin:0 0 3px}
+.now__t{font-size:1.3rem;font-weight:600;margin:0 0 4px;color:#fff}
+.now__m{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#B7D3C4}
+.remain{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:4px 10px;border-radius:3px;display:inline-block;margin-top:5px}
+.status.on{background:#1E5744;color:#B8F0D6}
+.status.long{background:#8E2A14;color:#FFD9CF}
+.status.ahead{background:#1E4457;color:#BFE4F5}
+.over{color:#FF9478}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:.06em;
+  text-transform:uppercase;padding:11px 16px;border-radius:3px;border:2px solid #35604F;
+  background:#123028;color:#EAF0EA;cursor:pointer}
+.btn:hover{border-color:#8FE3C0}
+.btn--go{background:#DE3F26;border-color:#DE3F26;color:#fff}
+.btn--go:hover{background:#FF6A4D;border-color:#FF6A4D}
+
+/* ---- run of show ---- */
+section{padding:30px 0;border-bottom:1px solid #1E3B31}
+.ros{list-style:none;margin:0;padding:0}
+.ros li{display:grid;grid-template-columns:76px 1fr auto;gap:18px;padding:13px 14px;align-items:start;
+  border-left:4px solid transparent;border-radius:3px}
+.ros li.cur{background:#123028;border-left-color:#DE3F26}
+.ros li.done{opacity:.5}
+.ros .mk{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.1rem;color:#8FE3C0;font-variant-numeric:tabular-nums}
+.ros .ti{font-weight:700;font-size:1.05rem;margin:0 0 4px;color:#fff}
+.ros .de{margin:0;font-size:14.5px;color:#B7D3C4;max-width:80ch}
+.ros .du{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#7FB79B;white-space:nowrap}
+.jumpbtn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;background:none;border:1px solid #35604F;color:#8FE3C0;padding:5px 9px;
+  border-radius:3px;cursor:pointer;margin-top:6px}
+.jumpbtn:hover{border-color:#8FE3C0;color:#fff}
+
+/* ---- prompts ---- */
+.pr{border:1px solid #2A4A3E;border-radius:4px;background:#0F2620;margin:0 0 18px}
+.pr__bar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 16px;
+  border-bottom:1px solid #2A4A3E;flex-wrap:wrap}
+.pr__id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8FE3C0}
+.pr__why{padding:12px 16px 0;margin:0;font-size:14.5px;color:#B7D3C4;max-width:88ch}
+.pr__t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;line-height:1.65;margin:0;
+  padding:14px 16px;white-space:pre-wrap;word-break:break-word;color:#fff}
+
+/* ---- demos ---- */
+.dm{border:1px solid #2A4A3E;border-radius:4px;background:#0F2620;margin:0 0 14px;overflow:hidden}
+.dm__bar{display:grid;grid-template-columns:38px 1fr auto;gap:14px;align-items:center;padding:13px 16px}
+.dm__n{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.2rem;color:#DE3F26;font-weight:700}
+.dm__t{font-weight:700;color:#fff;margin:0 0 2px}
+.dm__s{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#7FB79B}
+.dm__go{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;background:#123028;border:2px solid #35604F;color:#EAF0EA;padding:10px 14px;
+  border-radius:3px;text-decoration:none;white-space:nowrap}
+.dm__go:hover{border-color:#8FE3C0;color:#fff}
+.dm details{border-top:1px solid #2A4A3E}
+.dm summary{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;padding:11px 16px;cursor:pointer;color:#8FE3C0}
+.dm summary:hover{color:#fff;background:#123028}
+.dm img{display:block;width:100%;height:auto;background:#fff;border-top:1px solid #2A4A3E}
+.dm .cap{font-size:13px;color:#B7D3C4;padding:10px 16px;margin:0}
+
+.note{background:#123028;border-left:4px solid #DE3F26;padding:14px 18px;margin:0 0 20px;font-size:14.5px;color:#D7E4DA;max-width:96ch}
+footer{padding:26px 0 40px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#6FA089}
+@media (max-width:900px){
+  .top__grid,.timer__grid{grid-template-columns:1fr;gap:16px}
+  .ros li{grid-template-columns:60px 1fr}
+  .clock{font-size:2.4rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+`;
+
+const PRESENTER_JS = seg => `
+"use strict";
+var SEG = ${JSON.stringify(seg)};
+var TOTAL = SEG[SEG.length-1].at*60 + SEG[SEG.length-1].mins*60;
+var running=false, elapsed=0, last=0, cur=0, curStart=0;
+
+function fmt(s){
+  var neg = s<0; s=Math.abs(Math.floor(s));
+  return (neg?"-":"")+Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+// Counters that count DOWN round up, so a 5-minute segment reads "5:00 left"
+// for its first second instead of dropping to 4:59 the moment it starts, and
+// hits 0:00 exactly as the budget runs out. Takes a non-negative magnitude.
+function fmtUp(s){
+  s = Math.ceil(s);
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+function el(id){ return document.getElementById(id); }
+
+function render(){
+  var s = SEG[cur];
+  var segElapsed = elapsed - curStart;
+  var remain = s.mins*60 - segElapsed;
+
+  // How far past plan the session finishes if we stopped right now: lateness
+  // getting into this segment, plus anything spent over its own budget.
+  var plannedSoFar = s.at*60 + Math.min(segElapsed, s.mins*60);
+  var drift = elapsed - plannedSoFar;
+
+  el("clock").textContent = fmt(elapsed);
+  el("clock").className = "clock" + (running ? "" : " paused");
+  el("segTitle").textContent = s.title;
+  el("segMeta").textContent = "target " + s.label + " \\u2192 " + s.endLabel + "  \\u00b7  " + s.mins + " min budget";
+  el("remain").textContent = remain >= 0 ? fmtUp(remain) + " left" : fmtUp(-remain) + " OVER";
+  el("remain").className = "remain" + (remain < 0 ? " over" : "");
+
+  var st = el("status");
+  if (drift > 30) { st.className="status long"; st.textContent = "Running long by " + fmtUp(drift); }
+  else if (drift < -30) { st.className="status ahead"; st.textContent = "Ahead by " + fmtUp(-drift); }
+  else { st.className="status on"; st.textContent = "On plan"; }
+
+  el("startBtn").textContent = running ? "Pause" : (elapsed>0 ? "Resume" : "Start");
+  for (var i=0;i<SEG.length;i++){
+    var li = el("ros"+i);
+    li.className = i===cur ? "cur" : (i<cur ? "done" : "");
+  }
+}
+function tick(){
+  if (running) { var now = Date.now(); elapsed += (now-last)/1000; last = now; }
+  render();
+}
+function toggle(){ running = !running; last = Date.now(); render(); }
+function goto(i){ if(i<0||i>=SEG.length) return; cur = i; curStart = elapsed; render(); }
+function reset(){ running=false; elapsed=0; cur=0; curStart=0; render(); }
+
+el("startBtn").addEventListener("click", toggle);
+el("nextBtn").addEventListener("click", function(){ goto(cur+1); });
+el("prevBtn").addEventListener("click", function(){ goto(cur-1); });
+el("resetBtn").addEventListener("click", function(){
+  if (elapsed > 5 && !confirmReset()) return; reset();
+});
+var armed=false;
+function confirmReset(){
+  // no modal dialogs on a page being driven live — a second click within 3s
+  var b=el("resetBtn");
+  if (armed) { armed=false; b.textContent="Reset"; return true; }
+  armed=true; b.textContent="Reset — click again";
+  setTimeout(function(){ armed=false; b.textContent="Reset"; }, 3000);
+  return false;
+}
+Array.prototype.forEach.call(document.querySelectorAll("[data-goto]"), function(b){
+  b.addEventListener("click", function(){ goto(+b.dataset.goto); });
+});
+document.addEventListener("keydown", function(e){
+  var t = e.target.tagName;
+  if (t==="INPUT"||t==="TEXTAREA"||t==="SELECT") return;   // never hijack text entry
+  if (e.key===" ") {
+    // Space is the native activation key for whatever control has focus, so let
+    // it through rather than firing twice. Every control it can land on here
+    // (Start/Pause, Next, a still's summary) is one the presenter meant to hit.
+    if (t==="BUTTON"||t==="SUMMARY"||t==="A") return;
+    e.preventDefault(); toggle();
+  }
+  // N and P must keep working after a control has been clicked with the mouse.
+  // Excluding BUTTON here would silently kill the shortcuts the moment anyone
+  // pressed Start with the trackpad, which is exactly how the session starts.
+  else if (e.key==="n"||e.key==="N"||e.key==="ArrowRight") { e.preventDefault(); goto(cur+1); }
+  else if (e.key==="p"||e.key==="P"||e.key==="ArrowLeft") { e.preventDefault(); goto(cur-1); }
+});
+
+// one-click copy, with a fallback for file:// where the async clipboard API is
+// often unavailable — this page has to work opened straight off a disk
+Array.prototype.forEach.call(document.querySelectorAll(".copy"), function(btn){
+  btn.addEventListener("click", function(){
+    var src = document.getElementById(btn.dataset.target);
+    var txt = src ? src.textContent : "";
+    var done = function(){ btn.textContent="Copied"; setTimeout(function(){ btn.textContent="Copy prompt"; },1600); };
+    var fb = function(){
+      var ta=document.createElement("textarea"); ta.value=txt; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.left="-9999px"; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch(e) { btn.textContent="Copy failed"; }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fb);
+    else fb();
+  });
+});
+setInterval(tick, 250);
+render();
+`;
+
+function loadAsset(rel) {
+  const p = path.join(ROOT, 'assets', rel);
+  return fs.existsSync(p) ? fs.readFileSync(p) : null;
+}
+
+function renderPresenter(all, bySlug) {
+  // --- QR, with a staleness guard ---
+  const qrSvg = loadAsset('qr.svg');
+  const qrMeta = loadAsset('qr.json');
+  if (!qrSvg || !qrMeta) throw new Error('assets/qr.svg or assets/qr.json missing — run `node src/qr.js`');
+  const encoded = JSON.parse(qrMeta.toString('utf8')).url;
+  if (encoded !== SITE_URL) {
+    throw new Error(`QR staleness check FAILED: assets/qr.svg encodes ${encoded} but SITE_URL is ` +
+      `${SITE_URL}. Re-run \`node src/qr.js\`. Refusing to ship a QR code that points somewhere else.`);
+  }
+
+  // --- run of show, with labels derived from the markers ---
+  const label = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+  const seg = RUN_OF_SHOW.map(s => ({ ...s, label: label(s.at), endLabel: label(s.at + s.mins) }));
+
+  const ros = seg.map((s, i) => `
+    <li id="ros${i}">
+      <span class="mk">${s.label}</span>
+      <span>
+        <p class="ti">${esc(s.title)}</p>
+        <p class="de">${esc(s.detail)}</p>
+        <button class="jumpbtn" type="button" data-goto="${i}">I&rsquo;m here now</button>
+      </span>
+      <span class="du">${s.mins} min<br>&rarr; ${s.endLabel}</span>
+    </li>`).join('');
+
+  // --- the two rehearsed prompts ---
+  const prompts = REHEARSED.map((r, i) => {
+    const d = bySlug[r.slug];
+    if (!d) throw new Error(`REHEARSED prompt references unknown discipline "${r.slug}"`);
+    return `
+    <div class="pr">
+      <div class="pr__bar">
+        <span class="pr__id">${esc(r.at)} &middot; ${esc(r.role)} &middot; from ${esc(d.name)}</span>
+        <button class="btn copy" type="button" data-target="rp${i}">Copy prompt</button>
+      </div>
+      <p class="pr__why">${esc(r.why)}</p>
+      <pre class="pr__t" id="rp${i}">${esc(d.prompt)}</pre>
+    </div>`;
+  }).join('');
+
+  // --- demos, in presentation order (the hub's part order) ---
+  const withDemos = all.filter(d => d.demo).sort((a, b) => a.part - b.part);
+  const missing = [];
+  const demos = withDemos.map((d, i) => {
+    const png = loadAsset(path.join('screens', d.demo + '.png'));
+    let still;
+    if (png) {
+      still = `<img src="data:image/png;base64,${png.toString('base64')}"
+        alt="Fallback still of the ${escAttr(d.name)} demo, for narrating from if it will not load">
+      <p class="cap">Fallback still &mdash; if the demo will not load, talk through this without leaving the page.</p>`;
+    } else {
+      missing.push(d.demo);
+      still = `<p class="cap">No fallback still captured for this demo. Run <code>node src/screens.js</code>.</p>`;
+    }
+    return `
+    <div class="dm">
+      <div class="dm__bar">
+        <span class="dm__n">${i + 1}</span>
+        <span>
+          <p class="dm__t">${esc(d.name)}</p>
+          <span class="dm__s">${esc(d.demo)} &middot; Part ${String(d.part).padStart(2, '0')} &middot; runs offline</span>
+        </span>
+        <a class="dm__go" href="../demos/${esc(d.demo)}/index.html" target="_blank" rel="noopener">Open &nearr;</a>
+      </div>
+      <details>
+        <summary>Show fallback still</summary>
+        ${still}
+      </details>
+    </div>`;
+  }).join('');
+  if (missing.length) console.warn(`  WARNING: presenter page missing stills for: ${missing.join(', ')}`);
+
+  const body = `
+<div class="timer"><div class="wrap timer__grid">
+  <div class="clock paused" id="clock">0:00</div>
+  <div>
+    <p class="now__l">Current segment</p>
+    <p class="now__t" id="segTitle">Framing</p>
+    <p class="now__m mono" id="segMeta"></p>
+  </div>
+  <div>
+    <div class="remain" id="remain"></div>
+    <div><span class="status on" id="status">On plan</span></div>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn btn--go" type="button" id="startBtn">Start</button>
+      <button class="btn" type="button" id="prevBtn">&larr; Prev</button>
+      <button class="btn" type="button" id="nextBtn">Next &rarr;</button>
+      <button class="btn" type="button" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</div></div>
+
+<header class="top"><div class="wrap top__grid">
+  <div>
+    <p class="eyebrow">Presenter kit &middot; not linked from the site &middot; works offline</p>
+    <h1>EL3vate 2026 &middot; Day 8 &middot; Prototyping Solutions</h1>
+    <p class="mono" style="color:#B7D3C4;margin:0">Wednesday 29 July &middot; Tim Lum &middot; PACE, Shidler College of Business</p>
+  </div>
+  <div class="urlbox">
+    <div class="qr">${qrSvg.toString('utf8')}</div>
+    <div>
+      <p class="l">Put this on the screen</p>
+      <div class="u">${esc(SITE_URL)}</div>
+    </div>
+  </div>
+</div></header>
+
+<main>
+<section><div class="wrap">
+  <h2>Run of show</h2>
+  <p class="note"><strong>Space</strong> starts and pauses. <strong>N</strong> / <strong>P</strong> (or the arrow keys)
+  move between segments &mdash; press N when you actually move on, and the timer will tell you whether the session is
+  running long rather than silently sliding the plan. Every segment below has an &ldquo;I&rsquo;m here now&rdquo; button
+  that does the same thing.</p>
+  <ol class="ros">${ros}</ol>
+</div></section>
+
+<section><div class="wrap">
+  <h2>The two rehearsed prompts</h2>
+  ${prompts}
+</div></section>
+
+<section><div class="wrap">
+  <h2>Demos, in the order they are shown</h2>
+  <p class="note">Every demo opens in a new tab and runs entirely offline against canned data &mdash; no keys, no
+  network, safe on conference wifi. If one will not open, expand its fallback still and narrate from the picture.</p>
+  ${demos}
+</div></section>
+
+<section><div class="wrap">
+  <h2>If everything breaks</h2>
+  <p class="note">The whole site is static. Nothing on it needs a server, an account or a key. Fallbacks in order:
+  the demo tabs above &rarr; the fallback stills on this page &rarr; <a href="../all-handouts.html">all-handouts.html</a>
+  (46 pages, every assignment) &rarr; the printed handouts.</p>
+</div></section>
+</main>
+
+<footer><div class="wrap">Presenter kit &middot; build ${SHA} &middot; ${esc(SITE_URL)} &middot; noindex, linked from nowhere</div></footer>
+`;
+
+  return `<!DOCTYPE html>
+${STAMP}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Presenter kit · EL3vate 2026 Day 8</title>
+<style>${PRESENTER_CSS}</style>
+</head>
+<body>
+${body}
+<script>${PRESENTER_JS(seg)}</script>
+</body>
+</html>
+`;
+}
+
 // ---- main ----
 // ---- phase 7: human-readable claim audit page (dist/audit.html) ----
 function renderAudit(claims) {
@@ -851,6 +1266,10 @@ budget and three sizes.</p>
 
   // demos
   copyDir(DEMOS, path.join(DIST, 'demos'));
+
+  // presenter kit — linked from nowhere on the public site, noindex, fully offline
+  fs.mkdirSync(path.join(DIST, 'presenter'), { recursive: true });
+  fs.writeFileSync(path.join(DIST, 'presenter', 'index.html'), renderPresenter(all, bySlug));
 
   console.log(`built ${all.length} discipline pages + hub into dist/ (build ${SHA} ${ISO})`);
   console.log(`SITE_URL = ${SITE_URL}`);

@@ -346,6 +346,60 @@ function handoutGate(distDir, docs) {
   return { pass: problems.length === 0, problems, rows, pdfs, combined: combined.map(p => path.basename(p)) };
 }
 
+// ---------- GATE 9: presenter kit (phase 10) ----------
+// The presenter page is driven live, possibly with the network down, and is not
+// meant to be discoverable. Each of those properties is one careless edit away
+// from being lost, so each is a check:
+//   (a) it exists and is marked noindex
+//   (b) nothing else in dist/ links to it
+//   (c) it loads NO subresource over the network — no CDN font, stylesheet,
+//       script or image. Text mentions of the site URL are fine; a fetch is not.
+//   (d) every demo it links to has an embedded fallback still
+//   (e) the QR is present and inline
+function presenterGate(distDir, docs) {
+  const problems = [];
+  const file = path.join(distDir, 'presenter', 'index.html');
+  if (!fs.existsSync(file)) return { pass: false, problems: ['dist/presenter/index.html not found'], stills: 0 };
+  const html = fs.readFileSync(file, 'utf8');
+
+  if (!/<meta\s+name="robots"\s+content="[^"]*noindex/i.test(html))
+    problems.push('presenter page is not marked noindex');
+
+  // (b) nothing links to it
+  for (const p of walk(distDir, '.html')) {
+    if (p === file) continue;
+    const t = fs.readFileSync(p, 'utf8');
+    if (/(?:href|src)="[^"]*presenter\//.test(t))
+      problems.push(`${path.relative(distDir, p)} links to the presenter page, which is supposed to be unlinked`);
+  }
+
+  // (c) no network subresources
+  for (const m of html.matchAll(/<(link|script|img|iframe|source)\b[^>]*\b(?:href|src)="([^"]+)"/gi)) {
+    if (/^https?:|^\/\//i.test(m[2]))
+      problems.push(`presenter page loads an external subresource: <${m[1]}> ${m[2].slice(0, 70)}`);
+  }
+  for (const m of html.matchAll(/@import|url\(\s*['"]?https?:/gi))
+    problems.push(`presenter page CSS reaches the network: ${m[0]}`);
+  if (/fonts\.(googleapis|gstatic)\.com/.test(html))
+    problems.push('presenter page references CDN fonts — it must render with the network down');
+
+  // (d) a fallback still per linked demo
+  const linked = [...html.matchAll(/href="\.\.\/demos\/([^/"]+)\//g)].map(m => m[1]);
+  const uniqLinked = [...new Set(linked)];
+  const stills = (html.match(/src="data:image\/png;base64,/g) || []).length;
+  const expected = docs.filter(d => d.demo).length;
+  if (uniqLinked.length !== expected)
+    problems.push(`presenter links ${uniqLinked.length} demos but ${expected} disciplines declare one`);
+  if (stills < uniqLinked.length)
+    problems.push(`presenter embeds ${stills} fallback stills for ${uniqLinked.length} linked demos`);
+
+  // (e) inline QR
+  if (!/<svg[^>]*viewBox="0 0 \d+ \d+"/.test(html))
+    problems.push('presenter page has no inline QR svg');
+
+  return { pass: problems.length === 0, problems, stills, linked: uniqLinked.length, kb: (html.length / 1024).toFixed(0) };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -397,6 +451,12 @@ function runAll() {
     `  (${ho.rows.length}/${docs.length} disciplines, ${ho.pdfs} as PDF, combined: ${ho.combined.join(' + ') || 'none'})`);
   ho.problems.forEach(p => console.log('    ' + p));
   results.push(['handouts', ho.pass]);
+
+  const pk = presenterGate(DIST, docs);
+  console.log('\n[9] PRESENTER KIT  ' + (pk.pass ? 'PASS' : 'FAIL') +
+    `  (${pk.linked} demos linked, ${pk.stills} fallback stills embedded, ${pk.kb} KB self-contained)`);
+  pk.problems.forEach(p => console.log('    ' + p));
+  results.push(['presenter', pk.pass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -496,6 +556,33 @@ function selftest() {
   check('handouts (no combined handout)', handoutGate(htmp, [{ slug: 'ghost' }]),
     'per-discipline handouts fine, combined all-handouts.* absent');
   fs.rmSync(htmp, { recursive: true, force: true });
+
+  // 9 presenter kit — the ways it silently stops being what it claims:
+  // indexable, discoverable, network-dependent, or missing its fallbacks
+  const ptmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ptest-'));
+  fs.mkdirSync(path.join(ptmp, 'presenter'), { recursive: true });
+  const P = path.join(ptmp, 'presenter', 'index.html');
+  const good = '<meta name="robots" content="noindex, nofollow">' +
+    '<svg viewBox="0 0 27 27"></svg><a href="../demos/only-demo/index.html">d</a>' +
+    '<img src="data:image/png;base64,AAAA">';
+  const oneDemo = [{ slug: 'x', demo: 'only-demo' }];
+
+  fs.writeFileSync(P, good.replace(/<meta[^>]*>/, ''));
+  check('presenter (not noindex)', presenterGate(ptmp, oneDemo), 'robots meta removed');
+
+  fs.writeFileSync(P, good + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=X">');
+  check('presenter (CDN font)', presenterGate(ptmp, oneDemo), 'a CDN stylesheet added to the page');
+
+  fs.writeFileSync(P, good);
+  fs.writeFileSync(path.join(ptmp, 'index.html'), '<a href="presenter/index.html">psst</a>');
+  check('presenter (linked from the public site)', presenterGate(ptmp, oneDemo),
+    'the hub linking to the presenter page');
+  fs.rmSync(path.join(ptmp, 'index.html'));
+
+  fs.writeFileSync(P, good.replace('<img src="data:image/png;base64,AAAA">', ''));
+  check('presenter (missing fallback still)', presenterGate(ptmp, oneDemo),
+    'a linked demo with no embedded still');
+  fs.rmSync(ptmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);

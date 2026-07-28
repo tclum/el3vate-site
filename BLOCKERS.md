@@ -101,6 +101,38 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
   pass through as literal text rather than render. Extend `mdToHtml` at that
   point rather than assuming it is a general parser.
 
+## Presenter kit — decide before Wednesday
+
+- **The brief named "the two rehearsed starter prompts" without saying which
+  two.** Nothing in the repo records what was rehearsed, so two were chosen and
+  the choice is visible rather than buried: `learning-design` for the 0:30 live
+  build ("build a page that teaches this concept interactively" — every faculty
+  member in the room has a concept and a learner, and the a11y-audit demo is
+  what it produced) and `finance` for the 0:50 challenge exercise ("an
+  interactive model for this decision" — same build shape, their own field, and
+  the break-even demo is what it produced). Both are real starter prompts lifted
+  from the site's own content; nothing was written for the presenter page. **If
+  Tim rehearsed different ones, change the two slugs in `REHEARSED` at the top of
+  the presenter section of `src/build.js` and rebuild** — nothing else moves.
+- **Segment durations were derived from the markers, and the close is a guess.**
+  The brief gave six elapsed-time markers (0:00, 0:05, 0:25, 0:30, 0:50, 1:00);
+  each segment's budget is the gap to the next marker. The final "close" segment
+  has no following marker, so it was given 5 minutes, putting the session end at
+  1:05. Change `mins` on the last entry of `RUN_OF_SHOW` if the room is booked
+  to 1:00 sharp.
+- **The QR cannot silently go stale, by construction.** `assets/qr.json` records
+  the URL that was encoded; `src/build.js` compares it against `SITE_URL` and
+  **throws** rather than building if they disagree. `src/qr.js` additionally
+  refuses to encode a deployment-specific `el3vate-<hash>-…vercel.app` hostname,
+  and after generating, rasterises the SVG and scans it back with a real decoder
+  to confirm it reads as the intended URL. Re-run `node src/qr.js` after any
+  change to `SITE_URL`.
+- **Fallback stills are committed input, not build output.** `assets/screens/*.png`
+  (8 files, 666KB) are captured by `node src/screens.js` and base64-inlined into
+  the presenter page. **Re-run that script after changing any demo**, or the
+  presenter's fallback picture will show the old version. Nothing enforces this
+  automatically — it is the one staleness path in the kit that is not gated.
+
 ## Generator / validation
 
 - **`scales.fourWeeks` is now a misnomer on two disciplines.**
