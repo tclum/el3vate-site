@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Generate twelve distinct positioning statements for this product, aimed at this audience: [describe product and audience]. Make them genuinely different from each other in strategy, not in wording: vary what need is being claimed, what the competition is, and what the customer has to believe. Number them. Then for each one, write the single sentence a skeptical customer would say to reject it.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one real client named at the start — a campus club works. Minutes 0–10: write the client's actual objective in one sentence. Minutes 10–40: run the twelve-positioning-statements prompt, then cut to three, writing a one-line rationale for every cut. Minutes 40–75: an arm's-length test — students show the three surviving positions to people from other majors and record which the stranger believed and which they distrusted on sight. Minutes 75–90: report the gap between the position the team liked and the one outsiders trusted. The deliverable is the cut rationale plus the arm's-length notes; it grades the judgment that survives after AI supplies the volume.",
+  "replaces": {
+    "assignment": "The semester campaign deck presented to the class.",
+    "lost": "The polished, comprehensive campaign document and its production values.",
+    "gained": "Students practice the actual professional move — killing nine plausible ideas and defending why — instead of over-investing in one campaign picked in week two; the grade rewards discrimination over decoration."
+  },
+  "aiFailsHere": "A model generates marketing copy that is fluent, on-trend, and strategically empty — converging on the same benefit language ('elevate', 'seamless', 'community') regardless of product, and asserting a differentiator without evidence any customer cares about it. Its output looks like a finished campaign while smuggling in unvalidated claims, some of which — health, sustainability — invite regulatory and skeptical scrutiny it never flags.",
+  "rubric": [
+    {
+      "criterion": "Strategic diversity of the spread",
+      "weight": 20,
+      "description": "The retained positions rest on genuinely different bets — need, competitor, required belief — not reworded versions of one idea."
+    },
+    {
+      "criterion": "Quality of the cut rationale",
+      "weight": 30,
+      "description": "Each elimination is justified against the client's objective and audience, not the team's taste."
+    },
+    {
+      "criterion": "Evidence of audience reaction",
+      "weight": 30,
+      "description": "The arm's-length test is reported honestly, distinguishing what an outsider believed from what the team hoped."
+    },
+    {
+      "criterion": "Claim scrutiny",
+      "weight": 20,
+      "description": "Flags positions that depend on unproven or regulated claims before they anchor the campaign."
+    }
+  ],
+  "budget": {
+    "prepHours": 1,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $10–20 per team in print or cut stock for packaging or point-of-sale mockups in the four-week version.",
+    "fileDueWeek": "Week 2 — submit the packaging cut file the week the positions are chosen.",
+    "calendarNote": "Message testing needs no lead time; only the physical mockup depends on the 7–10 day turnaround, timed for the week-4 client presentation."
+  },
+  "scales": {
+    "oneSession": "The 90-minute generate-cut-test session producing a cut rationale and arm's-length notes; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: signed client brief, wide generation cut to three, one landing page per position with real traffic, then a client presentation with the physical mockup and the numbers.",
+    "oneSemester": "A full client engagement — brief, wide generation, a multivariate landing-page test with real traffic, fabricated packaging, and a final debrief on the gap between the team's favorite and the client's choice."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a Kakaʻako-brewed kombucha brand sold at farmers markets, aimed at health-conscious Honolulu office workers aged 25–45.",
+    "output": "Here are twelve positioning statements, each built on a different strategic bet, followed by the rejection each would earn from a skeptic.\n\n**1. The energy play** — For office workers who hit an afternoon slump, our kombucha is the clean alternative to a third coffee that lifts you without the crash.\n*Skeptic: \"It's fizzy tea, not a stimulant — I'd feel nothing.\"*\n\n**2. The gut-health play** — For people who care about digestion, our raw, unpasteurized brew delivers live cultures that a probiotic pill can't match.\n*Skeptic: \"A capsule is dosed and studied; your bottle is a guess.\"*\n\n**3. The sugar-swap play** — For anyone quitting soda, we're the tart, bubbly drink that scratches the same itch for a fraction of the sugar.\n*Skeptic: \"Kombucha still has sugar — this is marketing, not a swap.\"*\n\n**4. The local-provenance play** — For Honolulu residents who want to keep dollars on-island, we're the kombucha brewed a few blocks from your desk, not shipped from the mainland.\n*Skeptic: \"I care how it tastes, not the zip code it's brewed in.\"*\n\n**5. The ritual play** — For the weekend farmers-market crowd, we're the small pleasure that makes Saturday morning feel intentional.\n*Skeptic: \"That's a vibe, not a reason to spend $9.\"*\n\n**6. The status play** — For people whose desk drink signals their standards, we're what you're seen holding instead of a Red Bull.\n*Skeptic: \"Nobody at my office is judging my beverage.\"*\n\n**7. The clean-label play** — For label-readers, we're the drink with five ingredients you can pronounce and nothing you can't.\n*Skeptic: \"Every brand claims that now — it's table stakes, not a difference.\"*\n\n**8. The hydration play** — For desk-bound people who forget to drink water, we're the flavorful reason you'll actually stay hydrated all day.\n*Skeptic: \"Water is free and does that better.\"*\n\n**9. The craft/flavor play** — For those bored by mass-market SKUs, we're the small-batch kombucha with rotating flavors you can't get anywhere else.\n*Skeptic: \"I found a flavor I like — I don't want it to disappear next month.\"*\n\n**10. The immunity play** — For people trying not to get sick in a shared open-plan office, we're the daily habit that supports your defenses.\n*Skeptic: \"No drink has ever stopped me catching what's going around.\"*\n\n**11. The mindful-alcohol play** — For happy-hour skippers, we're the sophisticated non-alcoholic pour that holds its own in a glass.\n*Skeptic: \"If I'm not drinking, I'll just have a soda water for free.\"*\n\n**12. The values-community play** — For buyers who want their money to back real people, we're a brand you can meet face-to-face every weekend.\n*Skeptic: \"I like the founder, but I buy on price and taste, not friendship.\"*\n\nA note: several of these (immunity, gut health) lean on claims that invite regulatory scrutiny and the sharpest skepticism — worth validating before they anchor your messaging.",
+    "annotations": [
+      {
+        "marker": "Genuine strategic diversity across the twelve",
+        "note": "The energy, gut-health, sugar-swap, local-provenance and status plays rest on materially different bets — the model followed the 'different in strategy, not wording' instruction well."
+      },
+      {
+        "marker": "Self-flagged regulatory risk on immunity and gut-health claims",
+        "note": "Unprompted, it warned that claims #2 and #10 'invite regulatory scrutiny' — a useful, accurate caution students should heed."
+      },
+      {
+        "marker": "Skeptic lines are real objections, not strawmen",
+        "note": "'Water is free and does that better' and 'that's a vibe, not a reason to spend $9' are the actual rejections these positions earn."
+      },
+      {
+        "marker": "Convergent phrasing: nearly every entry uses a 'For [people] who...' frame",
+        "note": "The template repetition shows the model's pull toward one copy structure; a student should vary the form when testing so the frame itself is not the confound."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "entrepreneurship",
+      "reason": "Both generate a wide spread with AI and grade which few survive contact with a real audience, not the volume produced."
+    },
+    {
+      "slug": "finance",
+      "reason": "Both hand construction to AI so the graded work becomes defending the assumptions or claims the polished output quietly depends on."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }

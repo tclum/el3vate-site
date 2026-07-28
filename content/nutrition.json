@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Role-play as a nutrition counseling client for a dietetics student. You are [age, situation, cultural food background, budget constraint]. You are here because someone else told you to come, and you are polite but not really convinced you need to change anything. Do not volunteer information unless I ask a good question. Do not become enthusiastic and cooperative just because I say something encouraging. Stay in character until I type END SESSION, then give me feedback on whether I actually listened.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, no fabrication. Minutes 0–15: students draft a one-paragraph client profile grounded in a specific local community and food context — a Waipahu household, a kūpuna center. Minutes 15–70: each student runs the standardized-client prompt and conducts a motivational-interviewing session, recording a talk-time tally of how many minutes they spent asking versus telling. Minutes 70–90: pairs review each other's transcripts and mark the first place the student slipped into advice-giving before the client felt heard. The graded artifact is the transcript plus the talk-time tally; it measures whether the student listened more than they instructed.",
+  "replaces": {
+    "assignment": "The written diet-plan case study submitted for a hypothetical patient.",
+    "lost": "The detailed nutrient-calculation and meal-planning documentation.",
+    "gained": "Students practice the counseling relationship — the part that determines whether any plan is followed — at a volume human standardized patients cannot provide, and they are graded on listening rather than on a plan the patient never agreed to."
+  },
+  "aiFailsHere": "A model asked for nutrition guidance defaults to generic, culturally flat advice — 'reduce portion sizes, choose whole grains' — that ignores budget, access, and the foods a specific community actually eats, delivered with a confidence that erases the patient's autonomy. Playing a client, it also tends to reward the counselor, opening up as soon as the student says something kind, teaching exactly the wrong reflex unless the prompt forbids it.",
+  "rubric": [
+    {
+      "criterion": "Listen-to-tell ratio",
+      "weight": 30,
+      "description": "The session shows more eliciting than instructing; the talk-time tally and open-question count bear this out."
+    },
+    {
+      "criterion": "Cultural and economic specificity",
+      "weight": 25,
+      "description": "Recommendations engage the client's actual foods, budget, and household rather than generic guidance."
+    },
+    {
+      "criterion": "Reflective technique",
+      "weight": 25,
+      "description": "Uses reflections and affirmations that demonstrate the client was heard before change is discussed."
+    },
+    {
+      "criterion": "Autonomy preservation",
+      "weight": 20,
+      "description": "Supports the client's own reasons for change instead of prescribing; does not accept the AI's premature cooperation as success."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $4–8 per student in filament for portion and plate-method models in the four-week build.",
+    "fileDueWeek": "Week 3 — print file due end of week 3 so models return for the week-4 field test.",
+    "calendarNote": "Counseling reps need no lead time; the teaching models depend on the 7–10 day print turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute standardized-client session with a talk-time tally; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: draft the client profile, run and submit intake transcripts, design and submit the teaching model, then field-test and revise with the partner community.",
+    "oneSemester": "A full community-partner project — repeated counseling reps, a printed teaching model built around local staples, a field test with the partner community, and one documented revision based on what confused people."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a 58-year-old Filipino grandfather in Waipahu, newly diagnosed with type 2 diabetes, on a fixed income, cooking rice-and-pork dishes for a household of six, attending because his daughter told him to.",
+    "output": "Good morning. Oh, I'm okay, I'm okay. Cannot complain.\n\nMy daughter, she made the appointment for me. She's the one always worrying. So I told her okay, I come, I sit, I listen. You know how they are.\n\nI feel fine, though. No pain, nothing. Still going every day.",
+    "annotations": [
+      {
+        "marker": "Stayed guarded and minimal: 'I'm okay, I'm okay. Cannot complain.'",
+        "note": "The model correctly withheld information and did not volunteer, giving the student something to actually elicit — faithful standardized-client behavior."
+      },
+      {
+        "marker": "Externalized motivation: 'My daughter... made the appointment'",
+        "note": "Accurately models pre-contemplation; the student must build rapport before the client engages, which is the point of the exercise."
+      },
+      {
+        "marker": "Register choices ('You know how they are')",
+        "note": "A plausible cultural-register performance, but a place for care — the student should attend to the real person, not a caricature the model sketches."
+      },
+      {
+        "marker": "Ends the turn open, not cooperative",
+        "note": "It did not reward a mere greeting with disclosure, exactly the trap the prompt was written to avoid."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "marriage-family-therapy",
+      "reason": "Both run a standardized-client intake graded on whether the student listened and earned disclosure rather than dispensing advice."
+    },
+    {
+      "slug": "teacher-education",
+      "reason": "Both require designing a physical teaching object for a specific real community or classroom and justifying every choice against that audience."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }

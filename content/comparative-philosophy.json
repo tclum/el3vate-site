@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "You are going to argue a case from within a single philosophical tradition, and I am going to check your work. Adopt the position of [name the tradition, e.g. classical Confucian ethics] as it is actually articulated in its primary texts, not a modern popularization. The case is: [describe it]. Argue the position fully. Do not hedge, do not present multiple perspectives, and do not add a balanced summary at the end. When I quote a primary source back at you that contradicts what you said, address the contradiction directly rather than conceding everything.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, primary text in hand. Assign a two-page primary-source excerpt (for example, Analects 13.18 and Mengzi 7A35) to read in the first 20 minutes. Then students run the tradition-interlocutor prompt, instructing the AI to argue a case from within that tradition. For 40 minutes they interrogate it, keeping a three-column failure log: the AI's claim, the exact line from the source, and one sentence on what the AI flattened. Last 30 minutes: students share the single clearest instance where the model swapped a generic Western-liberal move — autonomy, individual rights, cost-benefit — for the tradition's actual commitment. No fabrication; the failure log is the graded artifact, and a student who did not read the excerpt cannot produce one.",
+  "replaces": {
+    "assignment": "The comparative seminar paper contrasting two ethical traditions on a case.",
+    "lost": "The extended written synthesis and the student's own sustained argument.",
+    "gained": "Students read the primary source adversarially, with a concrete opponent to catch, instead of paraphrasing secondary summaries; the assignment makes fidelity to the text the graded skill."
+  },
+  "aiFailsHere": "Asked to argue from within a non-Western tradition, the model collapses it into liberal individualism — recasting Confucian role-ethics as personal autonomy, Buddhist non-self as self-care, ubuntu as networking — because the training distribution is saturated with the Western frame. It produces fluent, respectful-sounding prose that quietly substitutes the tradition's metaphysics with the one it defaults to.",
+  "rubric": [
+    {
+      "criterion": "Textual fidelity of the catch",
+      "weight": 35,
+      "description": "Each flagged departure is anchored to a specific line of the primary source, not to a general impression of the tradition."
+    },
+    {
+      "criterion": "Precision of the flattening",
+      "weight": 25,
+      "description": "Names what specifically was substituted — which Western concept displaced which indigenous one — not merely that the AI was biased."
+    },
+    {
+      "criterion": "Comprehension on its own terms",
+      "weight": 25,
+      "description": "Demonstrates the student can state the tradition's commitment as it actually holds it."
+    },
+    {
+      "criterion": "Restraint against over-claiming",
+      "weight": 15,
+      "description": "Distinguishes a genuine flattening from a defensible interpretive choice; does not cry foul at every simplification."
+    }
+  ],
+  "budget": {
+    "prepHours": 2,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $5–10 per student in laser stock for engraved framework tiles in the four-week build.",
+    "fileDueWeek": "Week 3 — cut file due end of week 3 so the apparatus returns for the week-4 presentation.",
+    "calendarNote": "The AI and reading need no lead time; only the engraved tile apparatus depends on the 7–10 day cut turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute read-then-interrogate session producing one failure log; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: read the sources, build and run the interlocutor with a failure log, design the physical apparatus, then present artifact and log together.",
+    "oneSemester": "Sustained comparison across three traditions and three cases, each with its own failure log, culminating in an engraved decision apparatus and a written account of what the machine structurally could not hold."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as classical Confucian ethics (Analects, Mengzi, Xunzi) applied to a case: an adult child deciding whether to report a father who stole medication to treat the child's sick sibling.",
+    "output": "Report him? No. Within classical Confucian ethics, the child must not report the father—and the case is not close.\n\nThe governing text is *Analects* 13.18. The Duke of She tells Confucius of an \"upright\" man whose father stole a sheep, and the son testified against him. Confucius replies that in his own community uprightness is different: \"The father conceals for the son, the son conceals for the father—straightness lies therein\" (父為子隱，子為子隱，直在其中矣). This is not a lapse into nepotism against Confucius's better principles; it *is* the principle. Uprightness (直) is not agreement with the magistrate. It is the untwisted expression of the affections proper to one's role. The son who denounces his father has not achieved rectitude; he has severed the root from which rectitude grows.\n\nThat root is *xiao*, filial piety, which *Analects* 1.2 calls the very foundation of *ren*—\"the root of humaneness.\" The cultivated person \"attends to the root; the root established, the Way is born.\" A person who would send his own father into the hands of the authorities has attacked the soil in which every other virtue must be planted. Whatever civic tidiness such a report produces, it is bought by deforming the one relationship from which moral character actually develops.\n\nMengzi makes this unmistakable. In *Mengzi* 7A35, Tao Ying asks what the sage-king Shun would do if his father Gushou had committed murder. Mengzi answers that the officer Gao Yao would rightly arrest him—the law is not suspended—but that Shun \"would have abandoned the empire like a worn sandal, secretly carried his father on his back, fled to the coast, and lived there joyfully, forgetting the world.\" Note the structure: Mengzi does not pretend the theft was licit, nor that officers must not enforce. He locates the son entirely on the side of the father. The son's task is not to assist the prosecution but to bear the father away. The empire itself is worth less than this.\n\nAnd the mitigating facts deepen the obligation rather than lightening it. The father stole to save the child's own sibling—he acted from parental love toward the very family the child belongs to. For the child to then hand him over would be to repay the father's fierce care with betrayal, and to answer his devotion to the sibling with abandonment. This is precisely the ingratitude the Xunzi condemns when it insists that ritual and duty exist to *cultivate* and order our affections toward kin (*Lilun*), not to override them in favor of an abstract legal accounting.\n\nThe child conceals, shelters, and if it comes to it, bears the father away. Straightness lies therein.",
+    "annotations": [
+      {
+        "marker": "Held the tradition faithfully: cites Analects 13.18 and Mengzi 7A35 accurately",
+        "note": "A strong output — the model did NOT flatten into liberal individualism; it grounded the answer in role-ethics and filiality. Students should note when the AI gets it right, not only when it fails."
+      },
+      {
+        "marker": "Direct primary-source quotation in Chinese (父為子隱...)",
+        "note": "An accurate rendering of the Analects passage; a student should still verify the character text and translation against their own edition rather than trust it."
+      },
+      {
+        "marker": "Attribution to Xunzi's Lilun",
+        "note": "The general point about ritual cultivating the affections is defensible, but this citation is looser than the Analects/Mengzi ones — the place to press it against the actual text."
+      },
+      {
+        "marker": "Refused the balanced summary, as instructed",
+        "note": "It argued the position fully without hedging, which is what makes it a usable foil; a hedged answer would give students nothing to interrogate."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "english-literature",
+      "reason": "Both grade the student on catching where the AI produces a plausible reading the source text does not actually support."
+    },
+    {
+      "slug": "law",
+      "reason": "Both stage an AI arguing a committed position and assess whether the student can hold it to the authoritative text rather than accept its fluency."
+    }
+  ],
   "demo": "tradition-critique",
   "liveBuild": null
 }
