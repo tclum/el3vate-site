@@ -62,7 +62,21 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
 
 ## Demos
 
-- _(none)_ — all 8 demos were built and pass the offline gate.
+- **`intake-branching` could never be won — found and fixed in phase 8.** The end
+  screen branched on `trust >= 55`, but trust starts at 40 and the four
+  reflective options are worth +2, +2, +3, +3, so the highest score any
+  playthrough could reach was **50**. The "she opened up" branch was unreachable
+  dead code: every session ended in failure however well it was played, and a
+  faculty member who played it perfectly was told "too few of your responses
+  reflected what she said." The threshold is now 48, which is inside the
+  reachable band — an all-reflective read, or a reflective read with one
+  question, opens her; any advice or reassurance does not. This was invisible to
+  the first run's load-and-screenshot verification and is the single strongest
+  argument for the phase-8 click-through tests existing at all.
+  **A human should sanity-check the new gradient** before Wednesday: it is a
+  pedagogical judgement about how forgiving the exercise should be, not just a
+  number, and 48 was chosen to keep exactly one non-reflective-but-harmless move
+  survivable.
 
 ## Generator / validation
 
@@ -100,12 +114,24 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
 
 ## Verification (headless browser / screenshots)
 
-- **No full click-through automation of demos.** Puppeteer/Playwright are not
-  installed in this environment. Demos were verified by loading each from
-  `file://` in headless Chrome, asserting JS-generated DOM content appears,
-  confirming zero console/JS errors, and reviewing screenshots. A human should
-  still manually exercise: district-redraw's keyboard reassignment (Tab + 1/2/3),
-  the intake-branching dialogue tree to the end screen, and the a11y-audit
-  "break it" toggles + Run audit.
+- ~~**No full click-through automation of demos.**~~ **Resolved in phase 8.**
+  Playwright + chromium installed cleanly; `src/interact.js` drives all eight
+  demos through real interactions (slider extremes, a mouse drag across the
+  precinct grid, variant toggles, both dialogue paths, both highlight readings,
+  injected contrast fixtures) and asserts on the resulting output text, not on
+  the absence of errors. 147 assertions, all passing. Every demo is additionally
+  checked for keyboard-only operability by *parity*: the interaction is performed
+  with the mouse, the resulting state recorded, the page reloaded, the same
+  interaction performed with Tab + Enter/Home/End/digit keys alone, and the two
+  states required to be identical. The three items a human was asked to exercise
+  by hand — district-redraw's Tab + 1/2/3 reassignment, the intake-branching tree
+  to its end screen, and the a11y-audit break-switches + Run audit — are all now
+  covered automatically.
+- **The interaction tests need a browser download.** `npm i -D playwright &&
+  npx playwright install chromium` pulls ~270MB into
+  `~/Library/Caches/ms-playwright`. On a machine without it, `npm run check`
+  fails at the interaction stage rather than skipping it — deliberately, so a
+  missing browser can never read as green. `node src/validate.js` alone stays
+  zero-dependency and still runs the content gates on its own.
 - **Screenshots live in `dist/_screens/`**, which is git-ignored (`dist/`), so
   they are not committed. Regenerate with headless Chrome after `node src/build.js`.

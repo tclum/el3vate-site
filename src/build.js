@@ -338,6 +338,8 @@ function renderHub(all) {
       <li><span class="k">Laser cutting</span><span class="v">Cut and engrave in acrylic, wood and paper stock. Same file-submission model.</span></li>
       <li><span class="k">Hana studio</span><span class="v">Recording space for podcasts, oral assessments and recorded role-play.</span></li>
       <li><span class="k">Turnaround</span><span class="v">Plan on 7&ndash;10 <strong>business</strong> days &mdash; about two calendar weeks &mdash; from file to finished part. Build that into your dates.</span></li>
+      <li><span class="k">Submitting a file</span><span class="v">Fabrication files are submitted through the PACE request form, from a UH email address. Ask Tim Lum at PACE for the form link and pass it to your students.</span></li>
+      <li><span class="k">In-person access</span><span class="v">Visiting the space in person is currently <strong>by appointment</strong>. That is separate from submitting a file &mdash; nobody has to come in to have something made.</span></li>
       <li><span class="k">Contact</span><span class="v">Tim Lum, PACE &middot; pace.shidler.hawaii.edu/maker</span></li>
     </ul>
   </div>

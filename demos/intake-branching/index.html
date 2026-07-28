@@ -112,7 +112,13 @@ function choose(i){
   else end();
 }
 function end(){
-  var closed = trust>=55;
+  // Trust starts at 40 and the four reflective options are worth +2,+2,+3,+3, so
+  // the highest score any playthrough can reach is 50. The threshold has to sit
+  // inside that band or the "she opened up" branch is unreachable and every
+  // session ends in failure however well it was played. 48 opens her for a fully
+  // reflective read, or a reflective read with one question (+1) in it; a single
+  // piece of advice (-2) or reassurance (-1) puts it out of reach.
+  var closed = trust>=48;
   var msg = closed
     ? "Maria stayed with you. By reflecting what she said instead of jumping to fixes, you earned enough trust that she began to name what was really going on."
     : "Maria pulled back. The session stalled before she disclosed what was underneath — the caregiving strain she'd never said out loud.";
