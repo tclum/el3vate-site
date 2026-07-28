@@ -304,6 +304,48 @@ function claimGate(claims, docs, distDir) {
   return { pass: problems.length === 0, problems, counts };
 }
 
+// ---------- GATE 8: handout artifacts (phase 9) ----------
+// Every discipline must ship a handout someone can actually take away: the
+// markdown source plus a rendered artifact — handout.pdf where a local renderer
+// exists, handout.html where one does not. A 400-byte "handout" is a rendering
+// failure that still leaves a file on disk, so every artifact must clear 2KB.
+const MIN_HANDOUT = 2048;
+
+function handoutGate(distDir, docs) {
+  const problems = [];
+  const rows = [];
+  for (const d of docs) {
+    const dir = path.join(distDir, d.slug);
+    const md = path.join(dir, 'handout.md');
+    const pdf = path.join(dir, 'handout.pdf');
+    const html = path.join(dir, 'handout.html');
+
+    if (!fs.existsSync(md)) problems.push(`${d.slug}: no handout.md`);
+    else if (fs.statSync(md).size < MIN_HANDOUT)
+      problems.push(`${d.slug}: handout.md is ${fs.statSync(md).size}B, under the ${MIN_HANDOUT}B floor`);
+
+    const rendered = [pdf, html].filter(p => fs.existsSync(p));
+    if (!rendered.length) { problems.push(`${d.slug}: no rendered handout artifact (neither handout.pdf nor handout.html)`); continue; }
+    for (const p of rendered) {
+      const size = fs.statSync(p).size;
+      if (size < MIN_HANDOUT)
+        problems.push(`${d.slug}: ${path.basename(p)} is ${size}B, under the ${MIN_HANDOUT}B floor`);
+    }
+    rows.push({ slug: d.slug, kind: fs.existsSync(pdf) ? 'pdf' : 'html', kb: (fs.statSync(rendered[0]).size / 1024).toFixed(1) });
+  }
+
+  // the combined handout
+  const combined = ['all-handouts.pdf', 'all-handouts.html'].map(f => path.join(distDir, f)).filter(p => fs.existsSync(p));
+  if (!combined.length) problems.push('no combined handout (neither all-handouts.pdf nor all-handouts.html)');
+  else for (const p of combined) {
+    if (fs.statSync(p).size < MIN_HANDOUT)
+      problems.push(`${path.basename(p)} is ${fs.statSync(p).size}B, under the ${MIN_HANDOUT}B floor`);
+  }
+
+  const pdfs = rows.filter(r => r.kind === 'pdf').length;
+  return { pass: problems.length === 0, problems, rows, pdfs, combined: combined.map(p => path.basename(p)) };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -349,6 +391,12 @@ function runAll() {
     `  (${cl.counts.verified} verified, ${cl.counts.refuted} refuted, ${cl.counts.unverifiable} unverifiable)`);
   cl.problems.forEach(p => console.log('    ' + p));
   results.push(['claim-audit', cl.pass]);
+
+  const ho = handoutGate(DIST, docs);
+  console.log('\n[8] HANDOUT ARTIFACTS  ' + (ho.pass ? 'PASS' : 'FAIL') +
+    `  (${ho.rows.length}/${docs.length} disciplines, ${ho.pdfs} as PDF, combined: ${ho.combined.join(' + ') || 'none'})`);
+  ho.problems.forEach(p => console.log('    ' + p));
+  results.push(['handouts', ho.pass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -429,6 +477,25 @@ function selftest() {
     'refuted transcript claim with no annotation naming it');
 
   fs.rmSync(ctmp, { recursive: true, force: true });
+
+  // 8 handout artifacts — two failure modes: missing entirely, and present but
+  // truncated (a renderer that wrote a file and then died)
+  const htmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'htest-'));
+  fs.mkdirSync(path.join(htmp, 'ghost'), { recursive: true });
+  fs.writeFileSync(path.join(htmp, 'all-handouts.html'), 'x'.repeat(4096));
+  check('handouts (missing artifact)', handoutGate(htmp, [{ slug: 'ghost' }]),
+    'discipline directory with no handout.md and no rendered handout');
+
+  fs.writeFileSync(path.join(htmp, 'ghost', 'handout.md'), 'x'.repeat(4096));
+  fs.writeFileSync(path.join(htmp, 'ghost', 'handout.pdf'), '%PDF-1.4 truncated');
+  check('handouts (artifact under 2KB)', handoutGate(htmp, [{ slug: 'ghost' }]),
+    `handout.pdf of 18B against the ${MIN_HANDOUT}B floor`);
+
+  fs.rmSync(path.join(htmp, 'all-handouts.html'));
+  fs.writeFileSync(path.join(htmp, 'ghost', 'handout.pdf'), 'x'.repeat(4096));
+  check('handouts (no combined handout)', handoutGate(htmp, [{ slug: 'ghost' }]),
+    'per-discipline handouts fine, combined all-handouts.* absent');
+  fs.rmSync(htmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);

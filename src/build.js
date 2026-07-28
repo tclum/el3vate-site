@@ -5,6 +5,17 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// ---- deployment constants ----
+// SITE_URL is the ONE place the public address is written. It is printed by the
+// build, logged in REPORT.md, stamped into the print stylesheet's demo
+// substitution line, encoded into the QR code, and shown on the closing card.
+// It must be the stable production alias, never a deployment-specific hostname
+// of the form el3vate-<hash>-<team>.vercel.app — those are frozen to a single
+// build, so a QR code printed from one would go stale the next time the site
+// ships.
+const SITE_URL = 'https://el3vate.vercel.app';
+const FEEDBACK_EMAIL = 'tclum@hawaii.edu';
+
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT = path.join(ROOT, 'content');
 const DEMOS = path.join(ROOT, 'demos');
@@ -254,7 +265,55 @@ footer{padding:30px 0 46px;font-family:var(--mono);font-size:11.5px;letter-spaci
   .plan__list li{grid-template-columns:52px 1fr;gap:12px}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
-@media print{.hero,.tt{background:#fff;color:#000}.hero *,.tt *{color:#000!important}.chips,.jump,.copy{display:none}.sec{break-inside:avoid}}
+
+/* screen: the print-only demo substitution line is hidden */
+.printonly{display:none}
+
+/* ---- phase 9: print stylesheet ----
+   Black on white, no navigation, no iframes. The demo section is replaced by a
+   line naming the demo and where to run it, and every major section starts on a
+   fresh page. One section per page is what "page breaks between major sections"
+   asks for literally; it runs a discipline page to roughly ten to twelve sheets,
+   which is why the handout exists as the compact artifact. If a reader would
+   rather have a dense printout, change .sec{break-before:page} to
+   .sec{break-inside:avoid} on the line below and nothing else needs to move. */
+@media print{
+  @page{margin:16mm 14mm}
+  html,body{background:#fff!important;color:#000!important;font-size:10.5pt;line-height:1.45}
+  .wrap{max-width:none;padding:0}
+
+  /* navigation and interactive chrome do not survive to paper */
+  .jump,.chips,.backlink,.copy,.marks,.demoframe,.related,nav{display:none!important}
+
+  /* every surface goes black on white */
+  .hero,.tt,.livebuild,.prompt,.po,.card,.scale,.claimrow,.unvnote{
+    background:#fff!important;color:#000!important;box-shadow:none!important}
+  .hero::before{display:none!important}
+  .hero,.tt{border:0!important;border-bottom:1.5pt solid #000!important}
+  .hero__inner{padding:0 0 10pt}
+  *{color:#000!important}
+  a{color:#000!important;text-decoration:none}
+  .livebuild{border:1pt dashed #000!important;background-image:none!important}
+  .prompt,.po,.scale,.claimrow{border:0.5pt solid #000!important}
+  .unv{background:#fff!important;box-shadow:none!important;border-bottom:1.5pt solid #000!important}
+  .unv__t{background:#fff!important;border:0.5pt solid #000!important}
+  .unvnote{border-left:2pt solid #000!important}
+
+  /* the demo iframe is replaced by a line naming it and where to run it */
+  .printonly{display:block!important;border:0.5pt dashed #000;padding:8pt 10pt;
+    font-family:var(--mono);font-size:9.5pt;line-height:1.5}
+
+  /* page breaks between major sections */
+  .sec{break-before:page;break-inside:auto;border-top:0.5pt solid #000;padding:12pt 0 0}
+  .sec:first-of-type{break-before:auto}
+  .sec h2,.sec__label{break-after:avoid}
+  table.rub,.kv li,.facts li,.plan__list li,.po__ann li,.spec{break-inside:avoid}
+  .hero h1{font-size:22pt;max-width:none}
+  .sec h2{font-size:14pt}
+  .po__out{max-height:none!important;overflow:visible!important;font-size:8.5pt}
+  .prompt__text{font-size:9pt}
+  footer{border-top:0.5pt solid #000;break-before:avoid}
+}
 `;
 
 const COPY_JS = `
@@ -382,6 +441,8 @@ function sectionDemo(d) {
     <p class="sec__label">Try the demo &middot; runs offline</p>
     <h2>${esc(d.name)} demo</h2>
     <iframe class="demoframe" src="../demos/${esc(d.demo)}/index.html" title="${escAttr(d.name)} interactive demo" loading="lazy"></iframe>
+    <p class="printonly">Interactive demo &mdash; &ldquo;${esc(d.demo)}&rdquo;. It cannot be printed; run it in a browser at
+      ${esc(SITE_URL)}/demos/${esc(d.demo)}/index.html</p>
     <p class="demonote">This demo runs entirely offline against canned data &mdash; no keys, no network, safe on conference wifi.</p>
   </section>`;
 }
@@ -585,6 +646,120 @@ ${rub}
 
 ---
 _PACE · Shidler College of Business · University of Hawaiʻi at Mānoa · pace.shidler.hawaii.edu/maker_
+_All fifteen assignments, the demos and every handout: ${SITE_URL}_
+`;
+}
+
+// ---- phase 9: markdown -> print-styled HTML ----
+// A purpose-built renderer for exactly the constructs renderHandout() emits:
+// headings, an italic meta line, paragraphs, bold runs, bullet lists, pipe
+// tables with escaped pipes, blockquotes and a rule. Deliberately not a general
+// markdown parser — the input is generated by the line above, so the subset is
+// closed and a dependency would buy nothing.
+function mdInline(s) {
+  return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function mdCells(line) {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '')
+    .split(/(?<!\\)\|/)                       // renderHandout escapes literal pipes
+    .map(c => c.trim().replace(/\\\|/g, '|'));
+}
+const isSepRow = cells => cells.length > 0 && cells.every(c => /^:?-{2,}:?$/.test(c));
+
+function mdToHtml(md) {
+  const lines = String(md).split('\n');
+  const out = [];
+  let para = [];
+  const flush = () => { if (para.length) { out.push('<p>' + mdInline(para.join(' ')) + '</p>'); para = []; } };
+  let i = 0;
+  while (i < lines.length) {
+    const t = lines[i].trim();
+    if (!t) { flush(); i++; continue; }
+
+    let m;
+    if ((m = t.match(/^(#{1,6})\s+(.*)$/))) {
+      flush(); out.push(`<h${m[1].length}>${mdInline(m[2])}</h${m[1].length}>`); i++; continue;
+    }
+    if (/^-{3,}$/.test(t)) { flush(); out.push('<hr>'); i++; continue; }
+    if (/^_[^_].*[^_]_$/.test(t)) { flush(); out.push(`<p class="meta">${mdInline(t.slice(1, -1))}</p>`); i++; continue; }
+
+    if (t.startsWith('|')) {
+      flush();
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { rows.push(mdCells(lines[i])); i++; }
+      const head = rows.length && !isSepRow(rows[0]) ? rows[0] : null;
+      const body = rows.filter((r, idx) => !(idx === 0 && head) && !isSepRow(r));
+      out.push('<table>' +
+        (head ? '<thead><tr>' + head.map(c => `<th>${mdInline(c)}</th>`).join('') + '</tr></thead>' : '') +
+        '<tbody>' + body.map(r => '<tr>' + r.map(c => `<td>${mdInline(c)}</td>`).join('') + '</tr>').join('') +
+        '</tbody></table>');
+      continue;
+    }
+    if (/^[-*]\s/.test(t)) {
+      flush();
+      const items = [];
+      while (i < lines.length && /^[-*]\s/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*]\s+/, '')); i++;
+      }
+      out.push('<ul>' + items.map(x => `<li>${mdInline(x)}</li>`).join('') + '</ul>');
+      continue;
+    }
+    if (t.startsWith('>')) {
+      flush();
+      const q = [];
+      while (i < lines.length && lines[i].trim().startsWith('>')) { q.push(lines[i].replace(/^\s*>\s?/, '')); i++; }
+      out.push('<blockquote>' + q.map(mdInline).join('<br>') + '</blockquote>');
+      continue;
+    }
+    para.push(t); i++;
+  }
+  flush();
+  return out.join('\n');
+}
+
+// Handouts are print artifacts first: system font stack only, so they render
+// identically with the network down and the PDF step never waits on a CDN.
+const HANDOUT_CSS = `
+*{box-sizing:border-box}
+html,body{background:#fff;color:#111;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:10.5pt;line-height:1.5}
+.sheet{max-width:186mm;margin:0 auto;padding:16mm}
+.hsheet{break-after:page}
+.hsheet:last-child{break-after:auto}
+h1{font-size:19pt;line-height:1.15;margin:0 0 4pt;letter-spacing:-.012em}
+h2{font-size:12.5pt;margin:15pt 0 6pt;padding-bottom:3pt;border-bottom:.5pt solid #111;break-after:avoid}
+p{margin:0 0 7pt}
+p.meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8.5pt;color:#444;margin:0 0 12pt}
+ul{margin:0 0 8pt;padding-left:16pt}
+li{margin:0 0 4pt}
+blockquote{margin:0 0 8pt;padding:8pt 10pt;border-left:2pt solid #111;background:#F4F5F2;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9pt;line-height:1.55}
+table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:0 0 8pt}
+th,td{text-align:left;padding:5pt 7pt;border-bottom:.5pt solid #999;vertical-align:top}
+th{font-size:8.5pt;letter-spacing:.06em;text-transform:uppercase;border-bottom:1pt solid #111}
+td:nth-child(2){white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+hr{border:0;border-top:.5pt solid #999;margin:13pt 0 8pt}
+h2,table,blockquote,ul{break-inside:avoid}
+.toc{columns:2;column-gap:14mm;font-size:10pt}
+@page{margin:16mm}
+@media print{.sheet{padding:0;max-width:none}}
+`;
+
+function handoutDoc(title, inner) {
+  return `<!DOCTYPE html>
+${STAMP}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<style>${HANDOUT_CSS}</style>
+</head>
+<body><div class="sheet">
+${inner}
+</div></body>
+</html>
 `;
 }
 
@@ -636,17 +811,49 @@ function main() {
   // links to a real dist/ artifact rather than the repo-only content/claims.json)
   fs.writeFileSync(path.join(DIST, 'audit.html'), renderAudit(CLAIMS));
 
-  // discipline pages + handouts
+  // discipline pages + handouts (markdown, plus a print-styled HTML rendering of
+  // that same markdown — src/pdf.js turns the HTML into handout.pdf when a
+  // renderer is available, and the HTML stands as the artifact when it is not)
+  const sheets = [];
   for (const d of all) {
     const dir = path.join(DIST, d.slug);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'index.html'), renderDiscipline(d, all, bySlug));
-    fs.writeFileSync(path.join(dir, 'handout.md'), renderHandout(d));
+
+    const mdPath = path.join(dir, 'handout.md');
+    fs.writeFileSync(mdPath, renderHandout(d));
+    // read back from disk so the printed artifact is provably the file on disk,
+    // not a second rendering of the same data that could drift from it
+    const sheet = `<div class="hsheet">${mdToHtml(fs.readFileSync(mdPath, 'utf8'))}</div>`;
+    sheets.push(sheet);
+    fs.writeFileSync(path.join(dir, 'handout.html'),
+      handoutDoc(`${d.name} — handout · EL3vate 2026 Day 8`, sheet));
   }
+
+  // one combined handout of all fifteen, with a contents page
+  const toc = all.map(d =>
+    `<li>Part ${String(d.part).padStart(2, '0')} &middot; ${esc(d.name)}</li>`).join('');
+  const cover = `<div class="hsheet">
+<h1>Prototyping Solutions &mdash; all fifteen handouts</h1>
+<p class="meta">EL3vate 2026 &middot; Day 8 &middot; 29 July &middot; build ${SHA}</p>
+<p>One &ldquo;steal this&rdquo; handout per discipline: a 90-minute version, the full assignment,
+the multi-week plan, what it replaces, where AI fails at it, a rubric, the starter prompt,
+budget and three sizes.</p>
+<p>Everything here, plus the interactive demos and the annotated model outputs, is at
+<strong>${esc(SITE_URL)}</strong></p>
+<h2>Contents</h2>
+<ul class="toc">${toc}</ul>
+<hr>
+<p class="meta">PACE &middot; Shidler College of Business &middot; University of Hawai&#699;i at M&#257;noa</p>
+</div>`;
+  fs.writeFileSync(path.join(DIST, 'all-handouts.html'),
+    handoutDoc('All fifteen handouts · EL3vate 2026 Day 8', cover + '\n' + sheets.join('\n')));
 
   // demos
   copyDir(DEMOS, path.join(DIST, 'demos'));
 
   console.log(`built ${all.length} discipline pages + hub into dist/ (build ${SHA} ${ISO})`);
+  console.log(`SITE_URL = ${SITE_URL}`);
+  console.log(`FEEDBACK_EMAIL = ${FEEDBACK_EMAIL}`);
 }
 main();

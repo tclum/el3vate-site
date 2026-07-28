@@ -13,6 +13,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const STAGES = [
   ['build', ['src/build.js']],
+  ['handout PDFs', ['src/pdf.js']],
   ['content gates', ['src/validate.js']],
   ['gate selftest', ['src/validate.js', '--selftest']],
   ['demo interaction tests', ['src/interact.js']],

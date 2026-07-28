@@ -78,6 +78,29 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
   number, and 48 was chosen to keep exactly one non-reflective-but-harmless move
   survivable.
 
+## Print and handouts
+
+- **"Page breaks between major sections" was read literally, and it is long.**
+  Every `.sec` on a discipline page starts a fresh sheet in print, which runs a
+  discipline page to **12 pages**. The other defensible reading of that
+  instruction is "never break *through* a section", which would come in around
+  four. The literal reading shipped because that is what the brief asked for and
+  because the handout is the compact artifact — 3 pages per discipline. If a
+  human would rather have the dense version, change `.sec{break-before:page}` to
+  `.sec{break-inside:avoid}` in the `@media print` block of `src/build.js`;
+  nothing else has to move, and there is a comment at that line saying so.
+- **Handout PDFs are build output and are not committed.** `dist/` is
+  git-ignored, so the 16 PDFs (15 disciplines + `all-handouts.pdf`, 46 pages)
+  exist only after `node src/build.js && node src/pdf.js`. `npm run check` does
+  both. Nobody should expect to find them in a fresh clone.
+- **The markdown-to-HTML renderer in `src/build.js` is deliberately partial.** It
+  handles exactly the constructs `renderHandout()` emits — headings, an italic
+  meta line, paragraphs, bold runs, bullet lists, pipe tables with escaped
+  pipes, blockquotes, a rule. If someone starts hand-writing richer markdown
+  into the handout template (nested lists, inline links, code fences), it will
+  pass through as literal text rather than render. Extend `mdToHtml` at that
+  point rather than assuming it is a general parser.
+
 ## Generator / validation
 
 - **`scales.fourWeeks` is now a misnomer on two disciplines.**
