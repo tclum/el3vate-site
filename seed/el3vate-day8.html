@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototyping Solutions &middot; EL3vate 2026 Day 8</title>
+<meta name="description" content="Physical and AI prototyping assignments, one per discipline, for the EL3vate 2026 faculty cohort at the University of Hawai&#699;i.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F5F0;
+  --card:#FFFFFF;
+  --mat:#17352C;
+  --mat-deep:#0D211B;
+  --ink:#15211C;
+  --soft:#57675E;
+  --cut:#DE3F26;
+  --cut-ink:#BF2F19;
+  --cut-lit:#FF6A4D;
+  --rule:#D6DCD4;
+  --measure:74ch;
+  --display:"Bricolage Grotesque",-apple-system,BlinkMacSystemFont,sans-serif;
+  --body:"Atkinson Hyperlegible",-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+/* ---------- hero: cutting mat ---------- */
+.hero{
+  background:var(--mat);color:#EAF0EA;position:relative;overflow:hidden;
+  border-bottom:3px solid var(--mat-deep);
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(to right,rgba(255,255,255,.07) 0 1px,transparent 1px 40px),
+    repeating-linear-gradient(to bottom,rgba(255,255,255,.07) 0 1px,transparent 1px 40px);
+}
+.hero__inner{position:relative;padding:74px 0 62px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  color:#8FB8A4;margin:0 0 26px
+}
+.hero h1{
+  font-family:var(--display);font-weight:800;font-variation-settings:"wdth" 82,"wght" 800;
+  font-size:clamp(2.7rem,7.4vw,5rem);line-height:.96;letter-spacing:-.025em;
+  margin:0 0 22px;max-width:16ch;
+}
+.hero h1 em{font-style:normal;color:var(--cut-lit)}
+.hero__sub{
+  margin:0 0 34px;max-width:56ch;font-size:1.13rem;color:#C6D6C9;
+}
+.hero__meta{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:#7FA994;
+  border-top:1px solid rgba(255,255,255,.18);padding-top:18px;margin:0 0 34px;
+}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;
+  color:#DCE8DC;text-decoration:none;padding:7px 11px;
+  border:1px solid rgba(255,255,255,.24);border-radius:2px;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.chip:hover,.chip:focus-visible{background:#fff;border-color:#fff;color:var(--mat)}
+
+/* ---------- how to use ---------- */
+.brief{padding:56px 0 12px;border-bottom:1px solid var(--rule)}
+.brief__grid{display:grid;grid-template-columns:1fr 1fr;gap:44px}
+.brief h2{
+  font-family:var(--display);font-weight:700;font-variation-settings:"wdth" 88,"wght" 700;
+  font-size:1.55rem;letter-spacing:-.015em;margin:0 0 14px;
+}
+.brief p{margin:0 0 14px;max-width:var(--measure);color:#2A3A33}
+.facts{list-style:none;margin:0;padding:0}
+.facts li{
+  display:grid;grid-template-columns:118px 1fr;gap:16px;
+  padding:12px 0;border-top:1px solid var(--rule);align-items:baseline;
+}
+.facts li:last-child{border-bottom:1px solid var(--rule)}
+.facts dt,.facts .k{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cut-ink);
+}
+.facts .v{font-size:15.5px;color:#2A3A33;line-height:1.5}
+
+/* ---------- parts ---------- */
+.jump{
+  position:sticky;top:0;z-index:20;background:rgba(243,245,240,.94);
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--rule);
+}
+.jump__inner{display:flex;align-items:center;gap:14px;padding:9px 0}
+.jump label{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);
+}
+.jump select{
+  font-family:var(--mono);font-size:12.5px;color:var(--ink);background:#fff;
+  border:1px solid var(--rule);border-radius:2px;padding:6px 9px;max-width:280px;
+}
+.sheet{padding:52px 0 20px}
+.sheet__label{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--soft);margin:0 0 26px;
+}
+.part{
+  position:relative;background:var(--card);border:1px dashed var(--cut);
+  padding:34px 34px 30px;margin:0 0 22px;scroll-margin-top:68px;
+}
+.part__marks i{
+  position:absolute;width:9px;height:9px;border:1px solid var(--cut);border-radius:50%;
+}
+.part__marks i:nth-child(1){top:-5px;left:-5px}
+.part__marks i:nth-child(2){top:-5px;right:-5px}
+.part__marks i:nth-child(3){bottom:-5px;left:-5px}
+.part__marks i:nth-child(4){bottom:-5px;right:-5px}
+.part__no{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cut-ink);margin:0 0 8px;
+}
+.part__name{
+  font-family:var(--display);font-weight:700;font-variation-settings:"wdth" 86,"wght" 700;
+  font-size:clamp(1.6rem,3.4vw,2.1rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 10px;
+}
+.part__hook{margin:0 0 26px;max-width:var(--measure);color:#33453D;font-size:1.02rem}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--ink)}
+.spec{padding:18px 26px 20px 0}
+.spec + .spec{padding:18px 0 20px 26px;border-left:1px solid var(--rule)}
+.spec__label{
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  margin:0 0 10px;color:var(--ink);display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;
+}
+.spec__tool{letter-spacing:.04em;text-transform:none;color:var(--soft);font-size:11.5px}
+.spec__body{margin:0;font-size:15.6px;line-height:1.62;color:#33453D}
+.plan{border-top:1px solid var(--rule);padding-top:20px;margin-top:4px}
+.plan__label{
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px;
+}
+.plan__list{list-style:none;margin:0;padding:0;counter-reset:wk}
+.plan__list li{
+  display:grid;grid-template-columns:64px 1fr;gap:16px;padding:9px 0;align-items:baseline;
+}
+.plan__wk{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cut-ink);
+}
+.plan__txt{font-size:15.6px;line-height:1.6;color:#33453D}
+.prompt{margin-top:24px;border:1px solid var(--rule);background:#FAFBF8}
+.prompt__bar{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:11px 14px;border-bottom:1px solid var(--rule);
+}
+.prompt__label{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--soft);
+}
+.copy{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--ink);color:#F3F5F0;border:0;border-radius:2px;padding:7px 13px;cursor:pointer;
+  transition:background .15s;
+}
+.copy:hover,.copy:focus-visible{background:var(--cut-ink)}
+.copy[data-done="1"]{background:var(--cut-ink)}
+.prompt__text{
+  font-family:var(--mono);font-size:13.4px;line-height:1.68;margin:0;padding:16px 14px;
+  white-space:pre-wrap;word-break:break-word;color:#22322C;
+}
+
+/* ---------- challenge ---------- */
+.challenge{background:var(--mat);color:#EAF0EA;margin-top:36px}
+.challenge__inner{padding:60px 0}
+.challenge h2{
+  font-family:var(--display);font-weight:800;font-variation-settings:"wdth" 84,"wght" 800;
+  font-size:clamp(1.9rem,4.6vw,2.9rem);line-height:1.04;letter-spacing:-.02em;margin:0 0 18px;max-width:20ch;
+}
+.challenge p{margin:0 0 14px;max-width:60ch;color:#C6D6C9}
+.challenge strong{color:#fff}
+footer{padding:30px 0 46px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--soft)}
+a{color:var(--cut-ink)}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 20px}
+  .hero__inner{padding:52px 0 44px}
+  .brief__grid{grid-template-columns:1fr;gap:30px}
+  .part{padding:26px 20px 24px}
+  .specs{grid-template-columns:1fr}
+  .spec{padding:16px 0 4px}
+  .spec + .spec{padding:16px 0 4px;border-left:0;border-top:1px solid var(--rule)}
+  .plan__list li{grid-template-columns:52px 1fr;gap:12px}
+  .facts li{grid-template-columns:1fr;gap:4px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+@media print{
+  .hero,.challenge{background:#fff;color:#000}
+  .hero *,.challenge *{color:#000!important}
+  .chips,.jump{display:none}
+  .part{break-inside:avoid;border:1px solid #999}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero__inner">
+    <p class="eyebrow">EL3vate 2026 &middot; Day 8 &middot; 29 July</p>
+    <h1>Prototyping <em>solutions</em></h1>
+    <p class="hero__sub">Fifteen disciplines, fifteen assignments. Each one has something students make with their hands, something they build with AI, and a four-week plan that fits inside a real semester.</p>
+    <p class="hero__meta">Tim Lum &middot; AI Innovation Team Director &middot; PACE, Shidler College of Business &middot; University of Hawai&#699;i at M&#257;noa</p>
+    <nav aria-label="Jump to a discipline">
+      <div class="chips">
+        <a class="chip" href="#political-science">Political Science</a>
+            <a class="chip" href="#entrepreneurship">Entrepreneurship</a>
+            <a class="chip" href="#law">Law</a>
+            <a class="chip" href="#comparative-philosophy">Comparative Philosophy</a>
+            <a class="chip" href="#marketing">Marketing / Strategic Communication</a>
+            <a class="chip" href="#nutrition">Nutrition &amp; Dietetics</a>
+            <a class="chip" href="#urban-planning">Urban Planning</a>
+            <a class="chip" href="#learning-design">Learning Design &amp; Technology</a>
+            <a class="chip" href="#bioinformatics">Bioinformatics</a>
+            <a class="chip" href="#english-literature">English Literature</a>
+            <a class="chip" href="#finance">Finance</a>
+            <a class="chip" href="#marriage-family-therapy">Marriage &amp; Family Therapy</a>
+            <a class="chip" href="#teacher-education">Teacher Education</a>
+            <a class="chip" href="#family-business">Family Business / Management</a>
+            <a class="chip" href="#planetary-science">Planetary Science</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="brief">
+  <div class="wrap brief__grid">
+    <div>
+      <h2>How to use this page</h2>
+      <p>Find your field. Read the four-week plan. Copy the prompt into Claude or ChatGPT and change the bracketed parts to fit the course you are actually teaching.</p>
+      <p>Nothing here needs you to learn a tool first. The physical builds go through PACE as a service: your students submit a file, we fabricate it, nobody needs equipment training. The AI builds happen in a chat window.</p>
+      <p>Every plan assumes you will use one class session on this, not a semester. If a four-week module is too much, run week two on its own and you still have a real assignment.</p>
+    </div>
+    <div>
+      <h2>What PACE provides</h2>
+      <ul class="facts">
+        <li><span class="k">3D printing</span><span class="v">Free for UH faculty. Students submit an .stl file; we print and return it.</span></li>
+        <li><span class="k">Laser cutting</span><span class="v">Cut and engrave in acrylic, wood and paper stock. Same file-submission model.</span></li>
+        <li><span class="k">Hana studio</span><span class="v">Recording space for podcasts, oral assessments and recorded role-play.</span></li>
+        <li><span class="k">Turnaround</span><span class="v">Plan on 7&ndash;10 days from file to finished part. Build that into your assignment dates.</span></li>
+        <li><span class="k">Training</span><span class="v">None required for students when work runs through the service.</span></li>
+        <li><span class="k">Contact</span><span class="v">Tim Lum, PACE &middot; pace.shidler.hawaii.edu/maker</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="jump">
+  <div class="wrap jump__inner">
+    <label for="jumpsel">Jump to</label>
+    <select id="jumpsel">
+      <option value="">Choose a discipline&hellip;</option>
+      <option value="political-science">Political Science</option>
+      <option value="entrepreneurship">Entrepreneurship</option>
+      <option value="law">Law</option>
+      <option value="comparative-philosophy">Comparative Philosophy</option>
+      <option value="marketing">Marketing / Strategic Communication</option>
+      <option value="nutrition">Nutrition &amp; Dietetics</option>
+      <option value="urban-planning">Urban Planning</option>
+      <option value="learning-design">Learning Design &amp; Technology</option>
+      <option value="bioinformatics">Bioinformatics</option>
+      <option value="english-literature">English Literature</option>
+      <option value="finance">Finance</option>
+      <option value="marriage-family-therapy">Marriage &amp; Family Therapy</option>
+      <option value="teacher-education">Teacher Education</option>
+      <option value="family-business">Family Business / Management</option>
+      <option value="planetary-science">Planetary Science</option>
+    </select>
+  </div>
+</div>
+
+<main class="sheet">
+  <div class="wrap">
+    <p class="sheet__label">Cut sheet &middot; 15 parts &middot; one per discipline</p>
+
+      <article class="part" id="political-science" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 01 / 15</p>
+          <h3 class="part__name">Political Science</h3>
+          <p class="part__hook">For the challenge named in this cohort: getting entrepreneurship into political theory without it feeling bolted on.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · engrave</span></p>
+            <p class="spec__body">Students cut a real Hawaiʻi district or precinct as movable tiles, then physically redraw the boundaries to satisfy competing constraints (population equality, community of interest, incumbent protection). The map stops being an abstraction the moment they have to move a piece and tell the room who they just moved.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A stakeholder simulator for a bill actually moving through the Hawaiʻi legislature. The AI plays a lobbyist, an agency head, and a constituent group in turn; students have to get a provision through and then account for what they traded away.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Pick one live bill from the current session. Students write a one-page stake map: who wins, who loses, who is invisible in the text.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build and run the stakeholder simulator in class. Students log the three moments the AI’s stakeholder said something they could not verify against the actual record. That log is the graded artifact, not the transcript.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Submit the cut file for the district tiles (due Monday, so the 7–10 day turnaround lands before finals). While it fabricates, students draft the defense of their map.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Physical redraw session and public defense. Each team hands their tiles to another team, who must find the choice that cannot be justified.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p0">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p0">You are running a legislative negotiation simulation for an undergraduate political science class. I will give you a bill. Play three stakeholders in turn: a paid lobbyist for the affected industry, a state agency director who has to implement it, and a community group that was not consulted. Stay in character, push back hard, and do not concede quickly. After each exchange, stop and ask me what I am willing to give up. Do not summarize or break character unless I type PAUSE. The bill is: [paste bill text or summary here].</pre>
+        </section>
+      </article>
+
+      <article class="part" id="entrepreneurship" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 02 / 15</p>
+          <h3 class="part__name">Entrepreneurship</h3>
+          <p class="part__hook">The business model canvas from Day 4 stays theoretical until a stranger holds the thing and says no.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print · laser cut</span></p>
+            <p class="spec__body">A physical MVP good enough to put in a customer’s hands. Not a finished product: a form study, a fit test, a packaging mockup. The point is that customer discovery interviews change completely when there is an object on the table.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A working landing page for the venture, built in one prompt, with an email capture and three headline variants. Students run traffic from their own networks and report the actual conversion rate, not their opinion of it.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Teams commit to one value proposition and write the riskiest assumption underneath it in a single sentence.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build the landing page live in class. Submit the print or cut file the same week so fabrication runs in parallel with the digital test.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Run the test: fifteen real interviews and whatever traffic they can generate. No pivoting yet, just collection.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Prototype in hand, data in hand, teams present what they were wrong about. Grade the quality of the disconfirmation, not the size of the number.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p1">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p1">Build me a single-page landing site for a new product, as one self-contained HTML file I can host anywhere. The product is: [describe it in two sentences]. The customer is: [describe them]. Include a headline, three short benefit statements, an email signup field, and nothing else. Then give me two alternate headlines that make a meaningfully different promise, not just reworded versions of the first. Keep the copy plain and specific; no marketing filler.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="law" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 03 / 15</p>
+          <h3 class="part__name">Law</h3>
+          <p class="part__hook">Assessment that an AI cannot sit for: the student has to speak, be interrupted, and recover.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Hana recording studio</span></p>
+            <p class="spec__body">Students record oral argument or client counseling in the studio, then annotate their own recording. Production quality matters here: a clean recording makes students confront delivery, pacing and filler in a way a classroom run-through never does.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">An opposing counsel that never gets tired. Students argue a motion against an AI instructed to press the weakest point in their position and to interrupt. The unglamorous benefit is volume: every student gets ten rounds instead of one.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Assign one fact pattern. Students brief it the traditional way. No AI yet.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">AI opposing counsel rounds, done as homework, minimum five exchanges. Students submit the transcript with their own margin notes marking where they conceded too fast.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Studio recordings, scheduled in pairs. Ten minutes of argument, five of counseling.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Students watch their own recording against the AI transcript and write a one-page delivery diagnosis. That reflection is the assessment.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p2">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p2">Act as opposing counsel in a moot court exercise for a law student. Here is the fact pattern and my position: [paste]. Your job is to find the weakest link in my argument and attack it repeatedly. Interrupt me when I am being evasive. Do not be collegial, do not concede a point unless I actually earn it, and do not offer to help me improve my argument. Ask one question at a time and wait for my answer.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="comparative-philosophy" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 04 / 15</p>
+          <h3 class="part__name">Comparative Philosophy</h3>
+          <p class="part__hook">The AI is the object of study, not the tool. Students are graded on catching where it flattens a tradition.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · engrave</span></p>
+            <p class="spec__body">A physical apparatus that forces a commitment: engraved tiles for competing ethical frameworks that students must physically arrange and rank against a case, or a switchboard where the abstract choice becomes a lever you actually have to pull in front of people.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">An interlocutor instructed to argue from one specific tradition. The assignment is adversarial: students interrogate it against primary sources and document every place it substitutes a generic Western liberal position for the tradition it claims to hold. A student who has not read the text cannot do this.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Choose two traditions and one shared case. Students read the primary sources first. The AI stays closed.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Students build their interlocutor prompt and run it. They keep a failure log: quote from the AI, quote from the source, one sentence on what got lost.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Design the physical artifact. What distinction between the two traditions can only be shown by arranging objects in space? Cut file due end of week.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Present the artifact and the failure log together. The claim being assessed: here is what the machine could not hold, and here is why it matters.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p3">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p3">You are going to argue a case from within a single philosophical tradition, and I am going to check your work. Adopt the position of [name the tradition, e.g. classical Confucian ethics] as it is actually articulated in its primary texts, not a modern popularization. The case is: [describe it]. Argue the position fully. Do not hedge, do not present multiple perspectives, and do not add a balanced summary at the end. When I quote a primary source back at you that contradicts what you said, address the contradiction directly rather than conceding everything.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="marketing" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 05 / 15</p>
+          <h3 class="part__name">Marketing / Strategic Communication</h3>
+          <p class="part__hook">Students generate ten campaigns in an hour, then have to defend why nine of them are bad.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print · laser cut</span></p>
+            <p class="spec__body">Physical packaging or a point-of-sale piece for a real local client. Holding a mockup surfaces every decision a slide deck hides: size, weight, what the customer reads first from arm’s length.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A message-testing harness. Students generate a wide spread of positioning variants, then build a simple landing page per variant and measure. The AI supplies volume; the student supplies the judgment about which variant is worth defending.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Land one real client, even a campus organization. Written brief, signed by the client.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Generate wide with AI in class, then cut down to three positions with a written rationale per cut. Submit packaging cut file.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Build one page per position, run whatever traffic is available for five days.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Client presentation with the physical mockup and the actual numbers. The client picks. Students debrief the gap between their favorite and the client’s.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p4">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p4">Generate twelve distinct positioning statements for this product, aimed at this audience: [describe product and audience]. Make them genuinely different from each other in strategy, not in wording: vary what need is being claimed, what the competition is, and what the customer has to believe. Number them. Then for each one, write the single sentence a skeptical customer would say to reject it.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="nutrition" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 06 / 15</p>
+          <h3 class="part__name">Nutrition &amp; Dietetics</h3>
+          <p class="part__hook">Counseling practice at volume, plus a teaching tool students can hand to an actual community group.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print</span></p>
+            <p class="spec__body">Portion and plate-method models that students design for a specific community they are working with, in the foods that community actually eats. Generic food models exist commercially; models built around local staples do not, and making that argument is half the assignment.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A standardized client for motivational interviewing practice: someone with a real cultural food context, a budget constraint, and a reason to resist. Students run the session repeatedly, which is impossible with human volunteers.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Students select a community partner and a specific counseling scenario. Draft the client profile they will need.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build the AI client and run three sessions, submitting transcripts. Grade whether the student did more listening than telling.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Design and submit the physical teaching model. Requirement: justify every food choice against the partner community.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Field test the model with the partner and revise once based on what confused people.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p5">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p5">Role-play as a nutrition counseling client for a dietetics student. You are [age, situation, cultural food background, budget constraint]. You are here because someone else told you to come, and you are polite but not really convinced you need to change anything. Do not volunteer information unless I ask a good question. Do not become enthusiastic and cooperative just because I say something encouraging. Stay in character until I type END SESSION, then give me feedback on whether I actually listened.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="urban-planning" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 07 / 15</p>
+          <h3 class="part__name">Urban Planning</h3>
+          <p class="part__hook">A physical model changes a community meeting more than any rendering does.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · layered</span></p>
+            <p class="spec__body">A layered site model of a real Honolulu parcel: topography, existing structures, proposed massing, each on its own removable layer. Residents can lift the proposal off and see what is underneath, which is exactly the conversation that renderings prevent.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">An interactive tradeoff explainer for the same parcel: move a slider for height or density and see the consequences a resident actually cares about, in plain language. Built in an afternoon, used in a real meeting.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Pick one contested parcel with public documentation. Students extract the actual constraints from the record.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build the interactive explainer. Test it on someone outside the major and rebuild the parts they did not understand.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Cut file due. While it fabricates, students prepare the meeting facilitation, not the presentation.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Run a mock community meeting with the model and the tool on the table. Invite the neighborhood board if the timing allows.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p6">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p6">Build me a single self-contained HTML page with sliders that shows planning tradeoffs for a site. The variables are: [building height, unit count, parking ratio, open space, whatever applies]. When a slider moves, update plain-language consequences that a resident would care about: shadow, traffic, who can afford to live there, what gets demolished. No jargon, no acronyms. Assume the reader has never been to a planning meeting.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="learning-design" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 08 / 15</p>
+          <h3 class="part__name">Learning Design &amp; Technology</h3>
+          <p class="part__hook">Build the learning object, then audit it for accessibility before anyone sees it.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print · laser cut</span></p>
+            <p class="spec__body">A tactile manipulative for a concept students currently teach with a diagram. The design constraint that makes this a real assignment: it has to work for a learner who cannot see the diagram.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A working interactive module built in one sitting, then run against an accessibility checklist. The audit is where the learning is. Most AI-generated interfaces fail keyboard navigation and contrast on the first pass, and finding that is the skill.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Choose one concept and write the learning objective before touching a tool. Objective gets peer-reviewed for measurability.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build the digital module with AI. Ship a rough version fast.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Accessibility audit against WCAG basics: keyboard only, contrast, screen reader, reduced motion. Document every failure and fix it. Submit fabrication file for the tactile version.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">User test both versions with three learners outside the class. Revise once. The revision log is the deliverable.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p7">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p7">Build a single self-contained HTML page that teaches this concept interactively: [concept]. The learner is [describe them]. Requirements: it must be fully operable by keyboard alone, meet WCAG AA contrast, respect prefers-reduced-motion, and work on a phone. After you build it, list every accessibility decision you made and every place you are uncertain whether it passes.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="bioinformatics" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 09 / 15</p>
+          <h3 class="part__name">Bioinformatics</h3>
+          <p class="part__hook">The structure in your hand answers a question the rotating model on screen does not.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print</span></p>
+            <p class="spec__body">A printed structure from a record the student selected and defended: a binding site, a mutation, a fold. Print two variants, wild type and mutant, and let the difference be something you can feel rather than something you are told.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">An interactive explainer of the student’s own analysis, written for a non-specialist. Explaining a pipeline to a general audience exposes whether the student understands it, which a working script does not.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Each student picks a structure or dataset and writes the biological question in one sentence a non-scientist would understand.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Run the analysis. Prepare and submit the print file, including the mutant variant.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Build the public-facing interactive explainer. Peer review is done by a student from a different discipline who has to say what they did not follow.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Present both. Assessment weight sits on whether the non-specialist reviewer understood the finding.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p8">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p8">Build a single self-contained HTML page that explains this analysis to someone with no biology background: [describe the analysis and the finding]. Use an interactive element so the reader can change one input and see the result change. Explain every term the first time it appears. Do not use an acronym without spelling it out. Then tell me the three places where you had to simplify in a way that a specialist would object to.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="english-literature" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 10 / 15</p>
+          <h3 class="part__name">English Literature</h3>
+          <p class="part__hook">The strongest case for humanities in an AI world is a student demonstrating exactly where the machine reads badly.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Hana recording studio</span></p>
+            <p class="spec__body">A produced literary podcast episode or recorded close reading. Audio rewards the things the discipline actually teaches: pacing, emphasis, the pause before the word that matters. It is also assessment that resists generated submission.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A machine reading of a passage, generated deliberately, then dismantled in writing. Students document where the AI produced a plausible reading that the text does not support. This is a career argument as much as a literary one.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Close reading of an assigned passage, written by hand, submitted before any AI use.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Generate the AI reading of the same passage. Students annotate it against the text: what it noticed, what it invented, what it could not see.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Record the podcast episode in the studio, arguing the reading the AI missed.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Publish the episode with the annotated comparison as show notes. The artifact is portfolio-ready, which is the point.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p9">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p9">Give me a close reading of this passage: [paste passage]. Be specific and confident. Make claims about what the language is doing and why it matters. Do not hedge and do not tell me interpretations vary. Then, separately, list the three claims in your reading that you are least able to support with direct textual evidence.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="finance" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 11 / 15</p>
+          <h3 class="part__name">Finance</h3>
+          <p class="part__hook">Students build the model in ten minutes, so the class time goes to arguing about the assumptions.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · engrave</span></p>
+            <p class="spec__body">Physical decision cards or a data object for a simulation: a term structure or a risk distribution rendered as something you can hold and compare side by side. Useful precisely because it slows the reading down.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A working interactive model for a real decision, built live. The assignment is not the model. It is the sensitivity analysis and the written defense of every assumption the model needed to make.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Pick a real decision with public filings. Students list every assumption required, before building anything.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Build the interactive model with AI in class. Break it deliberately: what input makes the conclusion flip?</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Sensitivity write-up plus fabrication of the physical comparison cards.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Defense session. Another team’s job is to find the assumption that carries the whole result.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p10">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p10">Build a single self-contained HTML page with an interactive model for this decision: [describe the decision]. Include sliders for every input that matters. Show the output updating live, and display the break-even point prominently. Then list every assumption you had to make to build it, and tell me which single assumption the conclusion is most sensitive to.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="marriage-family-therapy" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 12 / 15</p>
+          <h3 class="part__name">Marriage &amp; Family Therapy</h3>
+          <p class="part__hook">Reps. Students get twenty practice intakes instead of two, before they ever sit with a person.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · Hana studio</span></p>
+            <p class="spec__body">A physical genogram kit with cut, movable pieces that a family can rearrange themselves, plus recorded role-play sessions in the studio for supervision review. Watching yourself is the intervention.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A standardized client that stays in character, resists, and does not reward the student for saying the encouraging thing. Practice only, never as a stand-in for supervised clinical contact, and the assignment should say so explicitly.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Establish the boundary first: what this practice is and is not, written into the syllabus and discussed. Students draft the client profile.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Run practice intakes with the AI client. Minimum five, transcripts submitted with self-critique marked in the margin.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Studio role-play with a peer, recorded. Build the physical genogram kit file.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Supervision review comparing the AI transcripts against the recorded human session. What did the machine let them get away with?</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p11">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p11">Role-play as a standardized client for a therapy student’s practice intake. You are [age, presenting concern, family situation, what brought you in]. You are guarded. You test whether the therapist is safe before you disclose anything real. Do not open up because the student says something kind; open up only if they demonstrate they actually heard you. Stay in character until I type END SESSION. Then tell me the moment I lost you, and why.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="teacher-education" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 13 / 15</p>
+          <h3 class="part__name">Teacher Education</h3>
+          <p class="part__hook">Pre-service teachers design for a real K–12 partner classroom and get told what did not work.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print · laser cut</span></p>
+            <p class="spec__body">A classroom manipulative designed for a specific partner teacher’s specific lesson. The constraint that makes it real: it has to survive thirty second-graders and cost almost nothing to reproduce.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">Differentiated versions of one lesson artifact, generated fast, then evaluated. Students see how quickly AI produces plausible-looking material and how much of it is subtly wrong for the grade level, which is the professional judgment being taught.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Secure the partner classroom and the specific lesson. Students observe before designing.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Generate differentiated variants with AI, then evaluate against the actual standard and the actual learners. Most get rejected.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Design and submit the manipulative file. Prototype in cardboard first so the fabrication is the second version, not the first.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Teach the lesson in the partner classroom. Debrief with the partner teacher, revise, hand it over.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p12">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p12">I am teaching this lesson to [grade level] students: [describe the lesson and standard]. Produce four versions of the main student activity, differentiated for: significantly below grade level, at grade level, above grade level, and an emerging multilingual learner. Keep the cognitive demand the same across all four; change the scaffolding, not the thinking. Then flag anything in your own versions that a teacher should check before using it.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="family-business" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 14 / 15</p>
+          <h3 class="part__name">Family Business / Management</h3>
+          <p class="part__hook">Succession conversations are hard to teach because nobody wants to have one out loud.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">Laser cut · engrave</span></p>
+            <p class="spec__body">A physical governance or succession decision board: roles, claims and constraints as pieces that have to be placed somewhere. Putting the pieces on the table forces the conversation the family has been avoiding.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">A family council simulation with three generations at the table, each with different assumptions about what was promised. Students facilitate rather than solve, which is the actual job.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Case selection and stake mapping. Every party gets a written statement of what they believe they were promised.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Run the AI family council. Students facilitate. Transcript plus a written account of the moment it went sideways.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Design the physical decision board. Cut file due.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Live facilitation with the board, peers playing the family. Assessment is on the facilitation, not the outcome.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p13">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p13">Run a family business succession meeting simulation. Play three people at once, clearly labeled: the founder who has not actually decided to leave, the child who has been running operations for a decade, and the sibling who left the business but still owns shares. Each of them believes something different about what was promised. I am the facilitator, not a family member. Do not resolve the conflict for me. Let the meeting go badly if I facilitate badly.</pre>
+        </section>
+      </article>
+
+      <article class="part" id="planetary-science" tabindex="-1">
+        <div class="part__marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <header class="part__head">
+          <p class="part__no">Part 15 / 15</p>
+          <h3 class="part__name">Planetary Science</h3>
+          <p class="part__hook">For the stated goal of restoring curiosity in advanced courses: give them terrain they can run a hand across.</p>
+        </header>
+
+        <div class="specs">
+          <section class="spec">
+            <p class="spec__label">Make it <span class="spec__tool">3D print</span></p>
+            <p class="spec__body">Printed terrain from real elevation data the student selected: a crater, a rift, a volcanic feature. Print the same feature at two exaggeration factors and let students argue about which one misleads.</p>
+          </section>
+          <section class="spec">
+            <p class="spec__label">Build it <span class="spec__tool">AI chat · no code</span></p>
+            <p class="spec__body">An interactive explainer or small simulation of the process that formed the feature. Change one parameter, see the outcome change. Built by the student in an afternoon, no coding background required.</p>
+          </section>
+        </div>
+
+        <section class="plan">
+          <p class="plan__label">Four weeks, realistically</p>
+          <ol class="plan__list">
+            <li><span class="plan__wk">Wk 1</span><span class="plan__txt">Each student claims a feature and writes the formation question they want to answer.</span></li>
+            <li><span class="plan__wk">Wk 2</span><span class="plan__txt">Prepare and submit the print file, including the second exaggeration factor. Fabrication runs while they work on the model.</span></li>
+            <li><span class="plan__wk">Wk 3</span><span class="plan__txt">Build the interactive simulation. Requirement: one parameter that, when changed, produces a feature that does not exist in nature, and an explanation of why.</span></li>
+            <li><span class="plan__wk">Wk 4</span><span class="plan__txt">Show and tell with the printed terrain and the running model. Peers try to break the model.</span></li>
+          </ol>
+        </section>
+
+        <section class="prompt">
+          <div class="prompt__bar">
+            <p class="prompt__label">Starter prompt</p>
+            <button class="copy" type="button" data-target="p14">Copy prompt</button>
+          </div>
+          <pre class="prompt__text" id="p14">Build a single self-contained HTML page with an interactive simulation of this planetary process: [describe the process]. Include sliders for the parameters that matter physically. Show the resulting landform update live. Label the axes and give units. Then tell me which parameter ranges produce results that are physically implausible, and why the simulation still lets me set them.</pre>
+        </section>
+      </article>
+  </div>
+</main>
+
+<section class="challenge">
+  <div class="wrap challenge__inner">
+    <h2>Bring one prototype to Day 10</h2>
+    <p>Between now and Friday, build one thing. A printed object, a cut model, a recorded episode, a working page you made by typing a paragraph into a chat window. <strong>Rough is the assignment.</strong></p>
+    <p>A prototype that survives contact with a student is worth more than a semester of planning that does not. The fastest way to find out whether an idea works is to make a bad version of it this week and watch someone use it.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">EL3vate 2026 &middot; Day 8 session resource &middot; Prepared for the faculty cohort &middot; Not for distribution outside the program</div>
+</footer>
+
+<script>
+var sel = document.getElementById('jumpsel');
+if (sel) sel.addEventListener('change', function(){
+  if (!sel.value) return;
+  var t = document.getElementById(sel.value);
+  if (t) { t.scrollIntoView({block:'start'}); t.focus({preventScroll:true}); }
+});
+document.querySelectorAll('.copy').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var el = document.getElementById(btn.dataset.target);
+    var txt = el ? el.textContent : '';
+    var done = function(){
+      btn.textContent = 'Copied';
+      btn.dataset.done = '1';
+      setTimeout(function(){ btn.textContent = 'Copy prompt'; btn.dataset.done = ''; }, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function(){ fallback(txt, done); });
+    } else { fallback(txt, done); }
+  });
+});
+function fallback(txt, cb){
+  var ta = document.createElement('textarea');
+  ta.value = txt; ta.setAttribute('readonly','');
+  ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){}
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
