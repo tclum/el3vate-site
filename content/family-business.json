@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "Run a family business succession meeting simulation. Play three people at once, clearly labeled: the founder who has not actually decided to leave, the child who has been running operations for a decade, and the sibling who left the business but still owns shares. Each of them believes something different about what was promised. I am the facilitator, not a family member. Do not resolve the conflict for me. Let the meeting go badly if I facilitate badly.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one case. Minutes 0–15: sketch a succession or governance scenario and give each party a one-line statement of what they believe was promised. Minutes 15–70: students take turns facilitating the AI family-council prompt, which plays three parties with conflicting assumptions; they must keep the conversation productive without solving it for the family. Minutes 70–90: the room names the moment each facilitator's meeting went sideways and what a better move would have been. The deliverable is a short facilitation self-critique; it grades facilitation, not the outcome.",
+  "replaces": {
+    "assignment": "The written succession-plan case analysis.",
+    "lost": "The comprehensive written governance recommendation.",
+    "gained": "Students rehearse the actual hard part — facilitating a conversation nobody wants to have, among parties who each remember a different promise — instead of writing a tidy recommendation no family would sit through; the grade rewards process over solution."
+  },
+  "aiFailsHere": "A model asked to run a multi-party family dispute resolves it — driving the parties to consensus, softening the conflict, and offering the facilitator a clean recommendation, because it is trained to be helpful and agreeable. That cooperative drift removes exactly the friction the exercise needs, and it will also produce confident 'best-practice' governance advice that ignores the specific relational history driving the impasse.",
+  "rubric": [
+    {
+      "criterion": "Facilitation stance",
+      "weight": 30,
+      "description": "The student facilitates rather than solves, holding space for the parties instead of imposing an answer."
+    },
+    {
+      "criterion": "Surfacing the conflicting promises",
+      "weight": 25,
+      "description": "Draws out what each party believes was promised and makes the mismatch discussable."
+    },
+    {
+      "criterion": "Managing the rupture",
+      "weight": 25,
+      "description": "Recognizes when the meeting goes sideways and adjusts, rather than pushing through."
+    },
+    {
+      "criterion": "Restraint from premature resolution",
+      "weight": 20,
+      "description": "Resists both the AI's and the student's pull toward a tidy consensus the family has not reached."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in laser stock for an engraved succession or governance decision board in the four-week build.",
+    "fileDueWeek": "Week 3 — cut file due so the board returns for the week-4 live facilitation.",
+    "calendarNote": "Facilitation reps need no lead time; the decision board depends on the 7–10 day cut turnaround."
+  },
+  "scales": {
+    "oneSession": "The 90-minute rotating-facilitation session producing a facilitation self-critique; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: stake mapping with written promise-statements, facilitated AI councils, a fabricated decision board, then live facilitation with peers playing the family.",
+    "oneSemester": "A full case — stake mapping with written promise-statements, repeated facilitated AI councils, a fabricated decision board, and a live facilitation assessed on process across a real governance question."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a 40-year-old family-owned Okinawan restaurant in Honolulu: a founder (72) who has not decided to leave, a daughter running operations for a decade, and a son who left for a mainland tech job but owns a third of the shares.",
+    "output": "I'll start the simulation now.\n\n---\n\n*The room is quiet. Three people are seated. They've stopped talking as you sit down. All eyes are on you.*\n\n**FOUNDER (72):** *[hands folded on the table, calm but with a slight edge]* So. We're all here. My daughter said you would help us \"have a conversation.\" *[glances at her]* I want to say first — I'm not sure what the emergency is. The restaurant is fine. Forty years, it's fine. But everyone wanted to sit down, so. Here I am. *[to you]* You go ahead. Tell us why we're doing this.\n\n**DAUGHTER:** *[phone face-down on the table, tired but composed — she came straight from a lunch shift, still smells faintly of dashi]* Dad, nobody said emergency. *[to you]* I asked for this. I've been running the kitchen and the front and the books for ten years. Ten. And every time I bring up what happens next, it turns into \"the restaurant is fine.\" I need us to actually talk about it while we still can, like adults. That's all.\n\n**SON:** *[joined the meeting composed, laptop closed but nearby, a little too polite — the tone of someone who flew in]* Yeah, and I appreciate everyone making time. I took two days off for this. *[carefully]* I just want to make sure this is a real conversation and not a decision that's already been made that I'm being told about. Because I still own a third of this thing. Whatever we decide, I'm part of the \"we.\" *[looks at his sister, then his father, then you]*\n\n**FOUNDER:** *[quietly]* Nobody's deciding anything.\n\n**DAUGHTER:** *[under her breath]* That's the problem.\n\n*They all turn back to you. It's your move, facilitator.*",
+    "annotations": [
+      {
+        "marker": "Preserved the conflict instead of resolving it",
+        "note": "The model set up three parties with genuinely incompatible expectations and handed the move back to the facilitator ('It's your move') — resisting the cooperative drift that would ruin the exercise."
+      },
+      {
+        "marker": "Distinct, believable party positions",
+        "note": "The founder's denial ('the restaurant is fine'), the daughter's earned resentment, and the son's ownership claim are differentiated and realistic — good material to facilitate."
+      },
+      {
+        "marker": "Rich stage directions ('still smells faintly of dashi')",
+        "note": "Atmospheric detail the model invented; harmless here, but a facilitator should engage the stated positions, not the novelistic color."
+      },
+      {
+        "marker": "Did not offer a recommendation",
+        "note": "Unprompted, it avoided handing the facilitator an answer — exactly right; students should notice this is a constrained behavior, not the model's default."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "political-science",
+      "reason": "Both run a multi-party simulation where each party believes something different, and grade accounting for the tradeoff rather than winning."
+    },
+    {
+      "slug": "marriage-family-therapy",
+      "reason": "Both assess the student's facilitation of an emotionally loaded family conversation on process, not on resolving the conflict."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }

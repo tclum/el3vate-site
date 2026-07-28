@@ -30,14 +30,81 @@
     }
   ],
   "prompt": "I am teaching this lesson to [grade level] students: [describe the lesson and standard]. Produce four versions of the main student activity, differentiated for: significantly below grade level, at grade level, above grade level, and an emerging multilingual learner. Keep the cognitive demand the same across all four; change the scaffolding, not the thinking. Then flag anything in your own versions that a teacher should check before using it.",
-  "tryTuesday": null,
-  "replaces": null,
-  "aiFailsHere": null,
-  "rubric": null,
-  "budget": null,
-  "scales": null,
-  "promptOutput": null,
-  "related": null,
+  "tryTuesday": "90 minutes, one real standard. Minutes 0–15: name the grade level, the standard, and the specific learners. Minutes 15–50: run the differentiation prompt to generate four versions of one activity — below level, at level, above level, and an emerging multilingual learner — then evaluate each against the actual standard, rejecting what is subtly wrong for the grade. Minutes 50–90: with a partner, check the AI's most confident-looking choices — vocabulary, any translation, cognitive demand — and mark what a teacher must verify before using it. The deliverable is the evaluation, not the generated material; it grades professional judgment about AI output.",
+  "replaces": {
+    "assignment": "The lesson-plan submission graded on format and completeness.",
+    "lost": "The from-scratch lesson-writing practice.",
+    "gained": "Students practice the judgment that now matters most — spotting where fast, plausible AI material is wrong for these learners and this standard — instead of being graded on a template the AI can fill in seconds."
+  },
+  "aiFailsHere": "A model produces differentiated lesson material that looks classroom-ready and is subtly wrong for the grade — misjudging cognitive load, mislabeling a standard, and generating confident 'translations' or cultural references it cannot vouch for. It changes the thinking when asked only to change the scaffolding, and it never flags that a human must check the pieces most likely to mislead a specific learner.",
+  "rubric": [
+    {
+      "criterion": "Standard alignment",
+      "weight": 25,
+      "description": "Each version is checked against the actual grade-level standard, and any misalignment the AI introduced is caught."
+    },
+    {
+      "criterion": "Constant cognitive demand",
+      "weight": 25,
+      "description": "Differentiation changes scaffolding, not the thinking; the student verifies the AI did not lower the demand."
+    },
+    {
+      "criterion": "Learner-specific scrutiny",
+      "weight": 30,
+      "description": "Flags what must be verified for real learners — translations, cultural references, reading load — rather than trusting the output."
+    },
+    {
+      "criterion": "Rejection judgment",
+      "weight": 20,
+      "description": "Rejects the versions that are wrong for the grade and explains why, rather than accepting plausible material."
+    }
+  ],
+  "budget": {
+    "prepHours": 1.5,
+    "classMinutes": 90,
+    "perStudentCost": "$0 for the Tuesday version; roughly $4–10 per student in filament or cut stock for a durable manipulative in the four-week build.",
+    "fileDueWeek": "Week 3 — fabrication file due after a cardboard prototype so the part is the second version.",
+    "calendarNote": "Material generation and evaluation need no lead time; the manipulative depends on the 7–10 day turnaround, timed for week-4 classroom teaching."
+  },
+  "scales": {
+    "oneSession": "The 90-minute generate-and-evaluate session producing an evaluation of the AI material; no fabrication.",
+    "fourWeeks": "The seeded four-week plan: secure a partner classroom, generate and vet differentiated variants, prototype then fabricate the manipulative, then teach and revise with the partner teacher.",
+    "oneSemester": "A partner-classroom project — observation, AI-differentiated materials vetted against standards, a prototyped-then-fabricated manipulative, taught in the real classroom and revised with the partner teacher."
+  },
+  "promptOutput": {
+    "model": "Claude (Anthropic) — captured 2026-07-27 in an isolated fresh session with no build context; output is unedited.",
+    "capturedAt": "2026-07-27",
+    "promptFilled": "Filled in as a 3rd-grade water-cycle lesson aligned to Hawaiʻi's NGSS, differentiated four ways including an emerging multilingual learner whose first language is Ilocano.",
+    "output": "Here's a single core activity — \"Model the Journey of a Water Drop\" — where students trace water through all four stages and explain what drives each change. The thinking (sequence + cause) stays constant; only the support changes.\n\n**Core task (all four):** Show water moving through evaporation → condensation → precipitation → collection, and explain what makes each step happen (energy from the sun, cooling, etc.).\n\n**Significantly below grade level**\nGive 4 pre-made picture cards (sun heating a puddle, cloud forming, rain, lake). Students place them in order on a labeled arrow strip, then match each to a sentence starter: \"The sun ___ the water, so it ___.\" Provide a word bank (heats, rises, cools, falls). They explain each step orally to a partner or you.\n\n**At grade level**\nStudents draw their own 4-stage cycle diagram, label each stage, and write one sentence per stage explaining the cause (\"The water evaporates *because* the sun heats it\"). They finish with: \"What would happen if the sun stopped shining?\"\n\n**Above grade level**\nSame diagram and causal sentences, plus: predict what changes if one variable shifts (hotter day, colder air) and justify it. Add a challenge — trace the *same* water molecule through two full cycles, and explain why the cycle has no true beginning or end.\n\n**Emerging multilingual learner (Ilocano L1)**\nSame 4-stage diagram as the at-grade version, with these supports: bilingual labels (English + Ilocano — e.g., *danum* = water, *ulep* = cloud, *tudo* = rain, *init* = sun), the picture cards from the below-level version, and sentence frames with a word bank. Allow first draft in Ilocano or drawing; the science reasoning is assessed, not English fluency. Pair with a supportive partner if one shares the language.\n\n**Flag these before using — teacher checks:**\n\n1. **Verify the Ilocano vocabulary.** I generated *danum, ulep, tudo, init* from general knowledge — confirm spelling and word choice with a fluent speaker, family member, or your EL coordinator before printing. Do not trust my translations unchecked.\n\n2. **Confirm the NGSS alignment.** Hawaiʻi adopted NGSS, but the water cycle as a named 4-stage cycle isn't cleanly a single grade-3 performance expectation — much of it lives in grade 2 (2-ESS2-3, water in solid/liquid form) and grade 5 (5-ESS2-1, Earth's systems). Check your grade-3 pacing guide/standard code so the lesson maps to what your school expects.\n\n3. **Watch the vocabulary load.** \"Evaporation/condensation/precipitation/collection\" are demanding for all four groups, not just the multilingual learner — decide whether you're teaching the terms or the concepts first.\n\n4. **The \"same molecule, two cycles\" extension** assumes conservation-of-matter reasoning some 3rd graders won't have yet; preview it before assigning.\n\n5. **Cultural relevance:** consider grounding examples in local water (rain on the mountains, streams, ocean) rather than generic ones — strong for all learners, especially in Hawaiʻi.\n\nWant me to build the printable picture cards or a rubric that scores the reasoning consistently across all four versions?",
+    "annotations": [
+      {
+        "marker": "Flagged its own Ilocano translations: 'Do not trust my translations unchecked'",
+        "note": "The model refused to vouch for danum/ulep/tudo/init and told the teacher to verify with a fluent speaker — the exact human-check the assignment teaches."
+      },
+      {
+        "marker": "Corrected the standard alignment: water cycle 'isn't cleanly a single grade-3 performance expectation'",
+        "note": "It caught that the prompt's NGSS framing was off (the content spans grades 2 and 5) — professional-grade scrutiny of the user's premise."
+      },
+      {
+        "marker": "Held cognitive demand constant across versions",
+        "note": "Differentiated the scaffolding, not the thinking, as instructed — the design principle the rubric rewards."
+      },
+      {
+        "marker": "Offered the unverifiable translations anyway",
+        "note": "Despite the caveat, it still produced specific Ilocano words; a teacher who skims past the warning could print an error — the subtle-wrongness failure in miniature."
+      }
+    ]
+  },
+  "related": [
+    {
+      "slug": "learning-design",
+      "reason": "Both generate learning materials fast with AI and make the assessment the critique of what the generator got subtly wrong for real learners."
+    },
+    {
+      "slug": "nutrition",
+      "reason": "Both require designing for a specific real community or classroom and justifying every choice against that audience rather than a generic one."
+    }
+  ],
   "demo": null,
   "liveBuild": null
 }
