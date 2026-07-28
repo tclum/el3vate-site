@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standardized-client intake</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;--good:#2F6F5E;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.55;padding:20px;max-width:680px}
+h1{font-family:var(--display);font-size:1.3rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 8px;font-size:.95rem}
+.note{font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--cut-ink);
+  border:1px solid var(--cut);background:#FCEBE7;padding:8px 11px;margin:0 0 16px}
+.trust{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin:0 0 6px;display:flex;justify-content:space-between}
+.meter{height:8px;background:#EAEFE9;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin:0 0 18px}
+.meter i{display:block;height:100%;background:var(--good);width:40%}
+.client{background:var(--card);border:1px dashed var(--cut);padding:14px 16px;margin:0 0 16px}
+.client .who{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin:0 0 6px}
+.client p{margin:0}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;font-family:var(--body);font-size:15px;padding:11px 14px;
+  border:2px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer;border-radius:2px}
+.opts button:hover,.opts button:focus-visible{border-color:var(--mat)}
+.end{background:var(--card);border:1px dashed var(--cut);padding:18px}
+.end h2{font-family:var(--display);font-size:1.15rem;margin:0 0 8px}
+.end .lost{color:var(--cut-ink);font-weight:700}
+.restart{font-family:var(--mono);font-size:13px;padding:9px 14px;border:2px solid var(--mat);
+  background:var(--mat);color:#fff;cursor:pointer;border-radius:2px;margin-top:12px}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<h1>Practice intake: a guarded client</h1>
+<p class="lead">This client opens up only when they feel heard. Reflect and ask; do not rush to advice or reassurance.</p>
+<p class="note">Practice only — never a substitute for supervised clinical contact.</p>
+
+<div class="trust"><span>Client trust</span><span id="trustPct">40%</span></div>
+<div class="meter"><i id="trustBar"></i></div>
+
+<div id="scene"></div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+// Each turn: client line + options. Options tagged: reflective(+), question(+/0), advice(-), reassure(-)
+var TURNS=[
+  { who:"Client — Maria, 29",
+    line:"I don't really know why I'm here. My sister said I should talk to someone. I'm fine, mostly.",
+    opts:[
+      {t:"reflect", d:2, s:"It sounds like coming here wasn't your idea, and part of you isn't sure you need it."},
+      {t:"advice", d:-2, s:"Well, since you're here, let's set some goals for you to work on this week."},
+      {t:"question", d:1, s:"What made your sister think you should come?"},
+      {t:"reassure", d:-1, s:"Don't worry, lots of people feel that way. You'll be glad you came."}
+    ]},
+  { who:"Client — Maria, 29",
+    line:"She worries too much. I've just been tired. Not sleeping great. It's not a big deal.",
+    opts:[
+      {t:"reflect", d:2, s:"Tired, not sleeping — and it feels like everyone's making more of it than you are."},
+      {t:"advice", d:-2, s:"Poor sleep is serious. You should cut out caffeine and set a fixed bedtime."},
+      {t:"question", d:1, s:"When did the sleep start changing?"},
+      {t:"reassure", d:-1, s:"Sleep problems are totally normal, nothing to be concerned about."}
+    ]},
+  { who:"Client — Maria, 29",
+    line:"...A few months ago. Around when my mom got sick. I've been the one taking care of her.",
+    opts:[
+      {t:"reflect", d:3, s:"So the tiredness started when you took on caring for your mom — that's a lot to carry."},
+      {t:"advice", d:-2, s:"You need to ask other family members to share the caregiving load."},
+      {t:"question", d:1, s:"What does caring for her look like day to day?"},
+      {t:"reassure", d:-1, s:"I'm sure your mom really appreciates everything you do."}
+    ]},
+  { who:"Client — Maria, 29",
+    line:"I guess I haven't really said that out loud before. That it's been hard.",
+    opts:[
+      {t:"reflect", d:3, s:"It's the first time you've let yourself name it — that this has been hard on you."},
+      {t:"advice", d:-2, s:"Okay, here's what we'll do: I want you to schedule time for yourself every day."},
+      {t:"question", d:1, s:"What's been the hardest part for you?"},
+      {t:"reassure", d:-1, s:"You're doing amazing. Everything is going to be okay."}
+    ]}
+];
+var trust=40, step=0, lostAt=-1, log=[];
+function renderTrust(){ $("trustBar").style.width=Math.max(0,Math.min(100,trust))+"%"; $("trustPct").textContent=Math.round(trust)+"%"; }
+function renderTurn(){
+  var T=TURNS[step];
+  var opts=T.opts.slice();
+  // stable shuffle by index parity so it isn't always the same order but is deterministic
+  var order=[0,2,1,3].filter(function(i){return i<opts.length;});
+  var html="<div class='client'><p class='who'>"+T.who+"</p><p>“"+T.line+"”</p></div><div class='opts'>";
+  order.forEach(function(i){ html+="<button type='button' data-i='"+i+"'>"+opts[i].s+"</button>"; });
+  html+="</div>";
+  $("scene").innerHTML=html;
+  Array.prototype.forEach.call($("scene").querySelectorAll("button"),function(b){
+    b.addEventListener("click",function(){ choose(+b.dataset.i); });
+  });
+}
+function choose(i){
+  var opt=TURNS[step].opts[i];
+  trust+=opt.d;
+  log.push({step:step+1, type:opt.t, text:opt.s, delta:opt.d});
+  if(opt.d<0 && lostAt===-1 && trust<40) lostAt=log.length-1;
+  renderTrust();
+  step++;
+  if(step<TURNS.length && trust>0) renderTurn();
+  else end();
+}
+function end(){
+  var closed = trust>=55;
+  var msg = closed
+    ? "Maria stayed with you. By reflecting what she said instead of jumping to fixes, you earned enough trust that she began to name what was really going on."
+    : "Maria pulled back. The session stalled before she disclosed what was underneath — the caregiving strain she'd never said out loud.";
+  var lostLine="";
+  if(lostAt>=0){
+    var L=log[lostAt];
+    lostLine="<p>You lost her at turn "+L.step+", when you "+(L.type==="advice"?"jumped to advice":"offered reassurance")+
+      ": <span class='lost'>“"+L.text+"”</span> She wasn't asking to be fixed or comforted yet — she was testing whether you'd listen.</p>";
+  } else if(!closed){
+    lostLine="<p>No single moment broke it, but too few of your responses reflected what she said, so trust never built.</p>";
+  }
+  $("scene").innerHTML="<div class='end'><h2>"+(closed?"She opened up.":"She stayed guarded.")+"</h2><p>"+msg+"</p>"+lostLine+
+    "<button type='button' class='restart' id='restart'>Try again</button></div>";
+  $("restart").addEventListener("click",function(){ trust=40;step=0;lostAt=-1;log=[];renderTrust();renderTurn(); });
+}
+renderTrust(); renderTurn();
+</script>
+</body>
+</html>

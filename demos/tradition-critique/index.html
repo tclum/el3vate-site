@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where does the AI leave the tradition?</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;--good:#2F6F5E;--bad:#BF2F19;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.55;padding:20px;max-width:820px}
+h1{font-family:var(--display);font-size:1.3rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 16px;font-size:.95rem}
+.cols{display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start}
+h2{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 10px}
+.who{font-family:var(--mono);font-size:11px;color:var(--cut-ink);margin:0 0 8px}
+.arg span.s{display:inline;cursor:pointer;padding:1px 2px;border-radius:2px}
+.arg button.s{font:inherit;text-align:left;background:none;border:none;padding:2px 3px;margin:0;cursor:pointer;
+  color:inherit;border-radius:2px;display:inline}
+.arg button.s:hover{background:#EAEFE9}
+.arg button.s[aria-pressed=true]{background:#FCEBE7;box-shadow:inset 0 -2px 0 var(--cut)}
+.arg button.s.hit{background:#E4F0EA;box-shadow:inset 0 -2px 0 var(--good)}
+.arg button.s.miss{box-shadow:inset 0 -2px 0 var(--bad)}
+.arg button.s.fp{background:#FBEEDD;box-shadow:inset 0 -2px 0 #C6702A}
+.src{background:var(--card);border:1px solid var(--rule);padding:12px 14px;font-size:14px}
+.src blockquote{margin:0 0 10px;padding-left:10px;border-left:3px solid var(--mat);color:#2A3A33}
+.src cite{display:block;font-family:var(--mono);font-size:11px;color:var(--soft);margin-top:3px;font-style:normal}
+.bar{margin:16px 0}
+.run{font-family:var(--mono);font-size:13px;padding:10px 16px;border:2px solid var(--cut-ink);
+  background:var(--cut-ink);color:#fff;cursor:pointer;border-radius:2px}
+.reset{font-family:var(--mono);font-size:13px;padding:10px 14px;border:2px solid var(--rule);
+  background:var(--card);color:var(--ink);cursor:pointer;border-radius:2px;margin-left:8px}
+.result{margin-top:14px;background:var(--card);border:1px dashed var(--cut);padding:14px 16px}
+.result[hidden]{display:none}
+.result .score{font-family:var(--display);font-size:1.3rem;margin:0 0 8px}
+.result ul{margin:8px 0 0;padding-left:18px;font-size:14px}
+.legend{font-family:var(--mono);font-size:11px;color:var(--soft);margin-top:10px}
+.legend b{color:var(--good)} .legend .m{color:var(--bad)} .legend .f{color:#C6702A}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:640px){.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Where does the AI leave the tradition?</h1>
+<p class="lead">An AI was asked to argue a case from within <strong>classical Confucian ethics</strong>. Click the sentences where its argument departs from the primary sources on the right. Then score your reading against the key.</p>
+
+<div class="cols">
+  <div>
+    <h2>The AI's argument</h2>
+    <p class="who">Prompt: “Argue, as classical Confucianism would, whether an adult child should report a father who stole medicine for a sick sibling.”</p>
+    <div class="arg" id="arg"></div>
+    <div class="bar">
+      <button type="button" class="run" id="run">Score my reading</button>
+      <button type="button" class="reset" id="reset">Clear</button>
+    </div>
+    <div class="result" id="result" hidden aria-live="polite"></div>
+    <p class="legend"><b>■ hit</b> (you caught a real departure) · <span class="m">■ missed</span> · <span class="f">■ false alarm</span> (faithful to the source)</p>
+  </div>
+  <div class="src">
+    <h2>Primary sources</h2>
+    <blockquote>“The father conceals for the son, the son conceals for the father — straightness lies therein.”<cite>Analects 13.18</cite></blockquote>
+    <blockquote>Asked what Shun would do if his father killed a man, Mengzi said he would abandon the throne, “secretly carry his father on his back, and flee to the coast.”<cite>Mengzi 7A35</cite></blockquote>
+    <blockquote>Filial piety is “the root of humaneness (ren).”<cite>Analects 1.2</cite></blockquote>
+  </div>
+</div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+// Each sentence: text + departs(true/false) + why
+var SENT=[
+  {t:"In Confucian ethics the child should not report the father, because concealment among kin is itself a form of uprightness.", departs:false,
+   why:"Faithful to Analects 13.18 — 'straightness lies therein.'"},
+  {t:"Filial duty is the root from which humaneness grows, so protecting the father protects the moral order itself.", departs:false,
+   why:"Faithful to Analects 1.2 — filiality as the root of ren."},
+  {t:"Ultimately, though, the child must weigh this against the individual's autonomous right to make their own moral choice free of family pressure.", departs:true,
+   why:"Imports liberal individual autonomy — a modern Western frame absent from the classical texts, which locate the self within role and relation."},
+  {t:"A rational cost-benefit calculation of the harms of the theft versus the harms of reporting should guide the decision.", departs:true,
+   why:"Substitutes utilitarian calculation for the role-based reasoning of the tradition; Confucian ethics reasons from relationship and ritual, not aggregate utility."},
+  {t:"As Mengzi suggests with the example of Shun, the properly filial response can extend even to shielding a father from the law entirely.", departs:false,
+   why:"Faithful to Mengzi 7A35 — Shun carries his father away rather than assist the law."},
+  {t:"In the end each person must simply follow their own conscience and personal values, whatever those may be.", departs:true,
+   why:"Collapses the tradition into individualist value-relativism; classical Confucianism holds that the cultivated affections toward kin are the standard, not idiosyncratic personal values."}
+];
+var arg=$("arg"), state=SENT.map(function(){return false;}), scored=false;
+function build(){
+  arg.innerHTML="";
+  SENT.forEach(function(s,i){
+    var b=document.createElement("button");
+    b.type="button"; b.className="s"; b.textContent=s.t+" ";
+    b.setAttribute("aria-pressed","false");
+    b.setAttribute("aria-label","Sentence "+(i+1)+": "+s.t);
+    b.addEventListener("click",function(){
+      if(scored){ reset(); }
+      state[i]=!state[i];
+      b.setAttribute("aria-pressed", state[i]?"true":"false");
+    });
+    arg.appendChild(b);
+  });
+}
+function score(){
+  scored=true;
+  var hit=0,miss=0,fp=0,total=0;
+  var btns=arg.querySelectorAll("button");
+  SENT.forEach(function(s,i){
+    var b=btns[i]; b.className="s";
+    if(s.departs) total++;
+    if(s.departs && state[i]){ b.classList.add("hit"); hit++; }
+    else if(s.departs && !state[i]){ b.classList.add("miss"); miss++; }
+    else if(!s.departs && state[i]){ b.classList.add("fp"); fp++; }
+  });
+  var items=SENT.map(function(s,i){
+    var tag = s.departs?(state[i]?"caught":"missed"):(state[i]?"false alarm":"correctly left alone");
+    return "<li><strong>Sentence "+(i+1)+"</strong> — "+tag+". "+s.why+"</li>";
+  }).join("");
+  var r=$("result"); r.hidden=false;
+  r.innerHTML="<p class='score'>"+hit+" of "+total+" departures caught"+(fp?", "+fp+" false alarm"+(fp>1?"s":""):"")+"</p><ul>"+items+"</ul>";
+}
+function reset(){
+  scored=false; state=SENT.map(function(){return false;});
+  var btns=arg.querySelectorAll("button");
+  Array.prototype.forEach.call(btns,function(b){b.className="s";b.setAttribute("aria-pressed","false");});
+  $("result").hidden=true; $("result").innerHTML="";
+}
+$("run").addEventListener("click",score);
+$("reset").addEventListener("click",reset);
+build();
+</script>
+</body>
+</html>

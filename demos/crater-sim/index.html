@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impact crater simulator</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.5;padding:20px;max-width:760px}
+h1{font-family:var(--display);font-size:1.35rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 18px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+label{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cut-ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin:12px 0 5px}
+.val{font-family:var(--mono);color:var(--soft);text-transform:none;letter-spacing:0;font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--cut)}
+canvas{width:100%;height:auto;border:1px dashed var(--cut);background:var(--card);margin-top:20px;display:block}
+.read{font-family:var(--mono);font-size:13px;color:#22322C;margin:12px 0 0;background:var(--card);
+  border:1px solid var(--rule);padding:12px 14px}
+.warn{border:1px solid var(--cut);background:#FCEBE7;color:var(--cut-ink);padding:11px 14px;margin-top:12px;
+  font-size:14px}
+.warn[hidden]{display:none}
+.warn ul{margin:6px 0 0;padding-left:20px}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Impact crater simulator</h1>
+<p class="lead">An asteroid hits a surface and leaves a crater. Set the physics and watch the crater profile change. Some settings are physically implausible — the tool flags them but still lets you try.</p>
+
+<div class="grid">
+  <div><label for="L">Impactor diameter <span class="val" id="LV"></span></label>
+    <input type="range" id="L" min="1" max="2000" value="100" step="1" aria-describedby="LV"></div>
+  <div><label for="v">Impact velocity <span class="val" id="vV"></span></label>
+    <input type="range" id="v" min="1" max="72" value="20" step="1" aria-describedby="vV"></div>
+  <div><label for="a">Impact angle from horizontal <span class="val" id="aV"></span></label>
+    <input type="range" id="a" min="5" max="90" value="45" step="1" aria-describedby="aV"></div>
+  <div><label for="g">Surface gravity <span class="val" id="gV"></span></label>
+    <input type="range" id="g" min="1" max="25" value="9.8" step="0.1" aria-describedby="gV"></div>
+</div>
+
+<canvas id="c" width="720" height="260" role="img" aria-label="Cross-section of the resulting crater"></canvas>
+<p class="read" id="read" aria-live="polite"></p>
+<div class="warn" id="warn" hidden aria-live="polite"></div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var cv=$("c"), ctx=cv.getContext("2d");
+var ids=["L","v","a","g"];
+function calc(){
+  var L=+$("L").value, vkm=+$("v").value, adeg=+$("a").value, g=+$("g").value;
+  $("LV").textContent=L+" m";
+  $("vV").textContent=vkm+" km/s";
+  $("aV").textContent=adeg+"°";
+  $("gV").textContent=g.toFixed(1)+" m/s²";
+  var v=vkm*1000, th=adeg*Math.PI/180, vz=v*Math.sin(th);
+  var rhoI=3000, rhoT=2500;
+  // gravity-regime pi-scaling (Holsapple), vertical velocity component
+  var Dt=1.16*Math.pow(rhoI/rhoT,1/3)*Math.pow(L,0.78)*Math.pow(vz,0.44)*Math.pow(g,-0.22);
+  var D=1.25*Dt, depth=0.2*D;
+  $("read").textContent="Final crater diameter ≈ "+Math.round(D).toLocaleString()+" m   ·   depth ≈ "+Math.round(depth).toLocaleString()+" m";
+  draw(D, depth);
+  flag(vkm, adeg, g, L);
+}
+function draw(D, depth){
+  var W=cv.width, H=cv.height, ground=H*0.42, margin=70;
+  ctx.clearRect(0,0,W,H);
+  // ground
+  ctx.fillStyle="#C9A15A"; ctx.fillRect(margin,ground,W-2*margin,H-ground-30);
+  // crater bowl (scaled to fit)
+  var maxW=W-2*margin-20;
+  var s=Math.min(1, maxW/D);
+  var w=D*s, d=Math.min((H-ground-40), depth*s*4);
+  var cx=W/2;
+  ctx.fillStyle="#F3F5F0"; ctx.strokeStyle="#7A5B1E"; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(cx-w/2, ground);
+  ctx.quadraticCurveTo(cx, ground+2*d, cx+w/2, ground);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // axes + labels with units
+  ctx.strokeStyle="#4C5B53"; ctx.lineWidth=1; ctx.fillStyle="#15211C";
+  ctx.font="12px ui-monospace, Menlo, monospace";
+  // x axis
+  ctx.beginPath(); ctx.moveTo(margin, H-24); ctx.lineTo(W-margin, H-24); ctx.stroke();
+  ctx.fillText("horizontal distance (m) — crater width ≈ "+Math.round(D).toLocaleString()+" m", margin, H-8);
+  // diameter caliper
+  ctx.strokeStyle="#BF2F19";
+  ctx.beginPath(); ctx.moveTo(cx-w/2, ground-8); ctx.lineTo(cx+w/2, ground-8); ctx.stroke();
+  ctx.fillStyle="#BF2F19";
+  ctx.fillText("← "+Math.round(D).toLocaleString()+" m →", cx-40, ground-12);
+  // y axis label
+  ctx.save(); ctx.translate(20, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle="#15211C"; ctx.fillText("depth (m)", -30, 0); ctx.restore();
+}
+function flag(vkm, adeg, g, L){
+  var msgs=[];
+  if(vkm<11) msgs.push("Velocity below ~11 km/s is slower than typical planetary impact speeds (real impactors arrive at 11–72 km/s). The crater is understated here.");
+  if(adeg<10) msgs.push("At angles below ~10° real impacts make elongated craters with downrange ejecta — this symmetric bowl model does not capture that geometry, so the number is wrong even though it is finite.");
+  if(L>1200 && vkm>40) msgs.push("A very large, very fast impactor enters the complex-crater regime (central peaks, terraces). This tool only uses gravity-regime scaling, so it is extrapolating past its validity.");
+  if(g<=1.5 && L<20) msgs.push("Low gravity with a tiny impactor enters the strength regime, where the target's cohesion — not gravity — sets the crater size. That physics is not modeled here.");
+  var w=$("warn");
+  if(msgs.length){
+    w.hidden=false;
+    w.innerHTML="<strong>Physically implausible for this model — shown anyway:</strong><ul>"+
+      msgs.map(function(m){return "<li>"+m+"</li>";}).join("")+"</ul>";
+  } else { w.hidden=true; w.innerHTML=""; }
+}
+ids.forEach(function(id){$(id).addEventListener("input",calc);});
+calc();
+</script>
+</body>
+</html>

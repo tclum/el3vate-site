@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zoning tradeoffs — what a building means for the block</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.55;padding:20px;max-width:760px}
+h1{font-family:var(--display);font-size:1.35rem;letter-spacing:-.01em;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 20px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 26px}
+.ctrl{margin:2px 0 8px}
+label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--cut-ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin:10px 0 5px}
+.val{font-family:var(--mono);color:var(--soft);text-transform:none;letter-spacing:0;font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--cut)}
+.out{background:var(--card);border:1px dashed var(--cut);padding:18px 20px;margin-top:22px}
+.out h2{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--soft);margin:0 0 12px}
+.row{display:grid;grid-template-columns:130px 1fr;gap:14px;padding:9px 0;border-top:1px solid var(--rule)}
+.row:first-of-type{border-top:0}
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cut-ink)}
+.v{font-size:15px;color:#2A3A33}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr;gap:2px}}
+</style>
+</head>
+<body>
+<h1>What this building would mean for the block</h1>
+<p class="lead">Move the sliders. Every number turns into something a neighbor would actually notice — no jargon.</p>
+
+<div class="grid">
+  <div class="ctrl"><label for="h">Building height <span class="val" id="hV"></span></label>
+    <input type="range" id="h" min="3" max="40" value="12" aria-describedby="hV"></div>
+  <div class="ctrl"><label for="u">Number of homes <span class="val" id="uV"></span></label>
+    <input type="range" id="u" min="10" max="400" value="120" step="5" aria-describedby="uV"></div>
+  <div class="ctrl"><label for="p">Parking spots per home <span class="val" id="pV"></span></label>
+    <input type="range" id="p" min="0" max="2" value="1" step="0.25" aria-describedby="pV"></div>
+  <div class="ctrl"><label for="o">Kept as open ground <span class="val" id="oV"></span></label>
+    <input type="range" id="o" min="0" max="60" value="15" step="5" aria-describedby="oV"></div>
+</div>
+
+<div class="out" aria-live="polite">
+  <h2>What a resident would notice</h2>
+  <div class="row"><span class="k">Sunlight</span><span class="v" id="rShadow"></span></div>
+  <div class="row"><span class="k">Traffic</span><span class="v" id="rTraffic"></span></div>
+  <div class="row"><span class="k">Who can live here</span><span class="v" id="rAfford"></span></div>
+  <div class="row"><span class="k">What gets torn down</span><span class="v" id="rDemo"></span></div>
+</div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var inputs=["h","u","p","o"].map($);
+function update(){
+  var h=+$("h").value, u=+$("u").value, p=+$("p").value, o=+$("o").value;
+  $("hV").textContent=h+" floors (about "+(h*11)+" ft)";
+  $("uV").textContent=u+" homes";
+  $("pV").textContent=p+" per home";
+  $("oV").textContent=o+"%";
+  $("rShadow").textContent = h<8
+    ? "Barely changes the light next door — you would not notice a new shadow."
+    : h<20
+    ? "A new afternoon shadow reaches the sidewalk and the closest homes for a few hours."
+    : "A long shadow crosses the street for much of the day; some yards lose direct sun entirely.";
+  var cars=Math.round(u*p);
+  $("rTraffic").textContent = cars<50
+    ? "About "+cars+" more cars — a light trickle, hard to notice."
+    : cars<200
+    ? "About "+cars+" more cars coming and going; mornings and the school run get busier."
+    : "About "+cars+" more cars means real backups at the driveway and the corner.";
+  $("rAfford").textContent = p>=1.5
+    ? "Every home pays for a parking spot, so rents run higher — this is built for people with cars and money."
+    : p<=0.5
+    ? "Few parking spots keeps costs down; friendlier to people who take the bus, bike, or walk."
+    : "Middling costs — some renters can afford it, some are priced out.";
+  $("rDemo").textContent = o>40
+    ? "Most of the lot stays as yard, trees, and walkways; little is paved over."
+    : o>15
+    ? "A courtyard or lawn survives, but much of the lot becomes building and pavement."
+    : "Almost the whole lot is built on; existing trees, low buildings, or parking there get torn down.";
+}
+inputs.forEach(function(el){el.addEventListener("input",update);});
+update();
+</script>
+</body>
+</html>

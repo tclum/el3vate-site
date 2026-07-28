@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gene variant explainer</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;--good:#2F6F5E;--bad:#BF2F19;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.55;padding:20px;max-width:760px}
+h1{font-family:var(--display);font-size:1.35rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 16px;font-size:.95rem}
+.defn{border-bottom:2px dotted var(--cut-ink);cursor:help}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.controls button{font-family:var(--mono);font-size:12px;padding:8px 12px;border:2px solid var(--rule);
+  background:var(--card);color:var(--ink);cursor:pointer;border-radius:2px}
+.controls button[aria-pressed=true]{border-color:var(--ink);font-weight:700;background:#EAEFE9}
+.seq{font-family:var(--mono);font-size:15px;letter-spacing:.06em;background:var(--card);
+  border:1px solid var(--rule);padding:14px;overflow-x:auto;white-space:nowrap}
+.codon{padding:2px 3px;border-radius:2px}
+.codon.changed{background:#FCEBE7;color:var(--cut-ink);font-weight:700;outline:1px solid var(--cut)}
+.chain{font-family:var(--mono);font-size:14px;margin-top:10px;color:#22322C;overflow-x:auto;white-space:nowrap}
+.out{background:var(--card);border:1px dashed var(--cut);padding:16px 18px;margin-top:18px}
+.out .eff{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px}
+.out .eff.g{color:var(--good)} .out .eff.b{color:var(--bad)}
+.out p{margin:6px 0 0}
+.gloss{margin-top:18px;font-size:13.5px;color:var(--soft);background:var(--card);border:1px solid var(--rule);padding:12px 14px}
+.gloss dt{font-weight:700;color:var(--ink);margin-top:8px}
+.gloss dt:first-child{margin-top:0}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<h1>What one change to a gene actually does</h1>
+<p class="lead">Below is a short stretch of <span class="defn" title="The working copy of a gene that the cell reads to build a protein.">messenger RNA</span> — the recipe a cell reads to build a protein. Switch on a variant and watch the recipe, the protein, and the outcome change.</p>
+
+<div class="controls" role="group" aria-label="Choose a variant to apply">
+  <button type="button" data-k="wt" aria-pressed="true">Healthy version</button>
+  <button type="button" data-k="silent" aria-pressed="false">Silent change</button>
+  <button type="button" data-k="missense" aria-pressed="false">Missense change</button>
+  <button type="button" data-k="nonsense" aria-pressed="false">Nonsense change</button>
+  <button type="button" data-k="frameshift" aria-pressed="false">Deletion (frameshift)</button>
+</div>
+
+<div class="seq" id="seq" aria-label="messenger RNA sequence, read in three-letter codons"></div>
+<div class="chain" id="chain" aria-hidden="false"></div>
+
+<div class="out" aria-live="polite">
+  <p class="eff" id="eff"></p>
+  <p id="explain"></p>
+</div>
+
+<dl class="gloss">
+  <dt>Nucleotide</dt><dd>A single letter of the genetic code — A, U, G, or C in RNA.</dd>
+  <dt>Codon</dt><dd>A group of three nucleotides. Each codon names one amino acid, the building block of a protein.</dd>
+  <dt>Amino acid</dt><dd>A protein building block. A chain of them, folded up, is a working protein.</dd>
+</dl>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+// canned mRNA, read 5' to 3'; starts at AUG (start codon)
+var WT="AUG GGA CCU UCA GUU AAA CAU UGG".split(" ");
+var CODON={
+  AUG:"Met",GGA:"Gly",GGG:"Gly",CCU:"Pro",CCC:"Pro",UCA:"Ser",UCG:"Ser",GUU:"Val",GUC:"Val",
+  AAA:"Lys",CAU:"His",UGG:"Trp",UAA:"STOP",UAG:"STOP",UGA:"STOP",GCU:"Ala",CGU:"Arg"
+};
+function translate(codons){
+  var aa=[]; for(var i=0;i<codons.length;i++){ var a=CODON[codons[i]]||"?"; aa.push(a); if(a==="STOP")break; } return aa;
+}
+var VARIANTS={
+  wt:{codons:WT.slice(), change:-1,
+      eff:["No change","g"], text:"This is the healthy recipe. The cell reads it three letters at a time and links the named building blocks into a working protein."},
+  silent:{codons:function(){var c=WT.slice();c[1]="GGG";return c;}(), change:1,
+      eff:["Silent change","g"], text:"One letter changed (GGA to GGG), but both codons still name the same building block, Glycine. The protein is identical — the change is invisible. Confidently calling every DNA change 'a mutation that causes disease' is exactly the kind of overstatement to watch for."},
+  missense:{codons:function(){var c=WT.slice();c[5]="GCU";return c;}(), change:5,
+      eff:["Missense change","b"], text:"One codon now reads GCU (Alanine) instead of AAA (Lysine). A single building block is swapped. Depending on where it sits, the protein may work a little worse, a lot worse, or fine — the effect is not automatic, and a tool that states the outcome with certainty is guessing."},
+  nonsense:{codons:function(){var c=WT.slice();c[5]="UAA";return c;}(), change:5,
+      eff:["Nonsense change","b"], text:"The codon now reads UAA, a STOP signal. The cell stops building the protein early, so everything after this point is missing. A short, truncated protein usually cannot do its job."},
+  frameshift:{codons:function(){
+        // delete first nucleotide of codon 3, re-frame the rest
+        var flat=WT.join("").split("");
+        flat.splice(6,1); // remove one letter -> shifts the reading frame
+        var c=[]; for(var i=0;i+3<=flat.length;i+=3)c.push(flat.slice(i,i+3).join(""));
+        return c;
+      }(), change:2,
+      eff:["Deletion — frameshift","b"], text:"Removing a single letter shifts how every later group of three is read, so all the building blocks downstream are wrong. This is why a deletion is usually far more damaging than swapping one letter — the whole rest of the recipe is scrambled."}
+};
+function render(key){
+  var vd=VARIANTS[key];
+  var codons=vd.codons;
+  $("seq").innerHTML=codons.map(function(c,i){
+    return "<span class='codon"+(i===vd.change?" changed":"")+"'>"+c+"</span>";
+  }).join(" ");
+  var wtAA=translate(WT), aa=translate(codons);
+  $("chain").textContent="Protein: "+aa.join(" - ");
+  var e=$("eff"); e.textContent=vd.eff[0]; e.className="eff "+vd.eff[1];
+  $("explain").textContent=vd.text;
+}
+Array.prototype.forEach.call(document.querySelectorAll(".controls button"),function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".controls button"),function(x){
+      x.setAttribute("aria-pressed", x===b?"true":"false");
+    });
+    render(b.dataset.k);
+  });
+});
+render("wt");
+</script>
+</body>
+</html>

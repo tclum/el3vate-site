@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break-even model</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;--good:#2F6F5E;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.5;padding:20px;max-width:760px}
+h1{font-family:var(--display);font-size:1.35rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 18px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+label{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cut-ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin:12px 0 5px}
+.val{font-family:var(--mono);color:var(--soft);text-transform:none;letter-spacing:0;font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--cut)}
+.headline{background:var(--card);border:1px dashed var(--cut);padding:18px 20px;margin-top:22px}
+.headline .be{font-family:var(--display);font-size:1.9rem;line-height:1.1;margin:2px 0 2px}
+.headline .sub{font-family:var(--mono);font-size:12.5px;color:var(--soft)}
+.profit{font-family:var(--mono);font-size:15px;margin-top:12px}
+.profit b.g{color:var(--good)} .profit b.r{color:var(--cut-ink)}
+.bar{position:relative;height:34px;background:#EAEFE9;border:1px solid var(--rule);margin-top:14px;border-radius:2px;overflow:hidden}
+.bar .fill{position:absolute;top:0;left:0;bottom:0;background:#D9E4DC}
+.bar .mark{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--cut)}
+.bar .mlab{position:absolute;top:-20px;transform:translateX(-50%);font-family:var(--mono);font-size:10.5px;color:var(--cut-ink);white-space:nowrap}
+.assume{background:var(--card);border:1px solid var(--rule);padding:14px 16px 14px 34px;margin-top:22px}
+.assume h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 8px;margin-left:-18px}
+.assume li{font-size:14px;margin:6px 0;color:#2A3A33}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Break-even model: a small food stall</h1>
+<p class="lead">Move the sliders and watch where the stall stops losing money. The break-even point is the number that matters — the assumptions underneath it are listed in full below.</p>
+
+<div class="grid">
+  <div><label for="fixed">Fixed cost / month <span class="val" id="fixedV"></span></label>
+    <input type="range" id="fixed" min="500" max="12000" value="4000" step="100"></div>
+  <div><label for="price">Price per item <span class="val" id="priceV"></span></label>
+    <input type="range" id="price" min="2" max="30" value="9" step="0.5"></div>
+  <div><label for="varc">Cost to make each item <span class="val" id="varcV"></span></label>
+    <input type="range" id="varc" min="0.5" max="20" value="3.5" step="0.5"></div>
+  <div><label for="vol">Items you expect to sell / month <span class="val" id="volV"></span></label>
+    <input type="range" id="vol" min="0" max="3000" value="900" step="10"></div>
+</div>
+
+<div class="headline" aria-live="polite">
+  <div class="sub">Break-even</div>
+  <div class="be" id="be"></div>
+  <div class="sub" id="beNote"></div>
+  <div class="profit" id="profit"></div>
+  <div class="bar" aria-hidden="true">
+    <div class="fill" id="fill"></div>
+    <div class="mark" id="mark"></div>
+    <div class="mlab" id="mlab">break-even</div>
+  </div>
+</div>
+
+<div class="assume">
+  <h2>Every assumption this model makes</h2>
+  <ul id="assumptions"></ul>
+</div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var money=function(n){return "$"+Math.round(n).toLocaleString();};
+var ids=["fixed","price","varc","vol"];
+function calc(){
+  var fixed=+$("fixed").value, price=+$("price").value, varc=+$("varc").value, vol=+$("vol").value;
+  $("fixedV").textContent=money(fixed);
+  $("priceV").textContent="$"+price.toFixed(2);
+  $("varcV").textContent="$"+varc.toFixed(2);
+  $("volV").textContent=vol.toLocaleString();
+  var margin=price-varc;
+  var be = margin>0 ? Math.ceil(fixed/margin) : Infinity;
+  if(margin<=0){
+    $("be").textContent="Never";
+    $("beNote").textContent="Each item costs as much (or more) to make as it sells for, so more sales only lose more money.";
+  } else {
+    $("be").textContent=be.toLocaleString()+" items / month";
+    $("beNote").textContent="At $"+margin.toFixed(2)+" profit per item, you cover "+money(fixed)+" in fixed cost after "+be.toLocaleString()+" items.";
+  }
+  var profit=vol*margin-fixed;
+  var p=$("profit");
+  if(margin<=0){ p.innerHTML="At "+vol.toLocaleString()+" items you lose <b class='r'>"+money(-profit)+"</b> a month."; }
+  else if(profit>=0){ p.innerHTML="At "+vol.toLocaleString()+" items you make <b class='g'>"+money(profit)+"</b> profit a month."; }
+  else { p.innerHTML="At "+vol.toLocaleString()+" items you still lose <b class='r'>"+money(-profit)+"</b> a month — "+(be-vol).toLocaleString()+" short of break-even."; }
+  // bar: scale from 0 to max(vol, be)*1.2
+  var span = Math.max(vol, isFinite(be)?be:vol, 1)*1.25;
+  $("fill").style.width=Math.min(100, vol/span*100)+"%";
+  if(isFinite(be)){
+    var pct=Math.min(100, be/span*100);
+    $("mark").style.left=pct+"%"; $("mlab").style.left=pct+"%"; $("mark").style.display=""; $("mlab").style.display="";
+  } else { $("mark").style.display="none"; $("mlab").style.display="none"; }
+  assumptions(fixed, price, varc, vol, margin);
+}
+function assumptions(fixed, price, varc, vol, margin){
+  var a=[
+    "Fixed cost of "+money(fixed)+" (rent, permits, equipment) is the same every month, whether you sell 0 items or 3,000.",
+    "Every item sells at exactly $"+price.toFixed(2)+" — no discounts, no bulk deals, no price changes.",
+    "Every item costs exactly $"+varc.toFixed(2)+" to make — ingredient and packaging prices never move.",
+    "Profit per item is therefore a flat $"+margin.toFixed(2)+", the same for the first item and the thousandth.",
+    "Expected sales of "+vol.toLocaleString()+"/month are steady — no slow months, holidays, or weather.",
+    "Your own time is unpaid; labor is not counted as a cost here.",
+    "There are no taxes, spoilage, or unsold inventory in this model."
+  ];
+  $("assumptions").innerHTML=a.map(function(x){return "<li>"+x+"</li>";}).join("");
+}
+ids.forEach(function(id){$(id).addEventListener("input",calc);});
+calc();
+</script>
+</body>
+</html>

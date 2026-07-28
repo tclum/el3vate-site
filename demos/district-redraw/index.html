@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redraw the districts</title>
+<style>
+:root{
+  --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--ink:#15211C;--soft:#4C5B53;
+  --cut:#DE3F26;--cut-ink:#BF2F19;--rule:#D6DCD4;
+  --dA:#2F6F5E;--dB:#C6702A;--dC:#5A5AA6;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.5;padding:20px;max-width:760px}
+h1{font-family:var(--display);font-size:1.35rem;margin:0 0 4px}
+.lead{color:var(--soft);margin:0 0 14px;font-size:.95rem}
+.how{font-family:var(--mono);font-size:11.5px;letter-spacing:.03em;color:var(--soft);
+  background:var(--card);border:1px solid var(--rule);padding:10px 12px;margin:0 0 16px}
+.brush{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.brush button{font-family:var(--mono);font-size:12px;padding:8px 12px;border:2px solid var(--rule);
+  background:var(--card);color:var(--ink);cursor:pointer;border-radius:2px}
+.brush button[aria-pressed=true]{border-color:var(--ink);font-weight:700}
+.dot{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.wrap{display:grid;grid-template-columns:1fr 220px;gap:20px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.cell{aspect-ratio:1;border:none;color:#fff;font-family:var(--mono);font-size:12px;cursor:pointer;
+  border-radius:2px;position:relative}
+.cell:focus-visible{outline:3px solid var(--cut);outline-offset:2px;z-index:2}
+.panel{background:var(--card);border:1px dashed var(--cut);padding:14px 16px}
+.panel h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 10px}
+.stat{padding:8px 0;border-top:1px solid var(--rule);font-size:14px}
+.stat:first-of-type{border-top:0}
+.dev{font-family:var(--mono);font-weight:700}
+.dev.bad{color:var(--cut-ink)}
+.dev.ok{color:var(--dA)}
+.score{margin-top:12px;font-family:var(--mono);font-size:13px;color:#22322C}
+:focus-visible{outline:2px solid var(--cut);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:600px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Redraw the districts</h1>
+<p class="lead">Assign each precinct to a district. Keep every district within ±5% of equal population — the readout turns red when you break it.</p>
+<p class="how">Pick a district below, then click or drag across precincts to assign them. Keyboard: Tab to a precinct and press <strong>1</strong>, <strong>2</strong>, or <strong>3</strong> to move it to district A, B, or C.</p>
+
+<div class="brush" role="group" aria-label="Choose which district to assign">
+  <button type="button" data-d="0" aria-pressed="true"><span class="dot" style="background:var(--dA)"></span>District A (press 1)</button>
+  <button type="button" data-d="1" aria-pressed="false"><span class="dot" style="background:var(--dB)"></span>District B (press 2)</button>
+  <button type="button" data-d="2" aria-pressed="false"><span class="dot" style="background:var(--dC)"></span>District C (press 3)</button>
+</div>
+
+<div class="wrap">
+  <div class="grid" id="grid" role="group" aria-label="Precinct map, 6 by 6"></div>
+  <div class="panel" aria-live="polite">
+    <h2>Population balance</h2>
+    <div class="stat">District A <span class="dev" id="devA"></span><br><span id="popA" class="val"></span></div>
+    <div class="stat">District B <span class="dev" id="devB"></span><br><span id="popB" class="val"></span></div>
+    <div class="stat">District C <span class="dev" id="devC"></span><br><span id="popC" class="val"></span></div>
+    <div class="score" id="score"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var N=6, TOTAL=N*N;
+var COLORS=["#2F6F5E","#C6702A","#5A5AA6"], NAMES=["A","B","C"];
+// canned precinct populations (deterministic, uneven like real precincts)
+var pops=[], seed=7;
+for(var i=0;i<TOTAL;i++){ seed=(seed*1103515245+12345)&0x7fffffff; pops.push(900+(seed%1200)); }
+// initial assignment: three vertical bands
+var dist=[];
+for(var r=0;r<N;r++)for(var col=0;col<N;col++){ dist.push(col<2?0:col<4?1:2); }
+var brush=0, painting=false;
+var grid=$("grid"), cells=[];
+
+function build(){
+  for(var i=0;i<TOTAL;i++){
+    (function(i){
+      var b=document.createElement("button");
+      b.type="button"; b.className="cell"; b.dataset.i=i;
+      b.setAttribute("role","gridcell");
+      b.addEventListener("mousedown",function(e){painting=true;assign(i,brush);e.preventDefault();});
+      b.addEventListener("mouseenter",function(){if(painting)assign(i,brush);});
+      b.addEventListener("click",function(){assign(i,brush);});
+      b.addEventListener("keydown",function(e){
+        if(e.key==="1"){assign(i,0);e.preventDefault();}
+        else if(e.key==="2"){assign(i,1);e.preventDefault();}
+        else if(e.key==="3"){assign(i,2);e.preventDefault();}
+      });
+      grid.appendChild(b); cells.push(b);
+    })(i);
+  }
+  document.addEventListener("mouseup",function(){painting=false;});
+  paint(); recompute();
+}
+function assign(i,d){ if(dist[i]!==d){ dist[i]=d; paint(); recompute(); } }
+function paint(){
+  for(var i=0;i<TOTAL;i++){
+    cells[i].style.background=COLORS[dist[i]];
+    cells[i].setAttribute("aria-label","Precinct "+(i+1)+", population "+pops[i].toLocaleString()+", district "+NAMES[dist[i]]);
+    cells[i].textContent=NAMES[dist[i]];
+  }
+}
+function recompute(){
+  var sum=[0,0,0], cnt=[0,0,0], grand=0;
+  for(var i=0;i<TOTAL;i++){ sum[dist[i]]+=pops[i]; cnt[dist[i]]++; grand+=pops[i]; }
+  var ideal=grand/3;
+  ["A","B","C"].forEach(function(nm,d){
+    $("pop"+nm).textContent=sum[d].toLocaleString()+" people · "+cnt[d]+" precincts";
+    var dev = cnt[d]===0 ? 100 : ((sum[d]-ideal)/ideal*100);
+    var el=$("dev"+nm);
+    el.textContent=(dev>=0?"+":"")+dev.toFixed(1)+"%";
+    el.className="dev "+(Math.abs(dev)>5?"bad":"ok");
+  });
+  $("score").textContent="Compactness: "+compactness()+"  (higher is tidier)";
+}
+function compactness(){
+  // fraction of shared edges that fall INSIDE a district (not on a boundary)
+  var internal=0, total=0;
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var i=r*N+c;
+    if(c<N-1){ total++; if(dist[i]===dist[i+1])internal++; }
+    if(r<N-1){ total++; if(dist[i]===dist[i+N])internal++; }
+  }
+  return Math.round(internal/total*100)+"%";
+}
+Array.prototype.forEach.call(document.querySelectorAll(".brush button"),function(b){
+  b.addEventListener("click",function(){
+    brush=+b.dataset.d;
+    Array.prototype.forEach.call(document.querySelectorAll(".brush button"),function(x){
+      x.setAttribute("aria-pressed", x===b ? "true":"false");
+    });
+  });
+});
+build();
+</script>
+</body>
+</html>
