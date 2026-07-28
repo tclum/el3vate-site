@@ -16,6 +16,15 @@ const { execSync } = require('child_process');
 const SITE_URL = 'https://el3vate.vercel.app';
 const FEEDBACK_EMAIL = 'tclum@hawaii.edu';
 
+// The Day 10 challenge, in one sentence, for the closing card. Nothing in the
+// repo or either brief records what it is, so this was written to follow from
+// the session: it asks for the one artifact the whole site is built around — a
+// real model output with the error found in it. If Tim has a different
+// challenge, replace this one string. See BLOCKERS.md.
+const DAY10_CHALLENGE =
+  'Before Day 10: run one starter prompt from your own discipline’s page against your own course material, ' +
+  'and bring back the place where the model was confidently wrong.';
+
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT = path.join(ROOT, 'content');
 const DEMOS = path.join(ROOT, 'demos');
@@ -225,6 +234,11 @@ table.rub td.w{font-family:var(--mono);white-space:nowrap;color:var(--ink)}
 .replaces .rg{display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px}
 .replaces .rg div{border-left:3px solid var(--rule);padding-left:12px}
 .replaces .rg .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cut-ink)}
+
+/* phase 11: feedback link */
+.fb{display:inline-block;font-family:var(--mono);font-size:13px;letter-spacing:.04em;
+  background:var(--ink);color:#F3F5F0;text-decoration:none;padding:12px 18px;border-radius:2px}
+.fb:hover,.fb:focus-visible{background:var(--cut-ink);color:#FFFFFF}
 
 /* phase 7: unverified-claim marker */
 .unv{background:#FBEED9;color:#15211C;box-shadow:inset 0 -2px 0 #7A3E0B;padding:1px 3px}
@@ -587,6 +601,7 @@ ${jumpMenu(all, '../')}
   ${sectionScales(d)}
   ${sectionRelated(d, bySlug)}
   ${sectionLiveBuild(d)}
+  ${sectionFeedback(d)}
   <p style="margin-top:26px"><a href="handout.md">Download the &ldquo;steal this&rdquo; handout (Markdown) &rarr;</a></p>
 </div></main>
 
@@ -759,6 +774,97 @@ ${STAMP}
 <body><div class="sheet">
 ${inner}
 </div></body>
+</html>
+`;
+}
+
+// ============================================================
+// phase 11 — session-day artifacts
+// ============================================================
+
+// Feedback capture: a mailto with the discipline in the subject, so replies
+// sort themselves, and a body that asks the two questions worth asking. No
+// backend, no form service, nothing to keep running after Wednesday.
+function feedbackHref(d) {
+  const subject = `EL3vate Day 8 — ${d.name}`;
+  const body = [
+    `Discipline: ${d.name}`,
+    `Page: ${SITE_URL}/${d.slug}/index.html`,
+    '',
+    'What I tried:',
+    '',
+    '',
+    'What happened — especially anything the model got wrong:',
+    '',
+    '',
+    'What I would need before I could run this with students:',
+    '',
+  ].join('\n');
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function sectionFeedback(d) {
+  return `<section class="sec" id="feedback">
+    <p class="sec__label">Tell us what happened</p>
+    <h2>Run it, then say how it went</h2>
+    <p>If you try this &mdash; the 90-minute version, the prompt, any part of it &mdash; send back what you tried and
+    what happened, especially anywhere the model was confidently wrong. That is the material the next session is
+    built from.</p>
+    <p><a class="fb" href="${escAttr(feedbackHref(d))}">Email feedback on ${esc(d.name)} &rarr;</a></p>
+    <p class="demonote">Opens a draft in your mail client, already addressed and titled. No form, no account, nothing to sign up for.</p>
+  </section>`;
+}
+
+// The closing card: one full-screen slide to share at 1:00. Self-contained and
+// offline for the same reason the presenter page is — it is shown from the
+// front of a room on conference wifi.
+function renderClosingCard(qrSvg) {
+  return `<!DOCTYPE html>
+${STAMP}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EL3vate 2026 · Day 8 · Closing card</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#0D211B;color:#EAF0EA;display:flex;align-items:center;justify-content:center;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:4vmin}
+.card{width:100%;max-width:1500px;display:grid;grid-template-columns:1fr auto;gap:6vmin;align-items:center}
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(11px,1.5vmin,17px);
+  letter-spacing:.24em;text-transform:uppercase;color:#7FB79B;margin:0 0 3vmin}
+h1{font-size:clamp(2rem,6.4vmin,5.2rem);line-height:1.02;letter-spacing:-.025em;margin:0 0 3vmin;max-width:20ch}
+h1 em{font-style:normal;color:#FF6A4D}
+.chal{font-size:clamp(1rem,2.5vmin,2rem);line-height:1.35;color:#D7E4DA;margin:0 0 4vmin;max-width:44ch;
+  border-left:.6vmin solid #DE3F26;padding-left:2.4vmin}
+.url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(1.1rem,3.4vmin,2.9rem);
+  color:#fff;word-break:break-all;margin:0}
+.urll{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(10px,1.4vmin,15px);
+  letter-spacing:.2em;text-transform:uppercase;color:#7FB79B;margin:0 0 1vmin}
+.qr{width:min(38vmin,420px);height:min(38vmin,420px);background:#fff;padding:2vmin;border-radius:1vmin}
+.qr svg{display:block;width:100%;height:100%}
+.foot{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(10px,1.4vmin,15px);
+  color:#6FA089;margin:3vmin 0 0}
+@media (max-width:900px),(orientation:portrait){
+  .card{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .chal{border-left:0;border-top:.6vmin solid #DE3F26;padding:2.4vmin 0 0;text-align:left}
+}
+</style>
+</head>
+<body>
+<main class="card">
+  <div>
+    <p class="eyebrow">EL3vate 2026 &middot; Day 8 &middot; 29 July</p>
+    <h1>Prototyping <em>solutions</em></h1>
+    <p class="chal">${esc(DAY10_CHALLENGE)}</p>
+    <p class="urll">All fifteen assignments, demos and handouts</p>
+    <p class="url">${esc(SITE_URL)}</p>
+    <p class="foot">Tim Lum &middot; PACE &middot; Shidler College of Business &middot; University of Hawai&#699;i at M&#257;noa</p>
+  </div>
+  <div class="qr">${qrSvg}</div>
+</main>
+</body>
 </html>
 `;
 }
@@ -1153,7 +1259,10 @@ function renderPresenter(all, bySlug) {
   <h2>If everything breaks</h2>
   <p class="note">The whole site is static. Nothing on it needs a server, an account or a key. Fallbacks in order:
   the demo tabs above &rarr; the fallback stills on this page &rarr; <a href="../all-handouts.html">all-handouts.html</a>
-  (46 pages, every assignment) &rarr; the printed handouts.</p>
+  (46 pages, every assignment) &rarr; the printed handouts. At 1:00, share
+  <a href="../closing-card.html" target="_blank" rel="noopener">closing-card.html</a> full-screen &mdash; the URL,
+  the QR and the Day 10 challenge on one slide. Every discipline page also carries a feedback link that opens a
+  pre-addressed mail draft.</p>
 </div></section>
 </main>
 
@@ -1266,6 +1375,13 @@ budget and three sizes.</p>
 
   // demos
   copyDir(DEMOS, path.join(DIST, 'demos'));
+
+  // session-day artifacts: the standalone QR (static SVG, no script, no
+  // dependency) and the full-screen closing card
+  const qr = loadAsset('qr.svg');
+  if (!qr) throw new Error('assets/qr.svg missing — run `node src/qr.js`');
+  fs.writeFileSync(path.join(DIST, 'qr.svg'), qr);
+  fs.writeFileSync(path.join(DIST, 'closing-card.html'), renderClosingCard(qr.toString('utf8')));
 
   // presenter kit — linked from nowhere on the public site, noindex, fully offline
   fs.mkdirSync(path.join(DIST, 'presenter'), { recursive: true });

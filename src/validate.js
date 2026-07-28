@@ -20,6 +20,16 @@ function loadDocs(dir) {
     .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')))
     .sort((a, b) => a.part - b.part);
 }
+// SITE_URL / FEEDBACK_EMAIL are defined once, at the top of src/build.js. Read
+// them from there rather than restating them here, so the gate cannot pass by
+// agreeing with a stale copy of the constant it is supposed to be checking.
+function buildConstant(name) {
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8');
+  const m = src.match(new RegExp(`^const ${name}\\s*=\\s*'([^']+)'`, 'm'));
+  if (!m) throw new Error(`could not find \`const ${name} = ...\` in src/build.js`);
+  return m[1];
+}
+
 function loadClaims() {
   const p = path.join(CONTENT, 'claims.json');
   if (!fs.existsSync(p)) return null;
@@ -400,6 +410,72 @@ function presenterGate(distDir, docs) {
   return { pass: problems.length === 0, problems, stills, linked: uniqLinked.length, kb: (html.length / 1024).toFixed(0) };
 }
 
+// ---------- GATE 10: session-day artifacts (phase 11) ----------
+// The QR, the closing card and the feedback links all encode the same two
+// constants. The failure that matters is a silent one: a QR or a card that
+// points at a hostname frozen to a single deployment, which works when it is
+// tested and is dead the next time the site ships. That is checked explicitly
+// across all of dist/, not just on the card.
+const DEPLOY_HOSTNAME = /\b[a-z0-9-]*-[a-z0-9]{7,}-[a-z0-9-]+\.vercel\.app/i;
+
+function sessionGate(distDir, docs, siteUrl, feedbackEmail) {
+  const problems = [];
+
+  // (a) the standalone QR
+  const qrPath = path.join(distDir, 'qr.svg');
+  if (!fs.existsSync(qrPath)) problems.push('dist/qr.svg not found');
+  else {
+    const qr = fs.readFileSync(qrPath, 'utf8');
+    if (!/^<svg[^>]*viewBox="0 0 \d+ \d+"/.test(qr.trim())) problems.push('dist/qr.svg is not an SVG with a viewBox');
+    if (/<script/i.test(qr)) problems.push('dist/qr.svg contains a script — the runtime output must be static');
+    const meta = path.join(ROOT, 'assets', 'qr.json');
+    if (!fs.existsSync(meta)) problems.push('assets/qr.json not found — cannot confirm which URL the QR encodes');
+    else {
+      const enc = JSON.parse(fs.readFileSync(meta, 'utf8')).url;
+      if (enc !== siteUrl) problems.push(`the QR encodes ${enc} but SITE_URL is ${siteUrl}`);
+    }
+  }
+
+  // (b) the closing card
+  const card = path.join(distDir, 'closing-card.html');
+  if (!fs.existsSync(card)) problems.push('dist/closing-card.html not found');
+  else {
+    const html = fs.readFileSync(card, 'utf8');
+    if (!html.includes(siteUrl)) problems.push('closing card does not show SITE_URL');
+    if (!/<svg[^>]*viewBox="0 0 \d+ \d+"/.test(html)) problems.push('closing card has no inline QR');
+    for (const m of html.matchAll(/<(link|script|img)\b[^>]*\b(?:href|src)="(https?:|\/\/)[^"]*"/gi))
+      problems.push(`closing card loads an external subresource: ${m[0].slice(0, 60)}`);
+  }
+
+  // (c) feedback link on every discipline page
+  let withFeedback = 0;
+  for (const d of docs) {
+    const p = path.join(distDir, d.slug, 'index.html');
+    if (!fs.existsSync(p)) { problems.push(`${d.slug}: no built page to carry a feedback link`); continue; }
+    const html = fs.readFileSync(p, 'utf8');
+    const m = html.match(/href="mailto:([^"?]+)\?([^"]*)"/);
+    if (!m) { problems.push(`${d.slug}: no mailto feedback link`); continue; }
+    if (m[1] !== feedbackEmail)
+      problems.push(`${d.slug}: feedback goes to ${m[1]}, not the FEEDBACK_EMAIL constant ${feedbackEmail}`);
+    const params = new URLSearchParams(m[2].replace(/&amp;/g, '&'));
+    const subject = params.get('subject') || '';
+    if (!subject.includes(d.name))
+      problems.push(`${d.slug}: mailto subject "${subject}" does not name the discipline`);
+    if (!/what|happen/i.test(params.get('body') || ''))
+      problems.push(`${d.slug}: mailto body does not ask what they tried and what happened`);
+    withFeedback++;
+  }
+
+  // (d) no deployment-frozen hostname anywhere in the built site
+  for (const f of walk(distDir, '.html').concat(walk(distDir, '.md'), walk(distDir, '.svg'))) {
+    const hit = fs.readFileSync(f, 'utf8').match(DEPLOY_HOSTNAME);
+    if (hit) problems.push(`${path.relative(distDir, f)} references a deployment-specific hostname ${hit[0]} — ` +
+      'those are frozen to one build and go stale on the next deploy');
+  }
+
+  return { pass: problems.length === 0, problems, withFeedback };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -457,6 +533,16 @@ function runAll() {
     `  (${pk.linked} demos linked, ${pk.stills} fallback stills embedded, ${pk.kb} KB self-contained)`);
   pk.problems.forEach(p => console.log('    ' + p));
   results.push(['presenter', pk.pass]);
+
+  const siteUrl = buildConstant('SITE_URL');
+  const feedbackEmail = buildConstant('FEEDBACK_EMAIL');
+  const sd = sessionGate(DIST, docs, siteUrl, feedbackEmail);
+  console.log('\n[10] SESSION-DAY ARTIFACTS  ' + (sd.pass ? 'PASS' : 'FAIL') +
+    `  (qr.svg + closing-card.html, ${sd.withFeedback}/${docs.length} feedback links)`);
+  console.log(`     SITE_URL       ${siteUrl}`);
+  console.log(`     FEEDBACK_EMAIL ${feedbackEmail}`);
+  sd.problems.forEach(p => console.log('     ' + p));
+  results.push(['session-artifacts', sd.pass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -583,6 +669,40 @@ function selftest() {
   check('presenter (missing fallback still)', presenterGate(ptmp, oneDemo),
     'a linked demo with no embedded still');
   fs.rmSync(ptmp, { recursive: true, force: true });
+
+  // 10 session-day artifacts — the stale-URL failure modes, which are the ones
+  // that survive testing and then break in the room
+  const stmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'stest-'));
+  const URL_OK = 'https://el3vate.vercel.app';
+  const mkSession = (cardUrl, mailto) => {
+    fs.rmSync(stmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(stmp, 'demo-disc'), { recursive: true });
+    fs.writeFileSync(path.join(stmp, 'qr.svg'), '<svg viewBox="0 0 27 27"></svg>');
+    fs.writeFileSync(path.join(stmp, 'closing-card.html'),
+      `<svg viewBox="0 0 27 27"></svg><p>${cardUrl}</p>`);
+    fs.writeFileSync(path.join(stmp, 'demo-disc', 'index.html'), `<a href="${mailto}">fb</a>`);
+  };
+  const goodMailto = 'mailto:tclum@hawaii.edu?subject=EL3vate%20Day%208%20%E2%80%94%20Demo&amp;' +
+    'body=What%20I%20tried%3A%20what%20happened%3F';
+  const oneDisc = [{ slug: 'demo-disc', name: 'Demo' }];
+
+  mkSession('https://el3vate-9f3a1c7-tclum-4994s-projects.vercel.app', goodMailto);
+  check('session (deployment-frozen hostname)', sessionGate(stmp, oneDisc, URL_OK, 'tclum@hawaii.edu'),
+    'closing card pointing at el3vate-<hash>-tclum-4994s-projects.vercel.app');
+
+  mkSession(URL_OK, 'mailto:someone-else@example.com?subject=EL3vate%20Day%208%20%E2%80%94%20Demo&amp;body=what%20happened');
+  check('session (feedback bypasses the constant)', sessionGate(stmp, oneDisc, URL_OK, 'tclum@hawaii.edu'),
+    'a discipline mailing someone other than FEEDBACK_EMAIL');
+
+  mkSession(URL_OK, 'mailto:tclum@hawaii.edu?subject=Feedback&amp;body=what%20happened');
+  check('session (subject does not name the discipline)', sessionGate(stmp, oneDisc, URL_OK, 'tclum@hawaii.edu'),
+    'a generic "Feedback" subject line');
+
+  mkSession(URL_OK, goodMailto);
+  fs.rmSync(path.join(stmp, 'closing-card.html'));
+  check('session (no closing card)', sessionGate(stmp, oneDisc, URL_OK, 'tclum@hawaii.edu'),
+    'closing-card.html absent');
+  fs.rmSync(stmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);

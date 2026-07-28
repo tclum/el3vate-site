@@ -731,6 +731,40 @@ async function presenterKit(browser) {
 
   t.ok('still no external requests after driving the whole page', attempted.length === 0,
     attempted.join(', '));
+
+  // --- the closing card, shared full-screen at 1:00 ---
+  const ct = suite('closing-card');
+  const cardPath = path.join(DIST, 'closing-card.html');
+  const cardAttempts = attempted.length;
+  await page.goto('file://' + cardPath, { waitUntil: 'load' });
+  ct.ok('closing card renders with the network down', attempted.length === cardAttempts,
+    attempted.slice(cardAttempts).join(', '));
+
+  const card = await page.evaluate(() => ({
+    url: (document.querySelector('.url') || {}).textContent,
+    challenge: (document.querySelector('.chal') || {}).textContent,
+    qr: !!document.querySelector('svg[viewBox]'),
+    // does the whole slide fit on screen without scrolling? it is shared, not read
+    overflowY: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  ct.eq('shows the site URL', card.url, 'https://el3vate.vercel.app');
+  ct.ok('shows the Day 10 challenge', (card.challenge || '').length > 40, card.challenge);
+  ct.ok('challenge is one sentence', ((card.challenge || '').match(/\./g) || []).length <= 2, card.challenge);
+  ct.ok('shows the QR', card.qr);
+  ct.ok('fits the screen without vertical scrolling', card.overflowY <= 1, `${card.overflowY}px overflow`);
+  ct.ok('fits the screen without horizontal scrolling', card.overflowX <= 1, `${card.overflowX}px overflow`);
+
+  // it has to hold up at projector and laptop shapes alike
+  for (const vp of [{ width: 1920, height: 1080 }, { width: 1280, height: 800 }, { width: 1024, height: 768 }]) {
+    await page.setViewportSize(vp);
+    const fits = await page.evaluate(() => ({
+      y: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      x: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    ct.ok(`fits ${vp.width}x${vp.height} without scrolling`, fits.y <= 1 && fits.x <= 1, JSON.stringify(fits));
+  }
+
   await ctx.close();
 }
 

@@ -133,6 +133,29 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
   presenter's fallback picture will show the old version. Nothing enforces this
   automatically — it is the one staleness path in the kit that is not gated.
 
+## Session-day artifacts — confirm before Wednesday
+
+- **The Day 10 challenge sentence was written, not supplied.** Neither brief nor
+  any file in the repo records what the Day 10 challenge actually is, and the
+  closing card needs one sentence. What ships is: *"Before Day 10: run one
+  starter prompt from your own discipline's page against your own course
+  material, and bring back the place where the model was confidently wrong."*
+  It follows from the session — it asks for the one artifact the whole site is
+  organised around — but **it is an authored guess and Tim should confirm or
+  replace it.** It is a single string, `DAY10_CHALLENGE`, at the top of
+  `src/build.js`.
+- **Feedback goes to `tclum@hawaii.edu`.** That is the address on file for this
+  work, set in the `FEEDBACK_EMAIL` constant next to `SITE_URL`. If feedback
+  should land somewhere else — a shared PACE inbox, say — change that one
+  constant. Note the cross-project rule that `timothy@forpono.com` is unverified
+  in Resend does not apply here: these are `mailto:` links that open the
+  reader's own mail client, with no sending service involved at all.
+- **`mailto:` has no delivery guarantee and no receipt.** A faculty member on a
+  machine with no configured mail client will click the feedback link and get
+  nothing. That is the accepted cost of "no backend, no form service" as
+  specified, but it means silence after Wednesday is not evidence that nobody
+  tried anything.
+
 ## Generator / validation
 
 - **`scales.fourWeeks` is now a misnomer on two disciplines.**
