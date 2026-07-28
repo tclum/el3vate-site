@@ -14,15 +14,15 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Case selection and stake mapping. Every party gets a written statement of what they believe they were promised."
+      "txt": "Case selection and stake mapping. Every party gets a written statement of what they believe they were promised — the roles, claims and constraints the decision board will render as movable pieces."
     },
     {
       "wk": "Wk 2",
-      "txt": "Run the AI family council. Students facilitate. Transcript plus a written account of the moment it went sideways."
+      "txt": "Cut the decision board from the stake map and submit the file at the start of the week. Run the AI family council; students facilitate. Transcript plus a written account of the moment it went sideways."
     },
     {
       "wk": "Wk 3",
-      "txt": "Design the physical decision board. Cut file due."
+      "txt": "While the board is cut, students rehearse facilitation and refine each party’s promise statement."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 1.5,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in laser stock for an engraved succession or governance decision board in the four-week build.",
-    "fileDueWeek": "Week 3 — cut file due so the board returns for the week-4 live facilitation.",
-    "calendarNote": "Facilitation reps need no lead time; the decision board depends on the 7–10 business day cut turnaround."
+    "fileDueWeek": "First day of Week 2 — cut the decision board from the week-1 stake map (roles, claims, constraints as pieces). PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 live facilitation.",
+    "calendarNote": "Facilitation reps need no lead time. The decision board is roles, claims and constraints drawn from the week-1 stake map, so its cut file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before the week-4 facilitation."
   },
   "scales": {
     "oneSession": "The 90-minute rotating-facilitation session producing a facilitation self-critique; no fabrication.",

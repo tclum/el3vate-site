@@ -14,11 +14,11 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Land one real client, even a campus organization. Written brief, signed by the client."
+      "txt": "Land one real client, even a campus organization. Written brief, signed by the client — enough to design the packaging or point-of-sale mockup from."
     },
     {
       "wk": "Wk 2",
-      "txt": "Generate wide with AI in class, then cut down to three positions with a written rationale per cut. Submit packaging cut file."
+      "txt": "Submit the packaging cut file at the start of the week. Generate wide with AI in class, then cut down to three positions with a written rationale per cut."
     },
     {
       "wk": "Wk 3",
@@ -63,8 +63,8 @@
     "prepHours": 1,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $10–20 per team in print or cut stock for packaging or point-of-sale mockups in the four-week version.",
-    "fileDueWeek": "Week 2 — submit the packaging cut file the week the positions are chosen.",
-    "calendarNote": "Message testing needs no lead time; only the physical mockup depends on the 7–10 business day turnaround, timed for the week-4 client presentation."
+    "fileDueWeek": "First day of Week 2 — submit the packaging cut file at the start of the week the positions are chosen; it is designed from the week-1 client brief. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 client presentation.",
+    "calendarNote": "Message testing needs no lead time. The packaging mockup is designed from the week-1 client brief, so its file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before the week-4 client presentation."
   },
   "scales": {
     "oneSession": "The 90-minute generate-cut-test session producing a cut rationale and arm's-length notes; no fabrication.",

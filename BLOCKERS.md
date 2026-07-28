@@ -66,6 +66,18 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
 
 ## Generator / validation
 
+- **`scales.fourWeeks` is now a misnomer on two disciplines.**
+  `comparative-philosophy` and `finance` run **five**-week plans, but the JSON key
+  holding their multi-week description is still called `fourWeeks`. Renaming it to
+  something neutral (`multiWeek`) is a schema change touching all 15 content
+  files, `src/build.js`, and the `REQ` list in the completeness gate — too broad
+  to do safely tonight, so it was deliberately left alone. What *was* done: every
+  rendered "N weeks" label is now derived from `d.plan.length`, so no page can
+  show a heading that disagrees with its own list, and a new completeness-gate
+  condition fails the build if `scales.fourWeeks` prose says "four-week" while
+  `plan.length !== 4`. The key name is cosmetic and invisible to readers; the
+  rendered output is correct. Rename it when someone has room to touch all 15
+  files in one commit.
 - **The similarity gate's headline number is dominated by stopwords.** After the
   phase-7 rewrite of `finance` and `planetary-science`, that pair still scores
   0.331 on `tryTuesday` — but the token "the" alone accounts for 0.169 of it,

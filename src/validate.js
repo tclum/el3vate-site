@@ -209,6 +209,17 @@ function completenessGate(docs) {
       if (empty) problems.push(`${d.slug}: empty required field "${k}"`);
     }
   }
+  // scales.fourWeeks must not say "four-week" when the plan is not four weeks.
+  // The key name is a misnomer for the two five-week disciplines (renaming it is
+  // a schema change across all 15 files — see BLOCKERS.md); this at least stops
+  // the *prose* from contradicting plan[].
+  for (const d of docs) {
+    const txt = textOf(d.scales && d.scales.fourWeeks);
+    const n = (d.plan || []).length;
+    if (n !== 4 && /four[- ]week/i.test(txt))
+      problems.push(`${d.slug}: scales.fourWeeks says "four-week" but plan is ${n} weeks`);
+  }
+
   // promptOutput: non-null must not be identical across two disciplines
   const seen = {};
   for (const d of docs) {
@@ -239,27 +250,39 @@ function claimGate(claims, docs, distDir) {
   if (!claims) return { pass: false, problems: ['content/claims.json not found — the phase 7 audit is missing'], counts };
 
   const bySlug = Object.fromEntries(docs.map(d => [d.slug, d]));
+  // audit.html is the human-readable claim audit itself — it quotes every claim,
+  // including refuted ones, by design, so it is excluded from the verbatim scan.
   const files = walk(distDir, '.html').concat(walk(distDir, '.md'))
+    .filter(p => path.basename(p) !== 'audit.html')
     .map(p => ({ name: path.relative(distDir, p), text: fs.readFileSync(p, 'utf8') }));
 
   for (const c of (claims.claims || [])) {
     if (counts[c.status] === undefined) { problems.push(`${c.id}: unknown status "${c.status}"`); continue; }
     counts[c.status]++;
 
-    if (c.status === 'refuted') {
-      if (c.inTranscript) {
-        const slug = path.basename(String(c.file).split(',')[0].trim(), '.json');
-        const d = bySlug[slug];
-        const ann = d && d.promptOutput ? JSON.stringify(d.promptOutput.annotations || []) : '';
-        if (!c.annotationMustContain)
-          problems.push(`${c.id}: refuted + inTranscript but declares no annotationMustContain`);
-        else if (!ann.includes(c.annotationMustContain))
-          problems.push(`${c.id}: refuted claim preserved in ${slug} transcript, but no annotation names it (looking for "${c.annotationMustContain}")`);
-      } else {
-        for (const f of files) {
-          if (f.text.includes(c.claim) || f.text.includes(escHtml(c.claim)))
-            problems.push(`${c.id}: refuted claim still appears verbatim in dist/${f.name}`);
-        }
+    // A `verified` claim with no source is not a verified claim — it is an
+    // unexamined one wearing the label, which is the exact failure this whole
+    // phase exists to catch. Fail the build rather than let it pass as checked.
+    if (c.status === 'verified' && !c.verifiedAgainst)
+      problems.push(`${c.id}: status "verified" but no verifiedAgainst URL — a claim is not verified until a source says so`);
+
+    // Any claim preserved inside a transcript must be named in that transcript's
+    // annotations, whichever way the audit came out. Transcripts are never
+    // edited, so the annotation is the only place the correction can live.
+    if (c.inTranscript && (c.status === 'refuted' || c.status === 'unverifiable')) {
+      const slug = path.basename(String(c.file).split(',')[0].trim(), '.json');
+      const d = bySlug[slug];
+      const ann = d && d.promptOutput ? JSON.stringify(d.promptOutput.annotations || []) : '';
+      if (!c.annotationMustContain)
+        problems.push(`${c.id}: ${c.status} + inTranscript but declares no annotationMustContain`);
+      else if (!ann.includes(c.annotationMustContain))
+        problems.push(`${c.id}: ${c.status} claim preserved in ${slug} transcript, but no annotation names it (looking for "${c.annotationMustContain}")`);
+    }
+
+    if (c.status === 'refuted' && !c.inTranscript) {
+      for (const f of files) {   // `files` already excludes audit.html, see above
+        if (f.text.includes(c.claim) || f.text.includes(escHtml(c.claim)))
+          problems.push(`${c.id}: refuted claim still appears verbatim in dist/${f.name}`);
       }
     }
 
@@ -372,6 +395,13 @@ function selftest() {
   d[2].tryTuesday = '';
   check('completeness', completenessGate(d), `emptied ${base[2].slug}.tryTuesday`);
 
+  // 6b plan-length vs scales prose: a five-week plan still calling itself four-week
+  d = JSON.parse(JSON.stringify(base));
+  d[0].plan = d[0].plan.concat([{ wk: 'Wk 5', txt: 'added a fifth week' }]);
+  d[0].scales.fourWeeks = 'The seeded four-week plan: still claims four weeks.';
+  check('completeness (plan length vs scales prose)', completenessGate(d),
+    `${base[0].slug} plan grown to 5 weeks while scales.fourWeeks still says "four-week"`);
+
   // 7 claim audit — three separate failure modes, each on its own fixture
   const ctmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ctest-'));
   fs.mkdirSync(path.join(ctmp, 'fake'), { recursive: true });
@@ -386,6 +416,11 @@ function selftest() {
     { claims: [{ id: 'FIX-B', file: 'content/fake.json', field: 'budget.perStudentCost', status: 'unverifiable', marker: true,
       markedSpans: [{ file: 'content/fake.json', text: 'roughly $99 per student in unobtanium' }] }] },
     [{ slug: 'fake' }], ctmp), 'unverifiable claim rendered with no `unverified` marker');
+
+  check('claim-audit (verified, no source)', claimGate(
+    { claims: [{ id: 'FIX-D', file: 'content/fake.json', field: 'hook', status: 'verified',
+      claim: 'the sky is blue', verifiedAgainst: null }] },
+    [{ slug: 'fake' }], ctmp), 'claim marked verified with no verifiedAgainst URL');
 
   check('claim-audit (transcript unannotated)', claimGate(
     { claims: [{ id: 'FIX-C', file: 'content/fake.json', field: 'promptOutput.output', status: 'refuted',

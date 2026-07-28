@@ -219,7 +219,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "The local residue context around F508 was not checked against the UniProt CFTR sequence in this audit. It is consistent with the commonly cited I507-F508-G509-V510 stretch, but that was not independently confirmed, so it is recorded as unverified rather than asserted. No marker: this sits inside a preserved transcript."
+      "note": "The local residue context around F508 was not checked against the UniProt CFTR sequence in this audit. It is consistent with the commonly cited I507-F508-G509-V510 stretch, but that was not independently confirmed, so it is recorded as unverified rather than asserted. No marker: this sits inside a preserved transcript.",
+      "annotationMustContain": "Ile-Phe-Gly-Val"
     },
     {
       "id": "TE-01",
@@ -341,7 +342,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": "https://www.lpi.usra.edu/lunar/tools/lunarcratercalc/theory.pdf",
-      "note": "The g exponent of -0.22 matches the commonly adopted beta = 0.22 for dense rock (Schmidt & Housen 1987). The leading constant 1.16 and the exponents 0.78 and 0.44 were not confirmed against the primary literature in this audit. The existing annotation already tells students to verify the exponents and constants against the source, which is the right instruction and is now backed by an audit that could not close it. No marker: preserved transcript."
+      "note": "The g exponent of -0.22 matches the commonly adopted beta = 0.22 for dense rock (Schmidt & Housen 1987). The leading constant 1.16 and the exponents 0.78 and 0.44 were not confirmed against the primary literature in this audit. The existing annotation already tells students to verify the exponents and constants against the source, which is the right instruction and is now backed by an audit that could not close it. No marker: preserved transcript.",
+      "annotationMustContain": "0.78"
     },
     {
       "id": "PS-03",
@@ -382,7 +384,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "Generic assumed densities in kg/m^3 for a rocky projectile and target. Plausible but not tied to any stated body, and the transcript does not say where they came from. No marker: preserved transcript."
+      "note": "Generic assumed densities in kg/m^3 for a rocky projectile and target. Plausible but not tied to any stated body, and the transcript does not say where they came from. No marker: preserved transcript.",
+      "annotationMustContain": "rho_i = 3000"
     },
     {
       "id": "LD-01",
@@ -461,9 +464,12 @@
       "field": "promptOutput.promptFilled",
       "claim": "SB1421, a fictional Hawaiʻi bill",
       "type": "disclosed-fiction",
-      "status": "verified",
+      "status": "unverifiable",
+      "inTranscript": true,
+      "marker": false,
       "verifiedAgainst": null,
-      "note": "Explicitly labelled fictional in promptFilled, so it makes no factual assertion. Recorded here so a reader auditing the page does not mistake it for a real bill citation."
+      "note": "Downgraded from `verified` on review. The assertion here is a negative — that no Hawaiʻi SB1421 matches this description — and a search returning nothing does not establish that. Two specific reasons it cannot be closed: capitol.hawaii.gov returns HTTP 403 to the fetch tool, so the authoritative bill-status system could not be queried directly; and Senate bill numbers are reused every biennium, so a real SB1421 on some unrelated subject very likely exists in one session or another. What is certain, and what actually protects the reader, is that promptFilled labels it fictional and the transcript's first annotation names it as a prompt fiction. Handled by annotation rather than by a visible marker, matching the policy for every other transcript-side claim: no `unverified` badge is rendered, because the sentence a reader sees already says the bill is invented.",
+      "annotationMustContain": "prompt fiction"
     },
     {
       "id": "POL-03",
@@ -474,7 +480,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "Asserted about a bill that does not exist, so there is no record to check it against. The existing annotation already names it as the fabricated-record failure the assignment hunts. No marker: preserved transcript."
+      "note": "Asserted about a bill that does not exist, so there is no record to check it against. The existing annotation already names it as the fabricated-record failure the assignment hunts. No marker: preserved transcript.",
+      "annotationMustContain": "20,000-plus"
     },
     {
       "id": "POL-04",
@@ -485,7 +492,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "An unverifiable off-record vote count, by construction. Already annotated. No marker: preserved transcript."
+      "note": "An unverifiable off-record vote count, by construction. Already annotated. No marker: preserved transcript.",
+      "annotationMustContain": "neighbor-island legislators"
     },
     {
       "id": "POL-05",
@@ -496,7 +504,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "A fiscal claim with no model shown, about a fictional bill. Already annotated. No marker: preserved transcript."
+      "note": "A fiscal claim with no model shown, about a fictional bill. Already annotated. No marker: preserved transcript.",
+      "annotationMustContain": "insolvent by year three"
     },
     {
       "id": "UP-01",
@@ -507,7 +516,8 @@
       "status": "unverifiable",
       "inTranscript": true,
       "verifiedAgainst": null,
-      "note": "11 feet floor-to-floor is a plausible residential rule of thumb but is not tied to Honolulu's Land Use Ordinance or to any Kakaʻako-specific height rule. The transcript flags this itself, and the annotation already carries the point. No marker: preserved transcript."
+      "note": "11 feet floor-to-floor is a plausible residential rule of thumb but is not tied to Honolulu's Land Use Ordinance or to any Kakaʻako-specific height rule. The transcript flags this itself, and the annotation already carries the point. No marker: preserved transcript.",
+      "annotationMustContain": "11 feet per floor"
     },
     {
       "id": "MK-01",
@@ -561,19 +571,58 @@
       "verifiedAgainst": null,
       "note": "PACE publishes no material price list, so the dollar ranges on each discipline page could not be confirmed against any source. They are load-bearing — a faculty member decides whether to run the four-week version on them — so they are kept and rendered inside the visible `unverified` marker rather than removed.",
       "markedSpans": [
-        { "file": "content/bioinformatics.json", "text": "roughly $6–12 per student in filament" },
-        { "file": "content/comparative-philosophy.json", "text": "roughly $5–10 per student in laser stock" },
-        { "file": "content/entrepreneurship.json", "text": "roughly $8–15 per team in print or cut stock" },
-        { "file": "content/family-business.json", "text": "roughly $8–15 per team in laser stock" },
-        { "file": "content/finance.json", "text": "roughly $8–15 per team in laser stock" },
-        { "file": "content/learning-design.json", "text": "roughly $5–12 per student in print or cut stock" },
-        { "file": "content/marketing.json", "text": "roughly $10–20 per team in print or cut stock" },
-        { "file": "content/marriage-family-therapy.json", "text": "roughly $8–15 per student in laser stock" },
-        { "file": "content/nutrition.json", "text": "roughly $4–8 per student in filament" },
-        { "file": "content/planetary-science.json", "text": "roughly $6–14 per student in filament" },
-        { "file": "content/political-science.json", "text": "roughly $6–9 per student in laser stock" },
-        { "file": "content/teacher-education.json", "text": "roughly $4–10 per student in filament or cut stock" },
-        { "file": "content/urban-planning.json", "text": "roughly $15–30 per team in laser stock" }
+        {
+          "file": "content/bioinformatics.json",
+          "text": "roughly $6–12 per student in filament"
+        },
+        {
+          "file": "content/comparative-philosophy.json",
+          "text": "roughly $5–10 per student in laser stock"
+        },
+        {
+          "file": "content/entrepreneurship.json",
+          "text": "roughly $8–15 per team in print or cut stock"
+        },
+        {
+          "file": "content/family-business.json",
+          "text": "roughly $8–15 per team in laser stock"
+        },
+        {
+          "file": "content/finance.json",
+          "text": "roughly $8–15 per team in laser stock"
+        },
+        {
+          "file": "content/learning-design.json",
+          "text": "roughly $5–12 per student in print or cut stock"
+        },
+        {
+          "file": "content/marketing.json",
+          "text": "roughly $10–20 per team in print or cut stock"
+        },
+        {
+          "file": "content/marriage-family-therapy.json",
+          "text": "roughly $8–15 per student in laser stock"
+        },
+        {
+          "file": "content/nutrition.json",
+          "text": "roughly $4–8 per student in filament"
+        },
+        {
+          "file": "content/planetary-science.json",
+          "text": "roughly $6–14 per student in filament"
+        },
+        {
+          "file": "content/political-science.json",
+          "text": "roughly $6–9 per student in laser stock"
+        },
+        {
+          "file": "content/teacher-education.json",
+          "text": "roughly $4–10 per student in filament or cut stock"
+        },
+        {
+          "file": "content/urban-planning.json",
+          "text": "roughly $15–30 per team in laser stock"
+        }
       ]
     },
     {

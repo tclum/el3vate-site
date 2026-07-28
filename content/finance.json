@@ -18,19 +18,23 @@
     },
     {
       "wk": "Wk 2",
-      "txt": "Build the interactive model with AI in class. Break it deliberately: what input makes the conclusion flip?"
+      "txt": "Build the interactive model with AI in class. Break it deliberately: what input makes the conclusion flip? By the end of the week the term structure or risk distribution the cards will render is fixed — lay the cards out from it."
     },
     {
       "wk": "Wk 3",
-      "txt": "Sensitivity write-up plus fabrication of the physical comparison cards."
+      "txt": "Cut file for the physical comparison cards due the first day of this week. The sensitivity write-up runs while they are cut and engraved."
     },
     {
       "wk": "Wk 4",
+      "txt": "Teams rehearse the defense and mark which assumption they expect to be attacked. The cards come back this week."
+    },
+    {
+      "wk": "Wk 5",
       "txt": "Defense session. Another team’s job is to find the assumption that carries the whole result."
     }
   ],
   "prompt": "Build a single self-contained HTML page with an interactive model for this decision: [describe the decision]. Include sliders for every input that matters. Show the output updating live, and display the break-even point prominently. Then list every assumption you had to make to build it, and tell me which single assumption the conclusion is most sensitive to.",
-  "tryTuesday": "90 minutes, one decision that has two sides to it — a lease renewal, an acquisition price, a covenant a lender wants and a borrower does not. Split the room. Half model the decision as the party who wants it to happen; half model it as the party who has to be talked into it. Neither half sees the other's work. For the first half hour each side builds its case with the prompt or the embedded break-even demo and commits, in writing, to the one number it will defend. Then both numbers go up side by side and the rest of the session belongs to a single question: what accounts for the distance between them? Work the gap down input by input until it closes or the room agrees it cannot. What gets handed in is the reconciliation — the short list of inputs that produced the spread, which of them a filing or a quote could settle, and the one that is a view about the future no model will ever decide. Finance students should leave having watched two honest analysts with the same tool arrive at different numbers, and knowing that saying precisely why is the professional act.",
+  "tryTuesday": "90 minutes, one decision that has two sides to it — a lease renewal, an acquisition price, a covenant a lender wants and a borrower does not. Minutes 0–5: split the room. Half model the decision as the party who wants it to happen; half model it as the party who has to be talked into it. Neither half sees the other’s work. Minutes 5–35: each side builds its case with the prompt or the embedded break-even demo and commits, in writing, to the one number it will defend. Minutes 35–80: both numbers go up side by side, against a single question — what accounts for the distance between them? Work the gap down input by input until it closes or the room agrees it cannot. Minutes 80–90: what gets handed in is the reconciliation — the short list of inputs that produced the spread, which of them a filing or a quote could settle, and the one that is a view about the future no model will ever decide. Finance students should leave having watched two honest analysts with the same tool arrive at different numbers, and knowing that saying precisely why is the professional act.",
   "replaces": {
     "assignment": "The valuation or capital-budgeting spreadsheet submitted as the answer.",
     "lost": "The hand-built modeling mechanics and formula fluency.",
@@ -62,13 +66,13 @@
   "budget": {
     "prepHours": 1.5,
     "classMinutes": 90,
-    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in laser stock for engraved decision and comparison cards in the four-week build.",
-    "fileDueWeek": "Week 3 — cut file due with the sensitivity write-up.",
-    "calendarNote": "Model-building needs no lead time; the physical comparison cards depend on the 7–10 business day cut turnaround."
+    "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in laser stock for engraved decision and comparison cards in the five-week build.",
+    "fileDueWeek": "First day of Week 3, in a five-week plan — the comparison cards render the term structure or risk distribution the week-2 model produces, so they are laid out at the close of week 2 and the cut file goes in the moment week 3 opens. PACE quotes 7–10 business days (up to 14 calendar days), which clears with the week-5 defense exactly 14 days out.",
+    "calendarNote": "Model-building needs no lead time. This plan is five weeks, not four, and the deadline sits at the start of week 3 rather than the end of it — both deliberately. The cards render numbers that do not exist until the week-2 model does, which rules out the start-of-week-2 deadline every other fabrication assignment here uses; and an end-of-week-3 file would leave only 8 calendar days before a week-5 defense, which the up-to-14-calendar-day cut turnaround does not fit. Start of week 3 to a week-5 session is 14 days, which does. A four-week version would hand out cards after the defense they exist to inform."
   },
   "scales": {
     "oneSession": "The 90-minute two-sided session producing a written reconciliation of the spread between the room's two numbers; no fabrication.",
-    "fourWeeks": "The seeded four-week plan: assumption list, AI model broken deliberately, sensitivity write-up plus fabricated cards, then a defense session.",
+    "fourWeeks": "The seeded plan runs five weeks, not four, because the comparison cards render numbers that do not exist until the model does. Week 1, pick a real decision with public filings and list every assumption it requires. Week 2, build the model with AI and break it deliberately; by Friday the term structure or risk distribution is fixed, so the cards get laid out from it. Week 3, cut file in on day one, with the sensitivity write-up running while the cards are engraved. Week 4, teams rehearse the defense and mark the assumption they expect to be attacked; the cards return. Week 5, the defense session. The extra week is the cut turnaround, not padding.",
     "oneSemester": "A full decision case with public filings — assumption inventory, an AI-built model stress-tested repeatedly, fabricated comparison cards, and a defense session where another team must find the assumption carrying the result."
   },
   "promptOutput": {

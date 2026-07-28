@@ -14,15 +14,15 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Choose one concept and write the learning objective before touching a tool. Objective gets peer-reviewed for measurability."
+      "txt": "Choose one concept and write the learning objective before touching a tool; the objective gets peer-reviewed for measurability. Design the tactile manipulative of that same concept for a learner who cannot see the diagram."
     },
     {
       "wk": "Wk 2",
-      "txt": "Build the digital module with AI. Ship a rough version fast."
+      "txt": "Submit the tactile-manipulative fabrication file at the start of the week so it is cut in parallel. Build the digital module with AI; ship a rough version fast."
     },
     {
       "wk": "Wk 3",
-      "txt": "Accessibility audit against WCAG basics: keyboard only, contrast, screen reader, reduced motion. Document every failure and fix it. Submit fabrication file for the tactile version."
+      "txt": "Accessibility audit against WCAG basics: keyboard only, contrast, screen reader, reduced motion. Document every failure and fix it."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 1.5,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $5–12 per student in print or cut stock for a tactile manipulative in the four-week build.",
-    "fileDueWeek": "Week 3 — fabrication file due after the accessibility audit.",
-    "calendarNote": "The digital build and audit need no lead time; the tactile version depends on the 7–10 business day turnaround, timed for week-4 user testing."
+    "fileDueWeek": "First day of Week 2 — submit the tactile-manipulative fabrication file; it is a parallel artifact of the concept chosen in week 1 and need not wait for the week-3 audit. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before week-4 user testing.",
+    "calendarNote": "The digital build and audit need no lead time. The tactile manipulative is defined by the week-1 concept, independent of the digital module, so its file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before week-4 user testing."
   },
   "scales": {
     "oneSession": "The 90-minute build-then-audit session producing an audit log; no fabrication.",

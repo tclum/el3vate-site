@@ -18,7 +18,7 @@
     },
     {
       "wk": "Wk 2",
-      "txt": "Build the landing page live in class. Submit the print or cut file the same week so fabrication runs in parallel with the digital test."
+      "txt": "Build the landing page live in class and submit the print or cut file at the start of the week so fabrication runs in parallel with the digital test."
     },
     {
       "wk": "Wk 3",
@@ -63,8 +63,8 @@
     "prepHours": 1,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per team in print or cut stock for a physical MVP in the four-week version.",
-    "fileDueWeek": "Week 2 — submit the print or cut file the same week the landing page goes live so fabrication runs in parallel with the digital test.",
-    "calendarNote": "The digital test needs no lead time; the physical MVP arrives in about 7–10 business days, in time for the week-4 presentation."
+    "fileDueWeek": "First day of Week 2 — submit the print or cut file at the start of the week the landing page goes live. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 presentation.",
+    "calendarNote": "The digital test needs no lead time. Submitting the MVP file at the start of week 2 clears the up-to-14-calendar-day turnaround before the week-4 presentation."
   },
   "scales": {
     "oneSession": "The 90-minute value-proposition and hallway-test session above; no fabrication.",

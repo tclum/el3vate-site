@@ -5,12 +5,126 @@ Built unattended from `AGENT-BRIEF.md` against the toplevel
 
 ```
 node src/build.js        # emits dist/
-node src/validate.js     # runs the six gates, exits non-zero on failure
+node src/validate.js     # runs the seven gates, exits non-zero on failure
 node src/validate.js --selftest   # proves each gate can fail
 ```
 
-Last build stamped `0681fbf` at `2026-07-28T06:03Z` (19:56 HST, 27 July). Every
-generated page carries that stamp as its first line after `<!DOCTYPE html>`.
+Every generated page carries the build stamp as its first line after
+`<!DOCTYPE html>`.
+
+---
+
+## Rev 2.1 corrections (three fixes to the phase-7 output)
+
+All seven gates pass after these. Not committed — shown as a diff first.
+
+### (1) Schedule arithmetic — re-derived every fabrication calendar
+
+The phase-7 fix changed "7–10 day" to "7–10 **business** days" in prose but did
+not re-derive the calendars. 7–10 business days is **9–14 calendar days**, so a
+fabrication file must be submitted **≥14 calendar days** before the session that
+uses the part. Modelling weekly class meetings (Wk1 = day 0 … Wk4 = day 21), the
+latest compliant submission for a part used in the week-4 session is the **first
+day of week 2** (day 7 = 14 days of clearance).
+
+Every week-3 deadline was moved to week 1 / first day of week 2, **except** the
+two where the artifact genuinely cannot be designed until week 3 because it
+depends on a week-2 output — those were **extended to five weeks** and say so in
+`calendarNote`. The four already-week-2 deadlines were pinned to "first day of
+Week 2" so the ≥14-day clearance is explicit rather than ambiguous. `law` and
+`english-literature` have no fabrication dependency and were left unchanged.
+
+| File | plan wks | `fileDueWeek` before → after | fix |
+|---|---|---|---|
+| political-science | 4 | Week 3 → **first day of Week 2** | move (tiles derive from wk-1 district) |
+| urban-planning | 4 | Week 3 → **first day of Week 2** | move (model from wk-1 record) |
+| nutrition | 4 | Week 3 → **first day of Week 2** | move (model from wk-1 community) |
+| learning-design | 4 | Week 3 → **first day of Week 2** | move (manipulative from wk-1 concept) |
+| family-business | 4 | Week 3 → **first day of Week 2** | move (board from wk-1 stake map) |
+| teacher-education | 4 | Week 3 → **first day of Week 2** | move (cardboard-prototype in wk 1) |
+| marriage-family-therapy | 4 | Week 3 → **first day of Week 1** | move (generic genogram kit) |
+| comparative-philosophy | **5** | Week 3 → **first day of Week 3, five-week plan** | extend (apparatus needs wk-2 failure log) |
+| finance | **5** | Week 3 → **first day of Week 3, five-week plan** | extend (cards render wk-2 model output) |
+| bioinformatics | 4 | Week 2 → **first day of Week 2** | pin (make ≥14-day clearance explicit) |
+| entrepreneurship | 4 | Week 2 → **first day of Week 2** | pin |
+| marketing | 4 | Week 2 → **first day of Week 2** | pin |
+| planetary-science | 4 | Week 2 → **first day of Week 2** | pin |
+
+13 files changed; `budget.fileDueWeek`, `budget.calendarNote` and `plan[].txt`
+were all re-derived together so prose and calendar agree. The two five-week plans
+gained a Wk-4 "while it fabricates" step and pushed the part-using session to Wk5
+(day 28 − 14 = day 14 = the Wk-3 cut-file deadline).
+
+**Three deadlines failed the arithmetic on re-derivation and were corrected a
+second time.** Extending to five weeks is not by itself sufficient: a cut file due
+*end* of week 3 (day 20) leaves only **8** calendar days before a week-5 session
+(day 28), not 14. Both five-week plans were therefore re-pinned to the **first
+day of week 3** (day 14 → day 28 = exactly 14), with the artifact designed at the
+close of week 2 while the week-2 output is fresh. Separately,
+`marriage-family-therapy` said only "during week 1" — worst case day 6, which
+leaves 8 days before its week-**3** role-play — and was pinned to day one. Final
+state, checked mechanically: all 13 fabrication deadlines clear ≥14 calendar days,
+and each `fileDueWeek` string was cross-checked against the arithmetic so the
+prose cannot drift from the calendar.
+
+### (2) Restored the minute-by-minute `tryTuesday` structure
+
+`finance` and `planetary-science` had lost the explicit minute markers the other
+13 disciplines carry. Both were rewritten to reinsert markers
+(`Minutes 0–5:` … / `Minutes 0–10:` …) **without changing the assignment
+content** — only the timing scaffold was added. As expected and permitted, the
+shared scaffold nudged similarity, but nothing near the gate: `finance ~
+planetary-science` on `tryTuesday` is **0.302** (max across the whole site is
+now **0.354**, nutrition ~ MFT). New scores are in the similarity table below.
+
+### (3) Fixed the dead `content/claims.json` reference
+
+The on-page "unverified marks" note pointed readers to `content/claims.json`, a
+repo path absent from `dist/`. The generator now emits **`dist/audit.html`** — a
+human-readable page listing all 55 claims (refuted first), each with its status
+badge, source file/field, audit note, and clickable verification URL — and the
+note links to it with a relative `../audit.html` href. Because that page quotes
+every claim (including refuted text) by design, GATE 7's "no refuted text in
+`dist/`" scan now skips `audit.html`; the gate still enforces the rule everywhere
+else and still passes `--selftest`.
+
+### (4) POL-02 downgraded, and the gate tightened twice
+
+POL-02 (`SB1421, a fictional Hawaiʻi bill`) was `verified` with no
+`verifiedAgainst`. It could **not** be re-verified and was changed to
+`unverifiable`. The reason is structural, not effort: the assertion is a
+*negative* — that no Hawaiʻi SB1421 matches this description — and a search
+returning nothing does not establish one. Worse, Senate bill numbers are reused
+every biennium, so a real SB1421 on some unrelated subject very likely exists in
+some session; and `capitol.hawaii.gov` returns HTTP 403 to the fetch tool, so the
+authoritative bill-status system could not be queried. It is handled under the
+existing transcript rule rather than with a visible badge: `promptFilled` already
+tells the reader the bill is invented, and the transcript's first annotation names
+it as a prompt fiction, which the gate now enforces.
+
+Two gate conditions were added to `src/validate.js` GATE 7:
+
+1. **`verified` with no `verifiedAgainst` fails the build.** A claim is not
+   verified until a source says so; the label without the URL is an unexamined
+   claim wearing the word, which is the exact failure this phase exists to catch.
+2. **Any `inTranscript` claim — `refuted` *or* `unverifiable` — must be named in
+   its transcript's annotations.** The original gate only checked this for
+   `refuted`, so downgrading POL-02 would have moved it into a branch nothing
+   checked.
+
+**The second condition immediately caught seven real holes.** BIO-07, PS-02,
+PS-06, POL-03, POL-04, POL-05 and UP-01 were all `unverifiable + inTranscript`
+and none was machine-bound to an annotation. Five turned out to be genuinely
+covered by existing annotation text and only needed the binding key. **Two were
+not covered at all** — the CFTR residue context `…Ile-Phe-Gly-Val…` (BIO-07) and
+the assumed impactor/target densities (PS-06) — meaning the previous report's
+claim that every transcript-side unverifiable was annotated was wrong. Both now
+have annotations naming them explicitly.
+
+Also removed: a duplicate `renderAudit()` and a duplicate
+`fs.writeFileSync(dist/audit.html)`. Two definitions existed; JS hoisting meant
+the later one silently won and the earlier one was dead code writing a file that
+was immediately overwritten. Only one remains.
 
 ---
 
@@ -29,8 +143,8 @@ generated page carries that stamp as its first line after `<!DOCTYPE html>`.
   brief's exact section order plus a reserved `id="live-build"` section, a
   "steal this" `handout.md` per discipline, and copies the demos into
   `dist/demos/` so iframes resolve from `file://` and GitHub Pages alike.
-- **Validator** (`src/validate.js`): six gates, all currently green, each proven
-  failable via `--selftest`.
+- **Validator** (`src/validate.js`): seven gates, all currently green, each proven
+  failable via `--selftest` (GATE 7, the claim audit, carries four fixtures).
 - **Screenshots** in `dist/_screens/` (hub + political-science, urban-planning,
   finance) captured with headless Chrome.
 
@@ -66,25 +180,31 @@ The completeness gate confirms no two `promptOutput`s are identical.
 
 TF-IDF cosine across `tryTuesday`, `replaces`, `aiFailsHere`, `rubric`.
 Threshold **0.45**; the build fails if any pair exceeds it. **Max observed:
-0.359** — comfortably clear. The ranked list (useful even on a pass):
+0.354** — comfortably clear. Scores below are current after the rev-2.1 timing
+restore (see the corrections section); restoring the shared minute-marker
+scaffold to `finance` and `planetary-science` moved a few pairs but nothing near
+the gate. The ranked list (useful even on a pass):
 
 | # | score | field | pair |
 |---|------|-------|------|
-| 1 | 0.359 | tryTuesday | finance ~ planetary-science |
-| 2 | 0.350 | tryTuesday | nutrition ~ marriage-family-therapy |
-| 3 | 0.339 | tryTuesday | entrepreneurship ~ marketing |
-| 4 | 0.325 | rubric | political-science ~ finance |
-| 5 | 0.310 | rubric | finance ~ planetary-science |
-| 6 | 0.308 | tryTuesday | political-science ~ comparative-philosophy |
-| 7 | 0.307 | rubric | nutrition ~ marriage-family-therapy |
-| 8 | 0.280 | rubric | law ~ marriage-family-therapy |
+| 1 | 0.354 | tryTuesday | nutrition ~ marriage-family-therapy |
+| 2 | 0.331 | tryTuesday | entrepreneurship ~ marketing |
+| 3 | 0.306 | rubric | nutrition ~ marriage-family-therapy |
+| 4 | 0.305 | tryTuesday | political-science ~ comparative-philosophy |
+| 5 | 0.302 | tryTuesday | finance ~ planetary-science |
+| 6 | 0.286 | tryTuesday | marketing ~ planetary-science |
+| 7 | 0.284 | rubric | law ~ marriage-family-therapy |
+| 8 | 0.280 | rubric | comparative-philosophy ~ finance |
 | 9 | 0.271 | tryTuesday | law ~ nutrition |
-| 10 | 0.268 | tryTuesday | urban-planning ~ finance |
+| 10 | 0.270 | tryTuesday | comparative-philosophy ~ finance |
 
-The clusters are unsurprising and real: the "build a model then break its
-assumptions" disciplines (finance, planetary-science, urban-planning) share
-method vocabulary; the counseling/intake disciplines (nutrition, MFT, law) share
-listening-and-disclosure language. None approaches the threshold.
+The clusters are unsurprising and real: the counseling/intake disciplines
+(nutrition, MFT, law) share listening-and-disclosure language; the "build then
+break/reconcile" disciplines (finance, planetary-science, marketing) share
+method vocabulary. `finance ~ planetary-science` on `tryTuesday` is **0.302**
+after the timing restore — the shared "Minutes 0–X:" scaffold is structure the
+other 13 disciplines already carry, not duplicated substance, and it stays well
+under threshold. None approaches 0.45.
 
 ## Every gate's demonstrated failure input
 
@@ -141,6 +261,11 @@ scanned, 0 problems).
 - **Demo interaction is not automated end-to-end.** Load + JS-error + screenshot
   verification only; a human should click through district-redraw's keyboard path
   and the intake-branching tree.
+- **We cannot prove SB1421 is fictional** (POL-02, now `unverifiable`). It is
+  invented *for this prompt*, but bill numbers recycle every biennium and
+  `capitol.hawaii.gov` blocks automated fetches, so a real SB1421 on some other
+  subject may well exist. The page says the bill is invented; nobody has
+  confirmed no same-numbered real bill exists.
 - **Some prompt fills are fictional specifics** (e.g., SB1421 is an invented
   bill). This is intentional and the annotations say so, but a reader skimming
   could mistake the fiction for a real bill.

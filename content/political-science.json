@@ -14,15 +14,15 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Pick one live bill from the current session. Students write a one-page stake map: who wins, who loses, who is invisible in the text."
+      "txt": "Pick one live bill from the current session and the Hawaiʻi district it touches. Students write a one-page stake map — who wins, who loses, who is invisible in the text — and mark the real precinct boundaries their movable tiles will use."
     },
     {
       "wk": "Wk 2",
-      "txt": "Build and run the stakeholder simulator in class. Students log the three moments the AI’s stakeholder said something they could not verify against the actual record. That log is the graded artifact, not the transcript."
+      "txt": "Submit the cut file for the district base tiles at the start of the week so fabrication runs in parallel. Build and run the stakeholder simulator in class; students log the three moments the AI’s stakeholder said something they could not verify against the actual record. That log is the graded artifact, not the transcript."
     },
     {
       "wk": "Wk 3",
-      "txt": "Submit the cut file for the district tiles (due Monday, so the 7–10 business day turnaround lands before finals). While it fabricates, students draft the defense of their map."
+      "txt": "The tiles come back from fabrication. Students draft the written defense of the map they intend to argue."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 2,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $6–9 per student in laser stock if the four-week district-tile build is run.",
-    "fileDueWeek": "Week 3 — cut file due Monday of week 3 so the 7–10 business day turnaround returns tiles before the week-4 defense.",
-    "calendarNote": "The AI portion needs no lead time; only the physical redraw depends on fabrication turnaround."
+    "fileDueWeek": "First day of Week 2 — cut the district base tiles from the district chosen in week 1. PACE quotes 7–10 business days (up to 14 calendar days), so a start-of-week-2 file clears with two weeks to spare before the week-4 redraw and defense.",
+    "calendarNote": "The AI portion needs no lead time. The tiles are just the base precinct map, designable as soon as the district is chosen in week 1, so their file goes in at the start of week 2 — the up-to-14-calendar-day cut turnaround clears before the week-4 defense."
   },
   "scales": {
     "oneSession": "The 90-minute stake-map plus verification-tally session above; no fabrication.",

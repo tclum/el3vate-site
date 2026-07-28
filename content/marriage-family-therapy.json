@@ -14,7 +14,7 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Establish the boundary first: what this practice is and is not, written into the syllabus and discussed. Students draft the client profile."
+      "txt": "Establish the boundary first: what this practice is and is not, written into the syllabus and discussed. Submit the generic genogram-kit cut file on day one — the pieces are a standard movable family set and need nothing from the course to design. Students then draft the client profile."
     },
     {
       "wk": "Wk 2",
@@ -22,7 +22,7 @@
     },
     {
       "wk": "Wk 3",
-      "txt": "Studio role-play with a peer, recorded. Build the physical genogram kit file."
+      "txt": "Studio role-play with a peer, recorded, using the genogram kit the family can rearrange."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 1.5,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $8–15 per student in laser stock for a movable genogram kit, plus free Hana studio time, in the four-week build.",
-    "fileDueWeek": "Week 3 — genogram-kit cut file due so pieces return for later sessions.",
-    "calendarNote": "Intake reps need no lead time; the genogram kit depends on the 7–10 business day cut turnaround, and studio role-play needs booking."
+    "fileDueWeek": "First day of Week 1 — the genogram kit is a generic set of movable family-member pieces, designable before the course starts, so its cut file goes in on day one. PACE quotes 7–10 business days (up to 14 calendar days), which clears with the week-3 studio role-play that first uses it exactly 14 days out.",
+    "calendarNote": "Intake reps need no lead time. The kit is the earliest deadline on the site and has to be: the role-play that uses it is in week 3, not week 4, so anything later than day one of week 1 leaves under 14 calendar days for an up-to-14-calendar-day cut turnaround. Because the pieces are generic, nothing in the course blocks submitting them immediately. Studio role-play still needs booking separately."
   },
   "scales": {
     "oneSession": "The 90-minute standardized-intake session with an annotated transcript; no fabrication.",

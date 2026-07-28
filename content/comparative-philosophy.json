@@ -18,14 +18,18 @@
     },
     {
       "wk": "Wk 2",
-      "txt": "Students build their interlocutor prompt and run it. They keep a failure log: quote from the AI, quote from the source, one sentence on what got lost."
+      "txt": "Students build their interlocutor prompt and run it. They keep a failure log: quote from the AI, quote from the source, one sentence on what got lost. By the end of the week the log has named the distinction the machine could not hold — design the engraved apparatus around that distinction while the log is fresh."
     },
     {
       "wk": "Wk 3",
-      "txt": "Design the physical artifact. What distinction between the two traditions can only be shown by arranging objects in space? Cut file due end of week."
+      "txt": "Cut file due the first day of this week: what distinction between the two traditions can only be shown by arranging objects in space? While it is cut and engraved, students begin the argument that pairs the apparatus with the failure log."
     },
     {
       "wk": "Wk 4",
+      "txt": "Finish the written argument and rehearse presenting the apparatus alongside the log. The engraved pieces come back this week."
+    },
+    {
+      "wk": "Wk 5",
       "txt": "Present the artifact and the failure log together. The claim being assessed: here is what the machine could not hold, and here is why it matters."
     }
   ],
@@ -62,13 +66,13 @@
   "budget": {
     "prepHours": 2,
     "classMinutes": 90,
-    "perStudentCost": "$0 for the Tuesday version; roughly $5–10 per student in laser stock for engraved framework tiles in the four-week build.",
-    "fileDueWeek": "Week 3 — cut file due end of week 3 so the apparatus returns for the week-4 presentation.",
-    "calendarNote": "The AI and reading need no lead time; only the engraved tile apparatus depends on the 7–10 business day cut turnaround."
+    "perStudentCost": "$0 for the Tuesday version; roughly $5–10 per student in laser stock for engraved framework tiles in the five-week build.",
+    "fileDueWeek": "First day of Week 3, in a five-week plan — the engraved apparatus can only be designed once the week-2 failure log has named the distinction the machine could not hold, so the design happens at the close of week 2 and the cut file goes in the moment week 3 opens. PACE quotes 7–10 business days (up to 14 calendar days), which clears with the week-5 presentation exactly 14 days out.",
+    "calendarNote": "The AI and reading need no lead time. This plan is five weeks, not four, and the deadline sits at the start of week 3 rather than the end of it — both deliberately. The apparatus cannot be designed before the week-2 failure log exists, which rules out the start-of-week-2 deadline every other fabrication assignment here uses; and an end-of-week-3 file would leave only 8 calendar days before a week-5 presentation, which the up-to-14-calendar-day cut turnaround does not fit. Start of week 3 to a week-5 session is 14 days, which does."
   },
   "scales": {
     "oneSession": "The 90-minute read-then-interrogate session producing one failure log; no fabrication.",
-    "fourWeeks": "The seeded four-week plan: read the sources, build and run the interlocutor with a failure log, design the physical apparatus, then present artifact and log together.",
+    "fourWeeks": "The seeded plan runs five weeks, not four, because the apparatus cannot be designed until the failure log exists. Week 1, read the primary sources with the AI closed. Week 2, build and run the interlocutor and keep the failure log; by Friday it has named the distinction the machine could not hold, so the apparatus gets designed around it. Week 3, cut file in on day one, and start the argument while the pieces are engraved. Week 4, finish the written argument and rehearse presenting it; the engraved pieces return. Week 5, present artifact and log together. The extra week is the cut turnaround, not padding.",
     "oneSemester": "Sustained comparison across three traditions and three cases, each with its own failure log, culminating in an engraved decision apparatus and a written account of what the machine structurally could not hold."
   },
   "promptOutput": {

@@ -14,15 +14,15 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Students select a community partner and a specific counseling scenario. Draft the client profile they will need."
+      "txt": "Students select a community partner and a specific counseling scenario. Draft the client profile they will need, and decide the local staple foods the teaching model will represent."
     },
     {
       "wk": "Wk 2",
-      "txt": "Build the AI client and run three sessions, submitting transcripts. Grade whether the student did more listening than telling."
+      "txt": "Design and submit the physical teaching-model print file at the start of the week, justifying every food choice against the partner community. Build the AI client and run three sessions, submitting transcripts; grade whether the student did more listening than telling."
     },
     {
       "wk": "Wk 3",
-      "txt": "Design and submit the physical teaching model. Requirement: justify every food choice against the partner community."
+      "txt": "While the models print, students rehearse the counseling scenario and plan how they will use the model with the partner."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 1.5,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $4–8 per student in filament for portion and plate-method models in the four-week build.",
-    "fileDueWeek": "Week 3 — print file due end of week 3 so models return for the week-4 field test.",
-    "calendarNote": "Counseling reps need no lead time; the teaching models depend on the 7–10 business day print turnaround."
+    "fileDueWeek": "First day of Week 2 — submit the teaching-model print file once the partner community and its staple foods are set in week 1. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 field test.",
+    "calendarNote": "Counseling reps need no lead time. The portion and plate-method models are defined by the partner community’s foods, chosen in week 1, so the print file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before the week-4 field test."
   },
   "scales": {
     "oneSession": "The 90-minute standardized-client session with a talk-time tally; no fabrication.",

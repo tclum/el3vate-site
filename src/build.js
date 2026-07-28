@@ -221,6 +221,24 @@ table.rub td.w{font-family:var(--mono);white-space:nowrap;color:var(--ink)}
 .unvnote{background:#FBEED9;color:#15211C;border-left:4px solid #7A3E0B;padding:14px 16px;margin:0 0 20px;font-size:14.5px;max-width:var(--measure)}
 .unvnote .hd{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5A2E08;display:block;margin-bottom:5px}
 
+/* claim audit page */
+.auditlist{display:grid;gap:14px;padding:10px 0 20px}
+.claimrow{border:1px solid var(--rule);background:var(--card);padding:16px 18px;border-left:4px solid var(--rule)}
+.claimrow--refuted{border-left-color:var(--cut-ink)}
+.claimrow--unverifiable{border-left-color:#7A3E0B}
+.claimrow--verified{border-left-color:var(--good)}
+.claimrow__hd{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.cid{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--soft)}
+.stbadge{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:2px}
+.stbadge--refuted{background:var(--cut-ink);color:#FFFFFF}
+.stbadge--unverifiable{background:#7A3E0B;color:#FFFFFF}
+.stbadge--verified{background:var(--good);color:#FFFFFF}
+.claimrow__q{margin:0 0 8px;color:var(--ink);font-size:15.5px}
+.claimrow__meta{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--soft);margin:0 0 8px;word-break:break-word}
+.claimrow__note{margin:0 0 8px;color:#2A3A33;font-size:14.5px;max-width:var(--measure)}
+.claimrow__src{margin:0;font-size:13.5px;color:#2A3A33;word-break:break-word}
+.muted{color:var(--soft)}
+
 footer{padding:30px 0 46px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--soft);border-top:1px solid var(--rule);margin-top:20px}
 
 @media (max-width:760px){
@@ -310,7 +328,7 @@ function renderHub(all) {
 <section class="brief"><div class="wrap brief__grid">
   <div>
     <h2>How to use this site</h2>
-    <p>Find your field. Start with <strong>Try it Tuesday</strong> &mdash; a 90-minute version you can run this week with no prep beyond reading the page. When you have more room, the four-week plan and the one-semester version are there too.</p>
+    <p>Find your field. Start with <strong>Try it Tuesday</strong> &mdash; a 90-minute version you can run this week with no prep beyond reading the page. When you have more room, the multi-week plan &mdash; four weeks for most disciplines, five where the physical build depends on an earlier week&rsquo;s output &mdash; and the one-semester version are there too.</p>
     <p>Nothing here needs you to learn a tool first. The physical builds go through PACE as a service: students submit a file, we fabricate it. The AI builds happen in a chat window, and every page shows a real model output with its failures marked.</p>
   </div>
   <div>
@@ -365,11 +383,17 @@ function sectionDemo(d) {
     <p class="demonote">This demo runs entirely offline against canned data &mdash; no keys, no network, safe on conference wifi.</p>
   </section>`;
 }
+// How many weeks a plan actually runs is data, not a constant: two disciplines
+// need five because their artifact cannot be designed until a week-2 output
+// exists. Every "N weeks" label is derived from plan.length so a plan that grows
+// or shrinks can never leave a stale heading above the list.
+const planWeeks = d => d.plan.length;
+
 function sectionPlan(d) {
   const items = d.plan.map(p => `<li><span class="plan__wk">${esc(p.wk)}</span><span class="plan__txt">${esc(p.txt)}</span></li>`).join('');
   return `<section class="sec" id="plan">
-    <p class="sec__label">Four weeks, realistically</p>
-    <h2>The four-week version</h2>
+    <p class="sec__label">${planWeeks(d)} weeks, realistically</p>
+    <h2>The ${planWeeks(d)}-week version</h2>
     <ol class="plan__list">${items}</ol>
   </section>`;
 }
@@ -447,7 +471,7 @@ function sectionScales(d) {
     <h2>Scale it to the time you have</h2>
     <div class="scales">
       <div class="scale"><h3>One session</h3><p>${esc(s.oneSession)}</p></div>
-      <div class="scale"><h3>Four weeks</h3><p>${esc(s.fourWeeks)}</p></div>
+      <div class="scale"><h3>${planWeeks(d)} weeks</h3><p>${esc(s.fourWeeks)}</p></div>
       <div class="scale"><h3>One semester</h3><p>${esc(s.oneSemester)}</p></div>
     </div>
   </section>`;
@@ -487,7 +511,7 @@ function renderDiscipline(d, all, bySlug) {
 ${jumpMenu(all, '../')}
 
 <main class="disc"><div class="wrap">
-  ${hasMarks(d.slug) ? `<p class="unvnote"><span class="hd">About the unverified marks on this page</span>Figures tagged <span class="unv__t">unverified</span> are PACE-local estimates that could not be confirmed against any published source, so they are labelled rather than quietly presented as fact. Every other factual claim on this page &mdash; statutes, standards codes, gene biology, primary-source citations &mdash; was independently checked; the full audit, including what came back wrong, is in <code>content/claims.json</code>.</p>` : ''}
+  ${hasMarks(d.slug) ? `<p class="unvnote"><span class="hd">About the unverified marks on this page</span>Figures tagged <span class="unv__t">unverified</span> are PACE-local estimates that could not be confirmed against any published source, so they are labelled rather than quietly presented as fact. Every other factual claim on this page &mdash; statutes, standards codes, gene biology, primary-source citations &mdash; was independently checked; the <a href="../audit.html">full claim audit</a>, including what came back wrong, lists every claim with its source.</p>` : ''}
   ${sectionTry(d)}
   ${sectionMakeBuild(d)}
   ${sectionDemo(d)}
@@ -506,7 +530,7 @@ ${jumpMenu(all, '../')}
 <footer><div class="wrap">EL3vate 2026 &middot; Day 8 &middot; ${esc(d.name)} &middot; Build ${SHA}</div></footer>
 `;
   return page(`${d.name} · EL3vate 2026 Day 8`,
-    `Prototyping assignment for ${d.name}: a 90-minute version, four-week plan, rubric, budget, and a real annotated AI output.`,
+    `Prototyping assignment for ${d.name}: a 90-minute version, ${planWeeks(d)}-week plan, rubric, budget, and a real annotated AI output.`,
     body, COPY_JS);
 }
 
@@ -526,7 +550,7 @@ ${d.tryTuesday}
 
 **Build it (${d.build.tool}).** ${d.build.body}
 
-## Four-week plan
+## ${planWeeks(d)}-week plan
 ${plan}
 
 ## What this replaces
@@ -554,7 +578,7 @@ ${rub}
 
 ## Three sizes
 - **One session:** ${d.scales.oneSession}
-- **Four weeks:** ${d.scales.fourWeeks}
+- **${planWeeks(d)} weeks:** ${d.scales.fourWeeks}
 - **One semester:** ${d.scales.oneSemester}
 
 ---
@@ -563,6 +587,40 @@ _PACE · Shidler College of Business · University of Hawaiʻi at Mānoa · pace
 }
 
 // ---- main ----
+// ---- phase 7: human-readable claim audit page (dist/audit.html) ----
+function renderAudit(claims) {
+  const items = (claims && claims.claims) || [];
+  const counts = { refuted: 0, unverifiable: 0, verified: 0 };
+  items.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+  const rank = s => (s === 'refuted' ? 0 : s === 'unverifiable' ? 1 : s === 'verified' ? 2 : 9);
+  const sorted = items.slice().sort((a, b) => rank(a.status) - rank(b.status) || String(a.id).localeCompare(String(b.id)));
+  const cards = sorted.map(c => {
+    const src = c.verifiedAgainst
+      ? `<a href="${escAttr(c.verifiedAgainst)}" rel="noopener noreferrer">${esc(c.verifiedAgainst)}</a>`
+      : `<span class="muted">no independent source found</span>`;
+    return `<article class="claimrow claimrow--${esc(c.status)}">
+      <div class="claimrow__hd"><span class="cid">${esc(c.id)}</span><span class="stbadge stbadge--${esc(c.status)}">${esc(c.status)}</span></div>
+      <p class="claimrow__q">&ldquo;${esc(String(c.claim))}&rdquo;</p>
+      <p class="claimrow__meta">${esc(c.file)} &middot; ${esc(c.field)}</p>
+      ${c.note ? `<p class="claimrow__note">${esc(c.note)}</p>` : ''}
+      <p class="claimrow__src">Checked against: ${src}</p>
+    </article>`;
+  }).join('\n');
+  const auditedAt = claims && claims.auditedAt ? ` (${esc(claims.auditedAt)})` : '';
+  const body = `
+<header class="hero"><div class="wrap hero__inner">
+  <a class="backlink" href="index.html">&larr; All 15 disciplines</a>
+  <p class="eyebrow">EL3vate 2026 &middot; Day 8 &middot; Claim audit</p>
+  <h1>Every factual claim on this site, checked</h1>
+  <p class="hero__sub">${items.length} claims were extracted from the discipline content and verified independently${auditedAt}: <strong>${counts.verified} verified</strong>, <strong>${counts.refuted} refuted</strong>, <strong>${counts.unverifiable} unverifiable</strong>. Refuted claims were rewritten out of the site, or &mdash; where they sit inside a preserved model transcript &mdash; named in that transcript&rsquo;s annotations. Load-bearing unverifiable figures stay on their pages inside a visible <span class="unv__t">unverified</span> mark.</p>
+</div></header>
+<main class="disc"><div class="wrap">
+  <div class="auditlist">${cards}</div>
+</div></main>
+<footer><div class="wrap">EL3vate 2026 &middot; Day 8 &middot; Claim audit &middot; Build ${SHA}</div></footer>`;
+  return page('Claim audit · EL3vate 2026 Day 8', 'Every factual claim on the EL3vate Day 8 site, independently checked, with sources.', body);
+}
+
 function main() {
   const all = load();
   const bySlug = Object.fromEntries(all.map(d => [d.slug, d]));
@@ -571,6 +629,10 @@ function main() {
 
   // hub
   fs.writeFileSync(path.join(DIST, 'index.html'), renderHub(all));
+
+  // claim audit page (phase-7 audit, rendered human-readable so the on-page note
+  // links to a real dist/ artifact rather than the repo-only content/claims.json)
+  fs.writeFileSync(path.join(DIST, 'audit.html'), renderAudit(CLAIMS));
 
   // discipline pages + handouts
   for (const d of all) {

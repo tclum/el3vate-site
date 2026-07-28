@@ -14,15 +14,15 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Secure the partner classroom and the specific lesson. Students observe before designing."
+      "txt": "Secure the partner classroom and the specific lesson. Students observe before designing, and cardboard-prototype the manipulative the same week so the fabricated part can be the second version, not the first."
     },
     {
       "wk": "Wk 2",
-      "txt": "Generate differentiated variants with AI, then evaluate against the actual standard and the actual learners. Most get rejected."
+      "txt": "Submit the refined manipulative fabrication file at the start of the week. Generate differentiated variants with AI, then evaluate against the actual standard and the actual learners. Most get rejected."
     },
     {
       "wk": "Wk 3",
-      "txt": "Design and submit the manipulative file. Prototype in cardboard first so the fabrication is the second version, not the first."
+      "txt": "While the manipulative is fabricated, students finalize the lesson and rehearse teaching it."
     },
     {
       "wk": "Wk 4",
@@ -63,8 +63,8 @@
     "prepHours": 1.5,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $4–10 per student in filament or cut stock for a durable manipulative in the four-week build.",
-    "fileDueWeek": "Week 3 — fabrication file due after a cardboard prototype so the part is the second version.",
-    "calendarNote": "Material generation and evaluation need no lead time; the manipulative depends on the 7–10 business day turnaround, timed for week-4 classroom teaching."
+    "fileDueWeek": "First day of Week 2 — cardboard-prototype the manipulative during week-1 observation, then submit the refined fabrication file at the start of week 2 (still the second version, iterated earlier). PACE quotes 7–10 business days (up to 14 calendar days), so it clears before week-4 classroom teaching.",
+    "calendarNote": "Material generation and evaluation need no lead time. The manipulative is for the specific lesson secured in week 1; students cardboard-prototype it that week and submit the refined file at the start of week 2, so the up-to-14-calendar-day turnaround clears before week-4 teaching."
   },
   "scales": {
     "oneSession": "The 90-minute generate-and-evaluate session producing an evaluation of the AI material; no fabrication.",

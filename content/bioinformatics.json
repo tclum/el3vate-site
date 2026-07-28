@@ -14,11 +14,11 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Each student picks a structure or dataset and writes the biological question in one sentence a non-scientist would understand."
+      "txt": "Each student picks a structure or dataset and writes the biological question in one sentence a non-scientist would understand, and identifies the wild-type and mutant structures to print."
     },
     {
       "wk": "Wk 2",
-      "txt": "Run the analysis. Prepare and submit the print file, including the mutant variant."
+      "txt": "Submit the print file (wild-type and mutant) at the start of the week so fabrication runs in parallel, then run the analysis."
     },
     {
       "wk": "Wk 3",
@@ -63,8 +63,8 @@
     "prepHours": 2,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $6–12 per student in filament for wild-type and mutant structure prints in the four-week build.",
-    "fileDueWeek": "Week 2 — print file, including the mutant variant, due so both parts return before the week-4 presentation.",
-    "calendarNote": "Analysis and explainer need no lead time; the printed structures depend on the 7–10 business day turnaround."
+    "fileDueWeek": "First day of Week 2 — submit the print file (wild-type and mutant) at the start of the week. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 presentation.",
+    "calendarNote": "Analysis and explainer need no lead time. The structures are selected in week 1, so the print file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before the week-4 presentation."
   },
   "scales": {
     "oneSession": "The 90-minute explainer-plus-outside-read session; no fabrication.",
@@ -88,6 +88,10 @@
       {
         "marker": "Binary 'no gate at all' framing in the code",
         "note": "The model admits this is too absolute; a student should see how the healthy/broken toggle erases the residual-function biology that real drugs target."
+      },
+      {
+        "marker": "Unchecked: the residue context '…Ile-Phe-Gly-Val…' around position 508",
+        "note": "Every other biological claim in this output was verified — the three-nucleotide deletion, the misfolding and premature degradation, the residual surface function correctors exploit, the two gene copies, the 2,000-plus known variants. This one was not: nobody compared that four-residue stretch against the actual CFTR sequence. It is consistent with the commonly cited I507-F508-G509-V510 run, but consistent is not checked, and the page will not claim otherwise. Two minutes in a sequence viewer closes it, which is precisely the move the assignment is teaching."
       },
       {
         "marker": "Confident causal compression: 'Thick, sticky mucus clogs the lungs → cystic fibrosis'",

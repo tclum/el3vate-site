@@ -14,11 +14,11 @@
   "plan": [
     {
       "wk": "Wk 1",
-      "txt": "Each student claims a feature and writes the formation question they want to answer."
+      "txt": "Each student claims a feature and writes the formation question they want to answer; the feature’s elevation data defines the terrain to print."
     },
     {
       "wk": "Wk 2",
-      "txt": "Prepare and submit the print file, including the second exaggeration factor. Fabrication runs while they work on the model."
+      "txt": "Submit the terrain print file, including the second exaggeration factor, at the start of the week. Fabrication runs while students build the model."
     },
     {
       "wk": "Wk 3",
@@ -30,7 +30,7 @@
     }
   ],
   "prompt": "Build a single self-contained HTML page with an interactive simulation of this planetary process: [describe the process]. Include sliders for the parameters that matter physically. Show the resulting landform update live. Label the axes and give units. Then tell me which parameter ranges produce results that are physically implausible, and why the simulation still lets me set them.",
-  "tryTuesday": "90 minutes, and every student needs one crater somebody has already measured — Barringer, Tycho, anything with published dimensions they can look up. The task is not to explore the simulator. It is to make the simulator reproduce a crater that already exists. Open the embedded crater-sim demo (or generate one with the prompt), feed in the impactor size, speed and angle the literature proposes for that crater, and set the computed diameter and depth beside the surveyed ones. They will not agree. Everything after that belongs to the residual: how large the miss is, which direction it runs, and what the simulation leaves out that would account for it. Worth chasing — whether the scaling law was ever fitted at that size, what atmospheric passage did to the impactor before it arrived, whether the target rock resembles the material the constants came from. Each student turns in a one-page calibration note: observed numbers, computed numbers, the size of the disagreement, and their best physical account of where it comes from. A simulation that matches an observation has taught nobody anything. The disagreement is the entire lesson.",
+  "tryTuesday": "90 minutes, and every student needs one crater somebody has already measured — Barringer, Tycho, anything with published dimensions they can look up. Minutes 0–10: the task is not to explore the simulator. It is to make the simulator reproduce a crater that already exists. Minutes 10–40: open the embedded crater-sim demo (or generate one with the prompt), feed in the impactor size, speed and angle the literature proposes for that crater, and set the computed diameter and depth beside the surveyed ones. They will not agree. Minutes 40–75: the residual — how large the miss is, which direction it runs, and what the simulation leaves out that would account for it. Worth chasing — whether the scaling law was ever fitted at that size, what atmospheric passage did to the impactor before it arrived, whether the target rock resembles the material the constants came from. Minutes 75–90: each student turns in a one-page calibration note — observed numbers, computed numbers, the size of the disagreement, and their best physical account of where it comes from. A simulation that matches an observation has taught nobody anything. The disagreement is the entire lesson.",
   "replaces": {
     "assignment": "The problem set of cratering or orbital-mechanics calculations.",
     "lost": "The hand-computation practice with the governing equations.",
@@ -63,8 +63,8 @@
     "prepHours": 2,
     "classMinutes": 90,
     "perStudentCost": "$0 for the Tuesday version; roughly $6–14 per student in filament for terrain prints at two exaggeration factors in the four-week build.",
-    "fileDueWeek": "Week 2 — print file, including the second exaggeration factor, due so terrain returns before the week-4 show-and-tell.",
-    "calendarNote": "Simulation work needs no lead time; the printed terrain depends on the 7–10 business day turnaround."
+    "fileDueWeek": "First day of Week 2 — submit the terrain print file (both exaggeration factors) at the start of the week the feature is claimed. PACE quotes 7–10 business days (up to 14 calendar days), so it clears before the week-4 show-and-tell.",
+    "calendarNote": "Simulation work needs no lead time. The terrain comes from the elevation data of the feature claimed in week 1, so its print file goes in at the start of week 2 and the up-to-14-calendar-day turnaround clears before the week-4 show-and-tell."
   },
   "scales": {
     "oneSession": "The 90-minute calibration session producing a one-page note on why the simulator misses a surveyed crater; no fabrication.",
@@ -82,8 +82,8 @@
         "note": "The model named exactly the parameter ranges where its own result is physically wrong — the model-limits reasoning the assignment grades, produced unprompted."
       },
       {
-        "marker": "Named its scaling law: 'gravity-regime pi-scaling (Holsapple)'",
-        "note": "A real crater-scaling approach, correctly identified — but a student should verify the exponents and constants against the source rather than trusting the code."
+        "marker": "Named its scaling law: 'gravity-regime pi-scaling (Holsapple)' — the attribution checks out, the constants were not checked",
+        "note": "Pi-group scaling with separate gravity and strength regimes is a real approach and is correctly attributed. We closed one number and could not close the rest: the gravity exponent −0.22 matches the β = 0.22 commonly adopted for dense rock (Schmidt & Housen 1987), but the leading constant 1.16 and the exponents 0.78 and 0.44 were not confirmed against the primary literature, and the assumed densities rho_i = 3000 and rho_t = 2500 kg/m³ are stated with no source and tied to no particular body. A correct citation is not a correct formula, and a student should pull the paper before trusting any number this code returns."
       },
       {
         "marker": "No regime gate: 'every input yields a finite number regardless of whether the physics still applies'",
