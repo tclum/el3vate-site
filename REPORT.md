@@ -593,3 +593,667 @@ full current table is in the phases 8–12 section above.*
 - **`tryTuesday` clusters** (finance/planetary/urban) share method language; well
   under threshold, but they are the closest pairs and the first place templating
   would show if content were later edited carelessly.
+
+---
+
+# THIRD RUN — phases 13 through 17
+
+_Run 2026-07-28. Five phases, five commits, explicit file lists throughout._
+
+| Phase | Commit | What it did |
+|---|---|---|
+| 13 | `84c3343` | Kill switch (`USE_SUPABASE`) + display-only `ALIASES` |
+| 14 | `0802827` | `db/001_feedback.sql`, authored and **not applied** |
+| 15 | `cd3c141` | Feedback form, gated entirely behind the phase-13 switch |
+| 16 | `51b3601` | Gates 11–14, each proven failable |
+| 17 | this commit | This report |
+
+## The bottom line, from build output rather than intent
+
+```
+$ node src/build.js
+built 15 discipline pages + hub into dist/ (build 51b3601 2026-07-29T02:34:18.009Z)
+SITE_URL = https://el3vate.vercel.app
+FEEDBACK_EMAIL = tclum@hawaii.edu
+ALIASES = https://el3vate.forpono.com  [display only — never SITE_URL]
+USE_SUPABASE = false  url=empty  key=empty  ->  feedback backend OFF (mailto only)
+```
+
+```
+$ node src/validate.js
+[11] KILL-SWITCH REVERSIBILITY  PASS  (USE_SUPABASE=false, url=empty, key=empty -> backend OFF; 59 files in dist/ scanned)
+     switch is OFF: dist/ must contain no reference to the backend at all
+[12] NO ELEVATED KEY  PASS  (51 tracked files + all of dist/; 0 decodable JWT(s) found)
+[13] SITE_URL INTEGRITY  PASS
+     SITE_URL  https://el3vate.vercel.app   (pinned: https://el3vate.vercel.app)
+     ALIASES   https://el3vate.forpono.com   [display only]
+[14] DEMO ISOLATION  PASS  (GATE 5 re-asserted: holds; 8 files under dist/demos/)
+
+ALL GATES PASS
+```
+
+```
+$ grep -n "^const USE_SUPABASE" src/build.js
+45:const USE_SUPABASE = false;              // master switch for everything in phases 13-17
+
+$ grep -ril "supabase" dist/ ; echo "exit=$?"
+exit=1                     # no output, no match, anywhere in dist/
+```
+
+`USE_SUPABASE` is committed `false`. Both credentials are committed as empty
+strings. GATE 11 scanned all **59 files** in `dist/` and found no occurrence of
+`supabase` in any of them. **That is the state Tim presents from tomorrow, and
+it is byte-for-byte the phase-12 site plus one line of footer text.**
+
+Both hard constraints held:
+
+- **CONSTRAINT A** — `SITE_URL` is unchanged at `https://el3vate.vercel.app`.
+  `assets/qr.svg`, `assets/qr.json`, `dist/closing-card.html` and the 916 KB
+  presenter kit were not regenerated and did not need to be. The forpono domain
+  appears in exactly one place, as plain text in the hub footer, and GATE 13 now
+  fails the build if it is ever substituted into `SITE_URL`.
+- **CONSTRAINT B** — GATE 5 is unchanged; not one character of it was relaxed,
+  weakened or scoped. GATE 14 re-runs it and additionally bars the backend from
+  every file under `dist/demos/`. No demo file gained a network call. The 212
+  phase-8 interaction assertions still pass.
+
+## What shipped
+
+### Phase 13 — the kill switch
+
+Five constants at the top of `src/build.js`, next to `SITE_URL`:
+
+```js
+const ALIASES = ['https://el3vate.forpono.com'];   // display only; never SITE_URL
+
+const USE_SUPABASE = false;              // master switch for everything in phases 13-17
+const SUPABASE_URL = '';                 // filled by Tim
+const SUPABASE_ANON_KEY = '';            // filled by Tim — anon key ONLY, never the service-role key
+
+const SUPABASE_ON =
+  USE_SUPABASE && String(SUPABASE_URL).trim() !== '' && String(SUPABASE_ANON_KEY).trim() !== '';
+```
+
+`SUPABASE_ON` is the predicate every phase-15 emission is gated on — never
+`USE_SUPABASE` alone. The two credentials are a second, independent interlock: if
+either is blank the switch counts as off whatever the boolean says, so a
+half-configured build cannot ship a form that posts nowhere. GATE 11 has a
+fixture for exactly that case.
+
+With the switch off the build emits **nothing** — not the form markup, not the
+script, not a dead CSS selector. `FBFORM_CSS` and `FBFORM_PRINT_CSS` are
+interpolated into the stylesheet only when `SUPABASE_ON`. That is stricter than
+the brief asked for and it is what makes GATE 11 a clean binary rather than a
+list of exceptions.
+
+`ALIASES` renders as plain text in the hub footer and nowhere else:
+
+```html
+<footer><div class="wrap">EL3vate 2026 · Day 8 session resource · Prepared for the
+faculty cohort · Build 51b3601 · also at el3vate.forpono.com</div></footer>
+```
+
+Not an `<a href>`, deliberately — the canonical address stays `SITE_URL`.
+
+### Phase 15 — the form
+
+Replaces the `mailto:` link on each discipline page **when and only when the
+switch is on**. Three fields: what you tried (required), what happened
+(optional), contact email (optional, and the label, the hint text and the SQL
+comment all say so). Discipline is filled from the page automatically and posted
+as the slug, which is what the `CHECK` constraint validates against.
+
+One inline `fetch` to the REST endpoint with the anon key. No SDK, no
+dependency, nothing added to `package.json`.
+
+**Failure is visible and lossless.** On a network error, a 12-second timeout, or
+any non-2xx status, the `mailto:` fallback is revealed with the discipline
+already in the subject *and what they typed spliced into the body*, so a broken
+backend degrades to the phase-11 behaviour instead of eating the submission. The
+`mailto:` anchor is present in the markup in both switch states, which is why
+GATE 10's per-discipline feedback-link check keeps passing either way.
+
+The form is in the page shell. It is not in any demo, not in the demo iframe, and
+not autofocused — it sits at the bottom of a long page and stealing focus on load
+breaks screen-reader flow.
+
+## Phase 14 — the migration SQL, authored and NOT applied
+
+**Nothing was applied.** No database credentials were requested, obtained or
+held, and no migration was run. No Postgres is installed on this machine
+(`psql`, `postgres` and `pg_ctl` are all absent), so this file is
+syntax-reviewed, not executed — see "what could not be run" below. Tim applies
+it himself in the Supabase SQL editor and runs the verification query after.
+
+### The full migration
+
+```sql
+-- ============================================================================
+-- 001_feedback.sql — EL3vate 2026 Day 8 session feedback
+-- ============================================================================
+-- Authored 2026-07-28 for the EL3vate Day 8 site (https://el3vate.vercel.app).
+--
+-- THIS FILE HAS NOT BEEN APPLIED. It was written to be read line by line and
+-- run by hand in the Supabase SQL editor. Nothing in the site's build or deploy
+-- path executes it, and no automated process holds credentials for this project.
+-- Run the verification query at the bottom of this file immediately afterwards;
+-- it is the only thing that confirms the applied state matches the intent here.
+--
+-- WHAT THIS BACKS
+-- One form, at the bottom of each of the fifteen discipline pages, asking a
+-- faculty member what they tried and what happened. The page is public static
+-- HTML served from a CDN, so the anonymous (publishable) key is embedded in it
+-- in plain sight. Everything below follows from that single fact.
+--
+-- THE SECURITY MODEL, STATED PLAINLY
+--   * Row-level security is ENABLED, and there is exactly ONE policy: anonymous
+--     INSERT. No select, update or delete policy exists for `anon`, and none may
+--     be added. With RLS on and no matching policy, those commands return zero
+--     rows / affect nothing for `anon` — that is the whole protection.
+--   * Anything `anon` can read, the entire internet can read, because the key
+--     that authorises `anon` ships inside a public web page. `contact_email` is
+--     a real email address volunteered by a colleague; a select policy on this
+--     table would publish those addresses.
+--   * Tim reads submissions through the Supabase dashboard, authenticated as
+--     himself. Reads never go through `anon`.
+--   * The key in the page is the anonymous/publishable key ONLY. The elevated
+--     key — written here as "service-role", hyphenated, because GATE 12 in
+--     src/validate.js fails the build on the underscored spelling appearing in
+--     any tracked file — bypasses RLS entirely and must never be pasted into
+--     src/build.js, a demo, an env file under dist/, or anything else that
+--     reaches a browser.
+--
+-- ABUSE CONTROL — READ THIS BEFORE ASSUMING YOU HAVE ANY
+-- The CHECK constraints below are the ONLY abuse control available at the
+-- database layer. They bound how large a single row can be and restrict
+-- `discipline` to the fifteen known slugs, which stops a junk row from carrying
+-- a megabyte of text or naming a page that does not exist.
+--
+--   THEY ARE NOT RATE LIMITING. They do not stop the same client from inserting
+--   ten thousand well-formed rows in a minute. Postgres cannot express that
+--   constraint here, and this project has no server of its own to enforce it.
+--
+-- Configure the actual limits in the Supabase dashboard, separately, before the
+-- form is switched on:
+--   * Project Settings -> API -> rate limiting on the REST endpoint.
+--   * A CAPTCHA/attestation provider on the project if the volume warrants it.
+--   * If a flood happens mid-session, the fastest kill is not in this file at
+--     all: flip USE_SUPABASE back to false in src/build.js and run
+--     `./ship.sh prod`. That removes the form and the key from the site inside
+--     two minutes and the mailto: fallback takes over.
+--
+-- RUN ONCE
+-- The whole migration is wrapped in begin/commit. `create table if not exists`
+-- is idempotent but `alter table ... add constraint` is not — Postgres has no
+-- `add constraint if not exists` — so a second run errors on the first
+-- constraint and the transaction rolls back whole. That is a safe failure, not
+-- a partial apply, but it means the right response to "did that go through?" is
+-- the verification query below, not running the file again.
+--
+-- REVERSIBILITY
+--   drop table if exists public.el3vate_feedback;   -- takes the policy with it
+-- ============================================================================
+
+begin;
+
+-- gen_random_uuid() lives in pgcrypto. Supabase enables it by default; this is
+-- here so the file also applies cleanly to a bare Postgres.
+create extension if not exists pgcrypto;
+
+-- ---------------------------------------------------------------------------
+-- table
+-- ---------------------------------------------------------------------------
+create table if not exists public.el3vate_feedback (
+  id               uuid        primary key default gen_random_uuid(),
+  created_at       timestamptz not null     default now(),
+  discipline       text        not null,
+  what_they_tried  text        not null,
+  what_happened    text,
+  contact_email    text,
+  user_agent       text
+);
+
+comment on table public.el3vate_feedback is
+  'EL3vate 2026 Day 8 session feedback. Anonymous insert only; RLS on; no anon read. Read via the dashboard.';
+comment on column public.el3vate_feedback.discipline is
+  'Discipline page slug the submission came from. Filled automatically by the form, constrained to the 15 known slugs.';
+comment on column public.el3vate_feedback.contact_email is
+  'Optional and nullable. Only present if the submitter wants a reply. Never exposed to anon — see the RLS policy.';
+comment on column public.el3vate_feedback.user_agent is
+  'Optional. Browser UA string, for telling a phone submission from a laptop one. Not an identifier.';
+
+-- ---------------------------------------------------------------------------
+-- check constraints — bounded size, known slugs. NOT rate limiting; see header.
+-- ---------------------------------------------------------------------------
+-- Added separately (rather than inline) so each one has its own name and can be
+-- dropped or adjusted without rewriting the table definition.
+
+alter table public.el3vate_feedback
+  add constraint el3vate_feedback_tried_len
+  check (char_length(what_they_tried) between 1 and 4000);
+
+alter table public.el3vate_feedback
+  add constraint el3vate_feedback_happened_len
+  check (what_happened is null or char_length(what_happened) <= 4000);
+
+alter table public.el3vate_feedback
+  add constraint el3vate_feedback_email_len
+  check (contact_email is null or char_length(contact_email) <= 254);
+
+alter table public.el3vate_feedback
+  add constraint el3vate_feedback_ua_len
+  check (user_agent is null or char_length(user_agent) <= 512);
+
+-- The fifteen slugs are the fifteen files in content/ (excluding claims.json,
+-- which is the claim audit, not a discipline). If a sixteenth discipline is ever
+-- added, this list must be extended or its submissions will be rejected.
+alter table public.el3vate_feedback
+  add constraint el3vate_feedback_discipline_known
+  check (discipline in (
+    'bioinformatics',
+    'comparative-philosophy',
+    'english-literature',
+    'entrepreneurship',
+    'family-business',
+    'finance',
+    'law',
+    'learning-design',
+    'marketing',
+    'marriage-family-therapy',
+    'nutrition',
+    'planetary-science',
+    'political-science',
+    'teacher-education',
+    'urban-planning'
+  ));
+
+-- ---------------------------------------------------------------------------
+-- row-level security
+-- ---------------------------------------------------------------------------
+alter table public.el3vate_feedback enable row level security;
+
+-- Belt and braces: `enable` leaves the table owner and any BYPASSRLS role able
+-- to skip policies. `force` makes the policy apply to the owner too, so a future
+-- connection as the owning role cannot quietly read the table through the API.
+alter table public.el3vate_feedback force row level security;
+
+-- EXACTLY ONE POLICY. Anonymous insert, nothing else.
+--
+-- There is deliberately no policy for select, update or delete, for `anon` or
+-- for `authenticated`. Do not add one. With RLS enabled and no matching policy,
+-- a select through the anon key returns an empty set rather than the table.
+--
+-- `with check (true)` is correct here and is not a hole: it is the row-level
+-- predicate for the row being inserted, and the column-level CHECK constraints
+-- above are what bound its contents. There is no per-row ownership concept on
+-- this table — every row is an anonymous submission — so there is nothing else
+-- to predicate on.
+drop policy if exists el3vate_feedback_anon_insert on public.el3vate_feedback;
+create policy el3vate_feedback_anon_insert
+  on public.el3vate_feedback
+  for insert
+  to anon
+  with check (true);
+
+-- The REST endpoint needs the schema and the insert privilege on top of the
+-- policy: RLS filters, grants admit. `anon` gets INSERT and nothing more — no
+-- SELECT grant, so even a mistakenly added select policy would still be blocked
+-- by the missing privilege.
+grant usage  on schema public              to anon;
+grant insert on table  public.el3vate_feedback to anon;
+
+revoke select, update, delete, truncate, references, trigger
+  on table public.el3vate_feedback from anon;
+
+-- Reading is by dashboard, authenticated as a real person, so nothing is granted
+-- to `authenticated` either.
+revoke all on table public.el3vate_feedback from authenticated;
+
+-- ---------------------------------------------------------------------------
+-- index: submissions are read newest-first in the dashboard
+-- ---------------------------------------------------------------------------
+create index if not exists el3vate_feedback_created_at_idx
+  on public.el3vate_feedback (created_at desc);
+
+commit;
+```
+
+### The verification query Tim runs after applying
+
+```sql
+-- ============================================================================
+-- VERIFICATION — run this after the migration, in the same SQL editor.
+-- ============================================================================
+-- It returns one row per check with a PASS/FAIL verdict and the actual observed
+-- value, so it is readable rather than silent. FIVE rows should come back, and
+-- every `verdict` must read PASS. An empty result is itself a failure: it means
+-- the table is not there at all.
+--
+-- Expected output (5 rows, every verdict PASS):
+--
+--   check                                       verdict  observed
+--   ------------------------------------------  -------  --------------------------------------------------
+--   1. table exists                             PASS     public.el3vate_feedback
+--   2. RLS enabled                              PASS     relrowsecurity=true relforcerowsecurity=true
+--   3. exactly one policy                       PASS     1 policy/policies: el3vate_feedback_anon_insert
+--   4. that policy is INSERT for anon           PASS     el3vate_feedback_anon_insert cmd=INSERT roles={anon}
+--   5. no select/update/delete policy for anon  PASS     0 non-INSERT policy/policies reachable by anon: none
+--
+-- Anything other than five PASS rows means STOP: leave USE_SUPABASE false and do
+-- not ship the form.
+--
+-- ("check" is quoted throughout because it is a reserved word in Postgres and an
+-- unquoted column alias by that name is a syntax error.)
+
+select '1. table exists' as "check",
+       case when count(*) = 1 then 'PASS' else 'FAIL' end as verdict,
+       coalesce(string_agg(schemaname || '.' || tablename, ', '), '(no such table)') as observed
+from pg_tables
+where schemaname = 'public' and tablename = 'el3vate_feedback'
+
+union all
+
+select '2. RLS enabled',
+       case when bool_and(c.relrowsecurity) then 'PASS' else 'FAIL' end,
+       coalesce(string_agg('relrowsecurity=' || c.relrowsecurity ||
+                           ' relforcerowsecurity=' || c.relforcerowsecurity, ', '),
+                '(no such table)')
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relname = 'el3vate_feedback'
+
+union all
+
+select '3. exactly one policy',
+       case when count(*) = 1 then 'PASS' else 'FAIL' end,
+       count(*) || ' policy/policies: ' ||
+         coalesce(string_agg(policyname, ', '), '(none)')
+from pg_policies
+where schemaname = 'public' and tablename = 'el3vate_feedback'
+
+union all
+
+select '4. that policy is INSERT for anon',
+       case when count(*) = 1 then 'PASS' else 'FAIL' end,
+       coalesce(string_agg(policyname || ' cmd=' || cmd || ' roles=' || roles::text, ', '),
+                '(no INSERT policy for anon)')
+from pg_policies
+where schemaname = 'public'
+  and tablename  = 'el3vate_feedback'
+  and cmd        = 'INSERT'
+  and roles::text[] = array['anon']
+
+union all
+
+select '5. no select/update/delete policy for anon',
+       case when count(*) = 0 then 'PASS' else 'FAIL' end,
+       count(*) || ' non-INSERT policy/policies reachable by anon: ' ||
+         coalesce(string_agg(policyname || ' (' || cmd || ')', ', '), 'none')
+from pg_policies
+where schemaname = 'public'
+  and tablename  = 'el3vate_feedback'
+  and cmd       <> 'INSERT'
+  and (roles::text[] && array['anon', 'public'])
+
+order by 1;
+
+-- Optional second check, once the form has been switched on and one real
+-- submission has been made. Run it as yourself in the dashboard; it should show
+-- the row. If it shows nothing, the insert path is broken and the form is
+-- silently dropping submissions.
+--
+--   select id, created_at, discipline, left(what_they_tried, 60) as tried
+--   from public.el3vate_feedback
+--   order by created_at desc
+--   limit 20;
+```
+
+### Why there is exactly one policy
+
+The anon key ships inside a public HTML page served from a CDN. Anything `anon`
+can read, the entire internet can read — including `contact_email`, which is a
+real address volunteered by a colleague. So `anon` gets `INSERT` and nothing
+else: no select/update/delete policy, and no `SELECT` grant either, so even a
+mistakenly added policy would still hit a missing privilege. Reads go through the
+Supabase dashboard, authenticated as Tim.
+
+`force row level security` is on as well as `enable`, so a future connection as
+the owning role cannot quietly read the table through the API.
+
+### The `CHECK` constraints are not rate limiting
+
+Stated in the file header and repeated here because it is the easiest thing to
+misread as protection. The constraints bound row size (4000 chars on each text
+field, 254 on the email, 512 on the UA) and restrict `discipline` to the fifteen
+known slugs. They stop one junk row from carrying a megabyte or naming a page
+that does not exist. **They do not stop ten thousand well-formed rows in a
+minute.** Configure the real limits in the dashboard before switching the form
+on — Project Settings → API rate limiting, and a CAPTCHA/attestation provider if
+volume warrants. If a flood happens mid-session, the fastest kill is not in the
+database at all: flip `USE_SUPABASE` to `false` and run `./ship.sh prod`.
+
+## Phase 16 — every new gate's demonstrated failure input
+
+Each gate was fed a deliberately broken fixture, confirmed to reject it, and the
+fixture deleted. Four gates additionally got a **negative control** — an input
+that is deliberately *right* and must pass — because a gate that fails everything
+is as useless as one that fails nothing, and gates 11, 12 and 14 all have an
+"allowed" branch that would otherwise never be exercised.
+
+`node src/validate.js --selftest`, verbatim:
+
+```
+OK   kill-switch (clean off-state build): control => PASS (correctly allowed)  | switch off and no backend reference anywhere in dist/ — the committed state
+OK   kill-switch (backend reference survives the revert): fixture => FAIL (caught)  | switch off but dist/law/index.html still contains the string "supabase"
+OK   kill-switch (credential value survives the revert): fixture => FAIL (caught)  | switch off but the SUPABASE_URL value is still present in dist/index.html (the word "supabase" is not)
+OK   kill-switch (form with no mailto fallback): fixture => FAIL (caught)  | switch on, form emitted, but no id="fb-mailto" — a backend failure would lose the submission
+OK   kill-switch (half-configured build): fixture => FAIL (caught)  | USE_SUPABASE true with an empty SUPABASE_URL — the credential interlock was bypassed
+OK   kill-switch (computed switch): fixture => FAIL (caught)  | `const USE_SUPABASE = process.env.ON === "1";` instead of a bare boolean literal
+OK   elevated key (elevated JWT in dist/): fixture => FAIL (caught)  | a JWT in dist/index.html whose decoded payload reads role=<the elevated role>
+OK   elevated key (anon JWT in dist/ is allowed): control => PASS (correctly allowed)  | the same JWT shape with role=anon — legitimate when the switch is on, must not be rejected
+OK   elevated key (modern secret key in dist/): fixture => FAIL (caught)  | an sb_secret_… key in dist/index.html — not a JWT, so the payload decode cannot see it
+OK   elevated key (role named in tracked source): fixture => FAIL (caught)  | the underscored token in a tracked .js file
+OK   elevated key (role named in tracked Markdown is allowed): control => PASS (correctly allowed)  | the same token in a tracked .md — documentation of the policy, and a real key there is still caught by the JWT/secret checks
+OK   elevated key (elevated JWT pasted into Markdown): fixture => FAIL (caught)  | an elevated JWT inside a .md — the Markdown exception covers the name, never the key
+OK   elevated key (tracked files unenumerable): fixture => FAIL (caught)  | git ls-files failed, so the repo could not be confirmed clean
+OK   site-url (pinned value with the alias present as text): control => PASS (correctly allowed)  | SITE_URL pinned, alias shown as display text in the footer — the committed state
+OK   site-url (alias substituted into SITE_URL): fixture => FAIL (caught)  | SITE_URL set to https://el3vate.forpono.com — it invalidates the QR, the closing card and the presenter kit
+OK   site-url (deployment hostname as SITE_URL): fixture => FAIL (caught)  | SITE_URL set to a deployment-frozen el3vate-<hash>- hostname
+OK   site-url (deployment hostname baked into dist/): fixture => FAIL (caught)  | SITE_URL correct, but dist/index.html still carries a frozen el3vate-<hash>- hostname
+OK   demo isolation (an offline demo): control => PASS (correctly allowed)  | canned data, no network call, no mention of the backend
+OK   demo isolation (GATE 5 broken inside a demo): fixture => FAIL (caught)  | a demo calling fetch( — CONSTRAINT B, the session runs with the network dead
+OK   demo isolation (backend named inside a demo): fixture => FAIL (caught)  | a demo mentioning the backend (also caught by GATE 5 via the bare URL)
+OK   demo isolation (backend named in a non-HTML demo asset): fixture => FAIL (caught)  | a .json asset under dist/demos/ naming the backend — GATE 5 only reads .html, this gate reads every file
+OK   demo isolation (form markup inside a demo): fixture => FAIL (caught)  | feedback-form markup inside a demo — the form belongs to the page shell only
+
+SELFTEST PASS: every gate rejected its broken fixture.
+```
+
+### The one gate failure that was not a fixture
+
+GATE 12's `sb_secret_…` selftest fixture was first written as a plain string
+literal in `src/validate.js`. `src/validate.js` is a tracked file, so on the very
+next run **the gate failed the real build on it**:
+
+```
+[12] NO ELEVATED KEY  FAIL  (51 tracked files + all of dist/; 0 decodable JWT(s) found)
+     src/validate.js contains a Supabase secret key (sb_secret_<8 chars>…)
+```
+
+That is the strongest evidence available that this check works on real input and
+not only on fixtures: it caught a secret-key-shaped string that nobody planted
+for it to find. The fixture is now assembled from fragments, and the failure is
+recorded here rather than quietly fixed.
+
+**And then it happened again, writing this report.** The line above was first
+pasted in verbatim, with the fixture's real characters. `REPORT.md` is tracked,
+the key-shape check has no Markdown exception, and the gate failed the build a
+second time:
+
+```
+[12] NO ELEVATED KEY  FAIL  (51 tracked files + all of dist/; 0 decodable JWT(s) found)
+     REPORT.md contains a Supabase secret key (sb_secret_<8 chars>…)
+```
+
+Which is the point. The `.md` exception covers the *name* of the role and nothing
+else; a key-shaped string in documentation is still a key-shaped string in the
+repo, and the gate does not care that it was only ever meant as an example. The
+value is redacted above.
+
+### A note on GATE 12's one exception
+
+Phase 13 of the brief specifies a comment containing the underscored
+`service`+`_role` token in `src/build.js`. Phase 16 gate 2 specifies a gate that
+fails on that token in **any tracked file**. `src/build.js` is tracked, so the
+mandated comment is exactly the input the mandated gate rejects — and it is worse
+than that, because `AGENT-BRIEF-3.md` is itself tracked and names the token twice
+while specifying this gate.
+
+The gate splits the question in two:
+
+- **Is this a key?** Every JWT-shaped string in `dist/` *and every tracked file*
+  is base64url-decoded and its role claim read; the newer non-JWT `sb_secret_…`
+  format is matched separately. **No exceptions, no skipped file, no file-type
+  carve-out.** This is the check that would catch an actual leak, and it has no
+  holes. It also tells an anon JWT from an elevated one, which matters because
+  with the switch on a legitimate anon key is *supposed* to be in `dist/`.
+- **Does this name the role?** Barred from `dist/` outright, and from every
+  tracked file **except `.md`**. That is the whole of the exception. Markdown here
+  is specification and record — the brief, `BLOCKERS.md`, this report — and a real
+  key pasted into a `.md` is still caught by the checks above.
+
+Everything that is not Markdown spells it `service-role` with a hyphen. It reads
+identically. `src/validate.js` assembles its needles from fragments because the
+gate scans the file it lives in. If Tim wants the underscored spelling in the
+`src/build.js` comment, the name check has to grow a per-file exemption list; the
+key checks would be unaffected, but an exemption list is the thing that
+eventually lets a real key through. Recorded in `BLOCKERS.md`.
+
+## What Tim does to turn this on
+
+Four steps, in this order. Do not reorder them — the gates will stop you, but the
+reason to do it in this order is that each step is verifiable before the next.
+
+1. **Fill three constants** at the top of `src/build.js` (lines 45–47):
+
+   ```js
+   const USE_SUPABASE = true;
+   const SUPABASE_URL = 'https://<your-project-ref>.supabase.co';
+   const SUPABASE_ANON_KEY = '<the anon / publishable key>';
+   ```
+
+   The **anon** key, from Project Settings → API. Not the elevated one. GATE 12
+   fails the build if an elevated JWT or an `sb_secret_…` key lands here.
+
+2. **Apply the migration.** Paste `db/001_feedback.sql` into the Supabase SQL
+   editor and run it. Then run the verification query from the bottom of the same
+   file. **Five rows, every verdict `PASS`.** Anything else — including an empty
+   result, which means the table is not there — means stop: set `USE_SUPABASE`
+   back to `false` and do not ship the form.
+
+3. **Configure rate limiting in the dashboard.** The `CHECK` constraints are not
+   rate limiting. See above.
+
+4. **Ship it:** `./ship.sh prod`. The script builds, restores the Vercel link,
+   runs all 14 gates, scrubs any `.env*` from the deploy root, deploys, and then
+   polls the live site until it serves this build's stamp. Gates 11–14 run as
+   part of that, so a build with a bad key or a broken fallback never reaches
+   Vercel.
+
+Then submit one real test row from a discipline page and confirm it appears via
+the optional second query at the bottom of the SQL file. If it does not, the form
+is silently dropping submissions.
+
+## What Tim does to turn it off — the 8am escape hatch
+
+Two steps. Under two minutes.
+
+1. **Set `USE_SUPABASE = false`** in `src/build.js` (line 45). Leave the two
+   credential strings alone; they are inert with the flag off, and blanking them
+   is a second edit for no benefit.
+2. **`./ship.sh prod`.**
+
+The site returns to `mailto:` feedback links. GATE 11 runs inside `ship.sh` and
+fails the deploy if any trace of the backend survived into `dist/`, so the revert
+is checked rather than trusted. Nothing needs to be undone in the database —
+`el3vate_feedback` can sit there with rows in it and nothing on the public site
+knows it exists.
+
+If the panic is worse than that and even the flag edit feels risky:
+`git checkout 51b3601 -- src/build.js && ./ship.sh prod` restores the exact
+committed off-state file.
+
+## What was actually run, and what could not be
+
+### Ran, with output seen
+
+| Check | Result |
+|---|---|
+| `node src/build.js`, switch **off** | Built 15 pages + hub. Output quoted above. |
+| `node src/build.js`, switch **on** (temporary, fake credentials) | Built; form on all 15 discipline pages, on none of the hub/audit/presenter/demo files. |
+| `node src/validate.js`, off-state build | **All 14 gates pass.** |
+| `node src/validate.js`, on-state build | **All 14 gates pass.** Contrast checks 78 pairs with the switch on against 68 with it off — the form's colours are gate-checked, not asserted. |
+| `node src/validate.js --selftest` | **38 fixtures**, all correct: 34 broken inputs rejected, 4 negative controls allowed. |
+| `node src/pdf.js` | 16 handout PDFs. GATE 8 passes; GATE 12 reads them as bytes and finds 0 JWT-shaped strings, so the PDFs are not a blind spot. |
+| `node src/interact.js` | **212 assertions, 0 failed, across 10 demos.** No console or page errors. |
+| `npm run check` (all five stages) | **CHECK PASSED: every stage green.** |
+| Headless Chromium, form ON-state, 13 assertions | All pass — see below. |
+| `git diff src/build.js` after restoring | Empty. The temporary on-state edit was reverted byte-identical. |
+
+The browser check drove a real ON-state build in headless Chromium:
+
+- Nothing focused on load (`document.activeElement` is `BODY`).
+- Exactly one form in the page shell, **zero** in the demo iframe.
+- Empty submit refused with a message, focus moved to the required field.
+- Full keyboard tab order: tried → happened → email → send.
+- **Network failure path**: the fake host does not resolve, the fallback appears,
+  the status reads "That could not reach the server — the wifi, most likely. Use
+  the email link below", the fallback `mailto:` keeps `subject=EL3vate Day 8 —
+  Law` *and* carries both typed fields in its body, and the send button is
+  re-enabled so a retry is possible.
+- **HTTP error path** (mocked 401): "That came back as an error (401)." Same
+  fallback, same recovery.
+- **Success path** (mocked 201): fields hide, fallback stays hidden, status reads
+  "Thank you — that is in." The POST body was captured and matches the table
+  columns exactly:
+  `{"discipline":"finance","what_they_tried":"…","what_happened":"…","contact_email":null,"user_agent":"…"}`
+  with `apikey`, `Authorization: Bearer …` and `Prefer: return=minimal` headers.
+- 2px focus outline on the fields; **0px horizontal overflow at 375px**.
+
+### Could NOT be run — stated plainly
+
+- **The migration was not applied and the verification query was not executed.**
+  By instruction. No database credentials were requested, obtained or held. The
+  SQL is authored for Tim to review line by line and run himself. Its correctness
+  against a live Postgres is therefore **unverified**.
+- **No Postgres is installed on this machine** (`psql`, `postgres`, `pg_ctl` all
+  absent), so the SQL was not even parsed by a real server. What was checked:
+  balanced parentheses, even quoting, `begin`/`commit` present, no underscored
+  role token, and a manual review that caught two real defects before commit —
+  `check` is a reserved word and needed quoting as a column alias, and the
+  `roles` array comparisons were rewritten to `roles::text[]` to avoid depending
+  on `text`/`name` operator resolution. **A syntax error surviving that review is
+  possible.** Run it in the SQL editor, which will say so immediately, and note
+  that the whole file is wrapped in `begin`/`commit` — a failure rolls back
+  whole rather than leaving a partial apply.
+- **The form has never posted to a real Supabase endpoint.** Success was verified
+  against a mocked 201 with the request captured and inspected; failure was
+  verified against a real DNS failure and a mocked 401. What is unverified is the
+  live round trip: CORS on the real project, whether the anon key is accepted,
+  and whether the `CHECK` constraints accept a real submission. Step 4 of the
+  enable procedure — submit one real row and confirm it appears — is what closes
+  that, and it is the one step nobody can do for him.
+- **No screen-reader pass.** The form is keyboard-operable and correctly
+  labelled by construction (`<label for>`, `aria-describedby` hints,
+  `role="status" aria-live="polite"` on the status line), and the contrast gate
+  checks its colour pairs. Nobody drove it with VoiceOver or NVDA. Same caveat
+  the rest of the site carries.
+- **Contrast remains a CSS-context heuristic, not a browser render.** Unchanged
+  from prior runs. The form's pairs are checked the same way everything else is.
+
+### Phase completion, honestly
+
+All five phases are complete and every phase's gate executed. Phase 14 is the one
+that needs qualifying: its deliverable was *authored SQL*, which exists and is
+committed, but "the migration works" is not a claim this run can make, and
+nothing in this report should be read as making it.
