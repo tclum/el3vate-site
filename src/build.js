@@ -145,6 +145,48 @@ const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">`;
 
+// ---- phase 15: feedback-form styling ----
+// Interpolated into CSS only when SUPABASE_ON. With the switch off not one of
+// these rules is emitted, so dist/ carries no trace of the form — not markup,
+// not script, not a dead selector. That is what makes the revert provable rather
+// than merely intended.
+//
+// Colours come from the same :root palette as the rest of the site, so when the
+// switch IS on, GATE 4 contrast-checks these pairs alongside every other one
+// rather than treating the form as a special case. The input border is #8B958F
+// on #FFFFFF (3.09:1), which clears the WCAG 1.4.11 non-text threshold; focus is
+// the site-wide 2px :focus-visible outline, unmodified.
+const FBFORM_CSS = !SUPABASE_ON ? '' : `
+/* phase 15: feedback form */
+.fbform{border:1px solid var(--rule);background:var(--card);padding:22px;max-width:var(--measure)}
+.fbfield{margin:0 0 18px}
+.fbfield:last-of-type{margin-bottom:22px}
+.fbform label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cut-ink);margin:0 0 7px}
+.fbform .opt{letter-spacing:.04em;text-transform:none;color:var(--soft);font-size:12px}
+.fbform textarea,.fbform input[type=email]{width:100%;font-family:var(--body);font-size:16px;line-height:1.55;color:var(--ink);background:#FFFFFF;border:1px solid #8B958F;border-radius:2px;padding:10px 12px}
+.fbform textarea{min-height:104px;resize:vertical}
+.fbform textarea:focus-visible,.fbform input[type=email]:focus-visible{border-color:var(--cut)}
+.fbhint{font-family:var(--body);font-size:13.5px;color:#4A574F;margin:6px 0 0}
+.fbsend{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:#F3F5F0;border:0;border-radius:2px;padding:13px 20px;cursor:pointer;transition:background .15s}
+.fbsend:hover,.fbsend:focus-visible{background:var(--cut-ink)}
+.fbsend[disabled]{background:#4C5B53;color:#F3F5F0;cursor:default}
+.fbstatus{font-family:var(--mono);font-size:13px;color:var(--ink);margin:14px 0 0;min-height:1.4em}
+.fbstatus--ok{color:#1F5446}
+.fbstatus--err{color:var(--cut-ink)}
+.fbfallback{border-left:3px solid var(--cut);padding:12px 0 12px 14px;margin:16px 0 0}
+.fbfallback p{font-size:14.5px;color:#2A3A33;margin:0 0 10px}
+`;
+
+// The print counterpart, same gating. On paper the form collapses to the same
+// email link the switched-off site shows, so what a faculty member prints is
+// identical whichever side of the kill switch the build was on.
+const FBFORM_PRINT_CSS = !SUPABASE_ON ? '' : `
+  .fbform{border:0!important;padding:0!important;background:none!important}
+  .fbfield,.fbsend,.fbstatus{display:none!important}
+  .fbfallback{display:block!important;border-left:2pt solid #000;padding:0 0 0 8pt;margin:0}
+  .fbfallback p:first-child{display:none!important}
+`;
+
 const CSS = `
 :root{
   --paper:#F3F5F0;--card:#FFFFFF;--mat:#17352C;--mat-deep:#0D211B;--ink:#15211C;
@@ -276,6 +318,7 @@ table.rub td.w{font-family:var(--mono);white-space:nowrap;color:var(--ink)}
   background:var(--ink);color:#F3F5F0;text-decoration:none;padding:12px 18px;border-radius:2px}
 .fb:hover,.fb:focus-visible{background:var(--cut-ink);color:#FFFFFF}
 
+${FBFORM_CSS}
 /* phase 7: unverified-claim marker */
 .unv{background:#FBEED9;color:#15211C;box-shadow:inset 0 -2px 0 #7A3E0B;padding:1px 3px}
 .unv__t{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;background:#7A3E0B;color:#FFFFFF;padding:2px 6px;margin-left:4px;white-space:nowrap}
@@ -362,6 +405,7 @@ footer{padding:30px 0 46px;font-family:var(--mono);font-size:11.5px;letter-spaci
   .sec h2{font-size:14pt}
   .po__out{max-height:none!important;overflow:visible!important;font-size:8.5pt}
   .prompt__text{font-size:9pt}
+${FBFORM_PRINT_CSS}
   footer{border-top:0.5pt solid #000;break-before:avoid}
 }
 `;
@@ -654,7 +698,7 @@ ${jumpMenu(all, '../')}
 `;
   return page(`${d.name} · EL3vate 2026 Day 8`,
     `Prototyping assignment for ${d.name}: a 90-minute version, ${planWeeks(d)}-week plan, rubric, budget, and a real annotated AI output.`,
-    body, COPY_JS);
+    body, COPY_JS + feedbackJs());
 }
 
 // ---- handout ----
@@ -848,16 +892,128 @@ function feedbackHref(d) {
   return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+// phase 15 — the same section in two shapes, chosen by SUPABASE_ON.
+//
+// OFF (the committed state): exactly what phase 11 shipped — one mailto: link,
+// no form, no script, no credential, nothing that touches the network.
+//
+// ON: a real form that POSTs to the Supabase REST endpoint, with the mailto:
+// link still in the markup as a fallback, hidden until a submit actually fails.
+// A broken backend therefore degrades to the phase-11 behaviour rather than
+// swallowing the submission — and because the mailto: anchor is present in both
+// shapes, GATE 10's per-discipline feedback-link check holds either way.
+//
+// No SDK and no dependency: one fetch, written out inline. The form lives in the
+// page shell and never inside a demo iframe, so GATE 5 (demos are offline) is
+// untouched by anything here.
 function sectionFeedback(d) {
-  return `<section class="sec" id="feedback">
-    <p class="sec__label">Tell us what happened</p>
+  const intro = `<p class="sec__label">Tell us what happened</p>
     <h2>Run it, then say how it went</h2>
     <p>If you try this &mdash; the 90-minute version, the prompt, any part of it &mdash; send back what you tried and
     what happened, especially anywhere the model was confidently wrong. That is the material the next session is
-    built from.</p>
+    built from.</p>`;
+
+  if (!SUPABASE_ON) {
+    return `<section class="sec" id="feedback">
+    ${intro}
     <p><a class="fb" href="${escAttr(feedbackHref(d))}">Email feedback on ${esc(d.name)} &rarr;</a></p>
     <p class="demonote">Opens a draft in your mail client, already addressed and titled. No form, no account, nothing to sign up for.</p>
   </section>`;
+  }
+
+  // Every id is namespaced `fb-` and there is one form per page, so nothing here
+  // can collide with the prompt-copy ids (`p0`..`p14`) or the jump menu.
+  return `<section class="sec" id="feedback">
+    ${intro}
+    <form class="fbform" id="fb-form" data-discipline="${escAttr(d.slug)}" data-name="${escAttr(d.name)}" novalidate>
+      <div class="fbfield">
+        <label for="fb-tried">What you tried <span class="opt">(required)</span></label>
+        <textarea id="fb-tried" name="what_they_tried" required maxlength="4000"
+          aria-describedby="fb-tried-hint"></textarea>
+        <p class="fbhint" id="fb-tried-hint">The prompt, the 90-minute version, one exercise &mdash; whatever you actually ran.</p>
+      </div>
+      <div class="fbfield">
+        <label for="fb-happened">What happened <span class="opt">(optional)</span></label>
+        <textarea id="fb-happened" name="what_happened" maxlength="4000"
+          aria-describedby="fb-happened-hint"></textarea>
+        <p class="fbhint" id="fb-happened-hint">Especially anywhere the model was confidently wrong.</p>
+      </div>
+      <div class="fbfield">
+        <label for="fb-email">Your email <span class="opt">(optional &mdash; only if you want a reply)</span></label>
+        <input type="email" id="fb-email" name="contact_email" maxlength="254"
+          autocomplete="email" aria-describedby="fb-email-hint">
+        <p class="fbhint" id="fb-email-hint">Leave it blank and the submission stays anonymous. Nothing here is required.</p>
+      </div>
+      <button class="fbsend" type="submit" id="fb-send">Send feedback on ${esc(d.name)}</button>
+      <p class="fbstatus" id="fb-status" role="status" aria-live="polite"></p>
+      <div class="fbfallback" id="fb-fallback" hidden>
+        <p>That did not go through. Nothing was lost &mdash; this link opens the same thing as an email, with
+        what you typed already in it.</p>
+        <p><a class="fb" id="fb-mailto" href="${escAttr(feedbackHref(d))}">Email feedback on ${esc(d.name)} &rarr;</a></p>
+      </div>
+    </form>
+  </section>`;
+}
+
+// The submit handler. Emitted only when SUPABASE_ON, so with the switch off this
+// string is never built and neither the endpoint nor the key reaches dist/.
+//
+// Deliberately not autofocused and deliberately not scrolled to: this sits at the
+// bottom of a long page, and moving focus on load breaks screen-reader flow.
+function feedbackJs() {
+  if (!SUPABASE_ON) return '';
+  const endpoint = `${String(SUPABASE_URL).trim().replace(/\/+$/, '')}/rest/v1/el3vate_feedback`;
+  return `
+(function(){
+  var f=document.getElementById('fb-form');
+  if(!f)return;
+  var send=document.getElementById('fb-send'),status=document.getElementById('fb-status'),
+      fall=document.getElementById('fb-fallback'),mail=document.getElementById('fb-mailto'),
+      tried=document.getElementById('fb-tried'),happened=document.getElementById('fb-happened'),
+      email=document.getElementById('fb-email');
+  var baseMailto=mail?mail.getAttribute('href'):'';
+  function say(msg,kind){status.textContent=msg;status.className='fbstatus'+(kind?' fbstatus--'+kind:'');}
+  // Rebuild the fallback mailto so what they typed rides along in the body
+  // rather than being lost with the failed request.
+  function degrade(why){
+    if(mail&&baseMailto){
+      var extra='\\n\\nWhat I tried:\\n'+tried.value+'\\n\\nWhat happened:\\n'+(happened.value||'')+'\\n';
+      mail.setAttribute('href',baseMailto+encodeURIComponent(extra));
+    }
+    if(fall)fall.hidden=false;
+    say(why+' Use the email link below \\u2014 what you typed is already in it.','err');
+    send.disabled=false;send.textContent=send.dataset.label;
+  }
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    if(!tried.value.trim()){say('Tell us what you tried first \\u2014 that field is the one required one.','err');tried.focus();return;}
+    send.dataset.label=send.dataset.label||send.textContent;
+    send.disabled=true;send.textContent='Sending\\u2026';
+    say('Sending\\u2026');
+    var body={discipline:f.dataset.discipline,what_they_tried:tried.value.trim(),
+      what_happened:happened.value.trim()||null,contact_email:email.value.trim()||null,
+      user_agent:(navigator.userAgent||'').slice(0,512)};
+    var done=false;
+    var t=setTimeout(function(){if(!done){done=true;degrade('That timed out.');}},12000);
+    fetch(${JSON.stringify(endpoint)},{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':${JSON.stringify(String(SUPABASE_ANON_KEY).trim())},
+        'Authorization':'Bearer '+${JSON.stringify(String(SUPABASE_ANON_KEY).trim())},'Prefer':'return=minimal'},
+      body:JSON.stringify(body)
+    }).then(function(r){
+      if(done)return;done=true;clearTimeout(t);
+      if(r.ok){
+        f.querySelectorAll('.fbfield').forEach(function(el){el.hidden=true;});
+        send.hidden=true;if(fall)fall.hidden=true;
+        say('Thank you \\u2014 that is in. It goes straight into the material for the next session.','ok');
+      }else{degrade('That came back as an error ('+r.status+').');}
+    }).catch(function(){
+      if(done)return;done=true;clearTimeout(t);
+      degrade('That could not reach the server \\u2014 the wifi, most likely.');
+    });
+  });
+})();
+`;
 }
 
 // The closing card: one full-screen slide to share at 1:00. Self-contained and
