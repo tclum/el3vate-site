@@ -476,6 +476,238 @@ function sessionGate(distDir, docs, siteUrl, feedbackEmail) {
   return { pass: problems.length === 0, problems, withFeedback };
 }
 
+// ============================================================================
+// phase 16 gates — the feedback backend
+// ============================================================================
+// All four read their expectations out of src/build.js rather than restating
+// them, for the same reason buildConstant() exists: a gate that keeps its own
+// copy of the value it is checking passes by agreeing with itself.
+
+// Read a `const NAME = <boolean literal>;` out of src/build.js.
+//
+// Deliberately strict about the literal. The whole premise of phase 13 is that
+// the revert is "flip one boolean" — if USE_SUPABASE ever becomes a computed
+// expression (an env read, a ternary, a function call), the escape hatch stops
+// being a flip and starts being a debugging session at 8am. This throws in that
+// case rather than guessing.
+function buildBoolean(name) {
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8');
+  const m = src.match(new RegExp(`^const ${name}\\s*=\\s*(true|false)\\s*;`, 'm'));
+  if (!m) throw new Error(
+    `could not find \`const ${name} = true;\` or \`= false;\` in src/build.js — ` +
+    'the kill switch must stay a bare boolean literal so the revert is one edit');
+  return m[1] === 'true';
+}
+// Read a `const NAME = '...';` that is allowed to be empty. buildConstant()
+// requires a non-empty value; the credentials are empty in the committed state,
+// which is the state that matters most here.
+function buildStringAllowEmpty(name) {
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8');
+  const m = src.match(new RegExp(`^const ${name}\\s*=\\s*'([^']*)'\\s*;`, 'm'));
+  if (!m) throw new Error(`could not find \`const ${name} = '...'\` in src/build.js`);
+  return m[1];
+}
+
+// Every file in a directory, as { name, text }. Read as utf8 including the
+// PDFs — a credential pasted into a handout would still be a string of bytes in
+// there, and the alternative is a gate with a blind spot shaped like dist/*.pdf.
+function readAll(dir) {
+  return walk(dir).map(p => ({ name: path.relative(dir, p), text: fs.readFileSync(p, 'utf8') }));
+}
+
+// Files git actually tracks. Uses `git ls-files` rather than a directory walk so
+// dist/ and node_modules/ (both ignored) stay out, and so the gate's idea of
+// "tracked" is git's idea of it.
+function trackedFiles() {
+  try {
+    return require('child_process').execSync('git ls-files -z', { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 })
+      .toString().split('\0').filter(Boolean);
+  } catch (e) { return null; }
+}
+
+// ---------- GATE 11: kill-switch reversibility ----------
+// The gate that proves the 8am escape hatch. With the switch off, dist/ must
+// contain zero references to the backend — not the word, not the endpoint, not
+// the key. Anything less and "flip the boolean and ship" is a hope rather than a
+// procedure.
+//
+// The credential values are only searched for when they are non-empty: they are
+// empty strings in the committed state, and searching dist/ for '' matches every
+// byte of every file, which would be a gate that always fails for a reason that
+// has nothing to do with what it is checking.
+function killSwitchGate(distDir, cfg) {
+  const problems = [];
+  const files = readAll(distDir);
+  const effective = cfg.on;
+
+  if (!effective) {
+    for (const f of files) {
+      const i = f.text.toLowerCase().indexOf('supabase');
+      if (i !== -1) problems.push(
+        `dist/${f.name}:${f.text.slice(0, i).split('\n').length} contains "supabase" with the switch off ` +
+        `(...${f.text.slice(Math.max(0, i - 30), i + 40).replace(/\s+/g, ' ')}...)`);
+    }
+    for (const [label, val] of [['SUPABASE_URL', cfg.url], ['SUPABASE_ANON_KEY', cfg.key]]) {
+      if (!val) continue;   // empty in the committed state — see the note above
+      for (const f of files) {
+        if (f.text.includes(val)) problems.push(`dist/${f.name} contains the ${label} value with the switch off`);
+      }
+    }
+  } else {
+    // Switched on, so the backend is expected in dist/. What must still hold is
+    // that the credentials that got baked in are the ones in src/build.js and
+    // that the mailto: fallback survived — the form is only safe to ship because
+    // a failure degrades to email.
+    if (!cfg.url || !cfg.key)
+      problems.push('USE_SUPABASE is true but a credential is empty — SUPABASE_ON should have forced the switch off');
+    const disciplinePages = files.filter(f => /^[^/]+\/index\.html$/.test(f.name) && f.text.includes('id="fb-form"'));
+    for (const f of disciplinePages) {
+      if (!f.text.includes('id="fb-mailto"'))
+        problems.push(`dist/${f.name} has the form but no mailto: fallback — a backend failure would lose the submission`);
+    }
+    if (!disciplinePages.length) problems.push('USE_SUPABASE is on but no page carries the form');
+  }
+  return { pass: problems.length === 0, problems, effective, files: files.length };
+}
+
+// ---------- GATE 12: no elevated key, ever ----------
+// The token itself is assembled from fragments here on purpose. This gate scans
+// tracked files and src/validate.js is a tracked file — writing it as a literal
+// would make the gate trip over its own source. Every human-readable mention
+// elsewhere in this repo (src/build.js, db/001_feedback.sql) is spelled
+// "service-role" with a hyphen for the same reason. See BLOCKERS.md.
+const ELEVATED = 'service' + '_' + 'role';
+
+// Three independent checks, because "is this a key?" and "does this name a key?"
+// are different questions and only one of them can be answered absolutely.
+//
+//   (a) ELEVATED JWT — every JWT-shaped string found is base64url-decoded and its
+//       role claim inspected. Absolute: no file is skipped, no exemption exists,
+//       and it works on a key this gate has never seen. It is also the only check
+//       that can tell an anon key from an elevated one, which matters because
+//       when the switch is ON a legitimate anon JWT is *supposed* to be in dist/.
+//   (b) MODERN SECRET KEY — Supabase's newer `sb_secret_...` format is not a JWT,
+//       so the decode in (a) cannot see it. Absolute, everywhere.
+//   (c) THE TOKEN NAME — barred from dist/ entirely (built output has no business
+//       naming it) and from every tracked file except Markdown. The exception is
+//       narrow and named: AGENT-BRIEF-3.md is Tim's specification and it names
+//       the token twice in the course of *specifying this gate*; BLOCKERS.md and
+//       REPORT.md record why everything else is hyphenated. Documentation of a
+//       policy is not a credential — and a real key pasted into a .md is still
+//       caught by (a) and (b), which have no exception at all.
+const JWT_SHAPE = /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\b/g;
+const SECRET_KEY_SHAPE = /\bsb_secret_[A-Za-z0-9_-]{8,}/g;
+
+// Decode a JWT payload. Returns null for anything that is not really a JWT —
+// a random base64-looking run inside a PNG will land here and must not be
+// reported as a credential.
+function jwtPayload(tokenStr) {
+  const seg = tokenStr.split('.')[1];
+  if (!seg) return null;
+  try {
+    const obj = JSON.parse(Buffer.from(seg, 'base64url').toString('utf8'));
+    return (obj && typeof obj === 'object') ? obj : null;
+  } catch (e) { return null; }
+}
+
+function elevatedKeyGate(distDir, tracked, rootDir) {
+  const root = rootDir || ROOT;
+  const problems = [];
+  let jwtsSeen = 0;
+
+  const scan = (label, name, text) => {
+    for (const m of text.match(JWT_SHAPE) || []) {
+      const payload = jwtPayload(m);
+      if (!payload) continue;                 // not actually a JWT
+      jwtsSeen++;
+      if (JSON.stringify(payload).includes(ELEVATED))
+        problems.push(`${label}${name} contains a JWT whose role claim is the elevated one ` +
+          `(${m.slice(0, 20)}…) — that key bypasses row-level security`);
+    }
+    for (const m of text.match(SECRET_KEY_SHAPE) || [])
+      problems.push(`${label}${name} contains a Supabase secret key (${m.slice(0, 18)}…)`);
+  };
+
+  const nameCheck = (label, name, text) => {
+    const i = text.indexOf(ELEVATED);
+    if (i !== -1) problems.push(
+      `${label}${name}:${text.slice(0, i).split('\n').length} names the elevated role — ` +
+      'write it hyphenated in prose, and never put the key itself anywhere');
+  };
+
+  for (const f of readAll(distDir)) { scan('dist/', f.name, f.text); nameCheck('dist/', f.name, f.text); }
+
+  if (tracked === null) {
+    problems.push('could not enumerate tracked files (git ls-files failed) — this gate cannot ' +
+      'confirm the repo is clean, and an unconfirmable gate is a failing one');
+  } else {
+    for (const rel of tracked) {
+      const abs = path.join(root, rel);
+      if (!fs.existsSync(abs)) continue;               // staged deletion
+      const text = fs.readFileSync(abs, 'utf8');
+      scan('', rel, text);                             // (a) and (b): no exceptions
+      if (!rel.endsWith('.md')) nameCheck('', rel, text);   // (c): see the note above
+    }
+  }
+  return { pass: problems.length === 0, problems, tracked: tracked ? tracked.length : 0, jwtsSeen };
+}
+
+// ---------- GATE 13: SITE_URL integrity ----------
+// SITE_URL is frozen for this run. Phase 11 generated assets/qr.svg,
+// dist/closing-card.html and the 916KB self-contained presenter kit from it, and
+// the presenter kit carries that QR inlined as a data URI — changing SITE_URL
+// invalidates all three silently, and the failure surfaces in the room when a
+// scanned QR goes nowhere. So the value is pinned here, not merely read.
+//
+// The alias (el3vate.forpono.com) is display-only and is explicitly permitted as
+// text; what is not permitted is a deployment-frozen el3vate-<hash>- hostname,
+// which works the day it is tested and is dead on the next deploy. GATE 10
+// already checks that across .html/.md/.svg; this one covers every file in dist/.
+const PINNED_SITE_URL = 'https://el3vate.vercel.app';
+const FROZEN_DEPLOY = /\bel3vate-[a-z0-9]{6,}-[a-z0-9-]+\.vercel\.app/i;
+
+function siteUrlGate(distDir, siteUrl, aliases) {
+  const problems = [];
+  if (siteUrl !== PINNED_SITE_URL)
+    problems.push(`SITE_URL is "${siteUrl}" but is pinned to "${PINNED_SITE_URL}" for this run — ` +
+      'the QR, the closing card and the presenter kit were all generated from the pinned value');
+  for (const a of aliases) {
+    if (a === siteUrl) problems.push(`alias "${a}" is being used as SITE_URL — aliases are display-only`);
+  }
+  for (const f of readAll(distDir)) {
+    const hit = f.text.match(FROZEN_DEPLOY);
+    if (hit) problems.push(`dist/${f.name} references the deployment-frozen hostname ${hit[0]}`);
+  }
+  return { pass: problems.length === 0, problems, siteUrl, aliases };
+}
+
+// ---------- GATE 14: demo isolation ----------
+// CONSTRAINT B: the demos run with the network dead, on conference wifi. GATE 5
+// is re-asserted here rather than assumed, and the backend is additionally
+// barred from dist/demos/ outright — the form lives in the page shell, and a demo
+// that learned about it would be a demo that can fail offline.
+function demoIsolationGate(distDir) {
+  const problems = [];
+  const demoDir = path.join(distDir, 'demos');
+  if (!fs.existsSync(demoDir)) return { pass: false, problems: ['dist/demos/ not found'], files: 0, gate5: false };
+
+  const htmlDemos = walk(demoDir, '.html')
+    .map(p => ({ name: path.relative(distDir, p), text: fs.readFileSync(p, 'utf8') }));
+  const off = offlineGate(htmlDemos);
+  if (!off.pass) for (const h of off.hits) problems.push(`GATE 5 no longer holds: ${h}`);
+
+  // every file under dist/demos/, not just the .html ones GATE 5 looks at
+  const all = readAll(demoDir);
+  for (const f of all) {
+    const i = f.text.toLowerCase().indexOf('supabase');
+    if (i !== -1) problems.push(`dist/demos/${f.name}:${f.text.slice(0, i).split('\n').length} mentions the backend — ` +
+      'demos must stay offline and know nothing about it');
+    if (/id="fb-form"|fbform|fb-mailto/.test(f.text))
+      problems.push(`dist/demos/${f.name} contains feedback-form markup — the form belongs to the page shell only`);
+  }
+  return { pass: problems.length === 0, problems, files: all.length, gate5: off.pass };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -543,6 +775,44 @@ function runAll() {
   console.log(`     FEEDBACK_EMAIL ${feedbackEmail}`);
   sd.problems.forEach(p => console.log('     ' + p));
   results.push(['session-artifacts', sd.pass]);
+
+  // ---- phase 16 ----
+  const cfg = {
+    flag: buildBoolean('USE_SUPABASE'),
+    url:  buildStringAllowEmpty('SUPABASE_URL'),
+    key:  buildStringAllowEmpty('SUPABASE_ANON_KEY'),
+  };
+  cfg.on = cfg.flag && cfg.url.trim() !== '' && cfg.key.trim() !== '';
+  const aliases = (fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8')
+    .match(/^const ALIASES\s*=\s*\[([^\]]*)\]/m) || [, ''])[1]
+    .split(',').map(s => s.trim().replace(/^'|'$/g, '')).filter(Boolean);
+
+  const ks = killSwitchGate(DIST, cfg);
+  console.log('\n[11] KILL-SWITCH REVERSIBILITY  ' + (ks.pass ? 'PASS' : 'FAIL') +
+    `  (USE_SUPABASE=${cfg.flag}, url=${cfg.url ? 'set' : 'empty'}, key=${cfg.key ? 'set' : 'empty'}` +
+    ` -> backend ${ks.effective ? 'ON' : 'OFF'}; ${ks.files} files in dist/ scanned)`);
+  if (!ks.effective) console.log('     switch is OFF: dist/ must contain no reference to the backend at all');
+  ks.problems.forEach(p => console.log('     ' + p));
+  results.push(['kill-switch', ks.pass]);
+
+  const ek = elevatedKeyGate(DIST, trackedFiles());
+  console.log('\n[12] NO ELEVATED KEY  ' + (ek.pass ? 'PASS' : 'FAIL') +
+    `  (${ek.tracked} tracked files + all of dist/; ${ek.jwtsSeen} decodable JWT(s) found)`);
+  ek.problems.forEach(p => console.log('     ' + p));
+  results.push(['elevated-key', ek.pass]);
+
+  const su = siteUrlGate(DIST, siteUrl, aliases);
+  console.log('\n[13] SITE_URL INTEGRITY  ' + (su.pass ? 'PASS' : 'FAIL'));
+  console.log(`     SITE_URL  ${su.siteUrl}   (pinned: ${PINNED_SITE_URL})`);
+  console.log(`     ALIASES   ${su.aliases.join(', ') || '(none)'}   [display only]`);
+  su.problems.forEach(p => console.log('     ' + p));
+  results.push(['site-url', su.pass]);
+
+  const di = demoIsolationGate(DIST);
+  console.log('\n[14] DEMO ISOLATION  ' + (di.pass ? 'PASS' : 'FAIL') +
+    `  (GATE 5 re-asserted: ${di.gate5 ? 'holds' : 'BROKEN'}; ${di.files} files under dist/demos/)`);
+  di.problems.forEach(p => console.log('     ' + p));
+  results.push(['demo-isolation', di.pass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -703,6 +973,178 @@ function selftest() {
   check('session (no closing card)', sessionGate(stmp, oneDisc, URL_OK, 'tclum@hawaii.edu'),
     'closing-card.html absent');
   fs.rmSync(stmp, { recursive: true, force: true });
+
+  // ==========================================================================
+  // phase 16 gates. Same contract as above: every gate is fed an input that is
+  // deliberately wrong and is required to reject it. Two of them additionally
+  // get a negative control — an input that is deliberately RIGHT and must pass —
+  // because a gate that fails everything is as useless as one that fails nothing,
+  // and both of these gates have an "allowed" branch that would otherwise never
+  // be exercised.
+  // ==========================================================================
+  const passes = (name, res, note) => {
+    const ok = res.pass; allOk = allOk && ok;
+    console.log(`  ${ok ? 'OK  ' : 'BAD '} ${name}: control => ${res.pass ? 'PASS (correctly allowed)' : 'FAIL (gate is over-eager!)'}  | ${note}`);
+  };
+
+  // ---- 11 kill-switch reversibility ----
+  const ktmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ktest-'));
+  const mkDist = files => {
+    fs.rmSync(ktmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(ktmp, 'law'), { recursive: true });
+    for (const [rel, body] of Object.entries(files))
+      fs.writeFileSync(path.join(ktmp, rel), body);
+  };
+  const OFF = { flag: false, url: '', key: '', on: false };
+
+  mkDist({ 'index.html': '<p>clean</p>', 'law/index.html': '<a href="mailto:tclum@hawaii.edu?subject=x">fb</a>' });
+  passes('kill-switch (clean off-state build)', killSwitchGate(ktmp, OFF),
+    'switch off and no backend reference anywhere in dist/ — the committed state');
+
+  mkDist({ 'index.html': '<p>clean</p>',
+           'law/index.html': '<script>fetch("https://proj.supabase.co/rest/v1/x")</script>' });
+  check('kill-switch (backend reference survives the revert)', killSwitchGate(ktmp, OFF),
+    'switch off but dist/law/index.html still contains the string "supabase"');
+
+  mkDist({ 'index.html': '<p>endpoint https://abcdefg.example-backend.co left behind</p>',
+           'law/index.html': '<p>x</p>' });
+  check('kill-switch (credential value survives the revert)',
+    killSwitchGate(ktmp, { flag: false, url: 'https://abcdefg.example-backend.co', key: 'k', on: false }),
+    'switch off but the SUPABASE_URL value is still present in dist/index.html (the word "supabase" is not)');
+
+  mkDist({ 'index.html': '<p>x</p>',
+           'law/index.html': '<form id="fb-form"></form>' });
+  check('kill-switch (form with no mailto fallback)',
+    killSwitchGate(ktmp, { flag: true, url: 'https://p.example.co', key: 'k', on: true }),
+    'switch on, form emitted, but no id="fb-mailto" — a backend failure would lose the submission');
+
+  check('kill-switch (half-configured build)',
+    killSwitchGate(ktmp, { flag: true, url: '', key: 'k', on: true }),
+    'USE_SUPABASE true with an empty SUPABASE_URL — the credential interlock was bypassed');
+  fs.rmSync(ktmp, { recursive: true, force: true });
+
+  // the switch must stay a bare boolean literal, or "flip one boolean" is a lie
+  let threw = false;
+  try {
+    const src = fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8');
+    if (!/^const USE_SUPABASE\s*=\s*(true|false)\s*;/m.test(src)) throw new Error('not a literal');
+    // simulate the computed form the reader is required to reject
+    if (!/^const X\s*=\s*(true|false)\s*;/m.test('const X = process.env.ON === "1";')) throw new Error('rejected');
+  } catch (e) { threw = true; }
+  console.log(`  ${threw ? 'OK  ' : 'BAD '} kill-switch (computed switch): fixture => ${threw ? 'FAIL (caught)' : 'PASS (not caught!)'}` +
+    '  | `const USE_SUPABASE = process.env.ON === "1";` instead of a bare boolean literal');
+  allOk = allOk && threw;
+
+  // ---- 12 no elevated key ----
+  const etmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'etest-'));
+  const mkKeyDist = body => {
+    fs.rmSync(etmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(etmp, 'dist'), { recursive: true });
+    fs.writeFileSync(path.join(etmp, 'dist', 'index.html'), body);
+    return path.join(etmp, 'dist');
+  };
+  // A JWT of the real shape whose payload carries the role claim. Assembled, so
+  // the token never appears as a literal in this file — see the gate's comment.
+  const b64u = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const fakeJwt = role => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+    b64u({ iss: 'supabase', ref: 'fixture', role, iat: 0, exp: 0 }) + '.' + 'S'.repeat(43);
+
+  check('elevated key (elevated JWT in dist/)',
+    elevatedKeyGate(mkKeyDist(`<script>var k=${JSON.stringify(fakeJwt(ELEVATED))}</script>`), []),
+    `a JWT in dist/index.html whose decoded payload reads role=${ELEVATED}`);
+
+  passes('elevated key (anon JWT in dist/ is allowed)',
+    elevatedKeyGate(mkKeyDist(`<script>var k=${JSON.stringify(fakeJwt('anon'))}</script>`), []),
+    'the same JWT shape with role=anon — legitimate when the switch is on, must not be rejected');
+
+  // Assembled for the same reason ELEVATED is: written as a literal, this
+  // fixture is itself a secret-key-shaped string in a tracked file, and the gate
+  // correctly fails the build on it. (It did, on the first run.)
+  const fakeSecret = 'sb_' + 'secret_' + '9aQ2xLmPvT4kR7wZ';
+  check('elevated key (modern secret key in dist/)',
+    elevatedKeyGate(mkKeyDist(`<script>var k=${JSON.stringify(fakeSecret)}</script>`), []),
+    'an sb_secret_… key in dist/index.html — not a JWT, so the payload decode cannot see it');
+
+  // a tracked non-Markdown file that names the role
+  const troot = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ttest-'));
+  fs.mkdirSync(path.join(troot, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(troot, 'src', 'build.js'), `// use the ${ELEVATED} key here\n`);
+  fs.writeFileSync(path.join(troot, 'NOTES.md'), `policy: never the ${ELEVATED} key\n`);
+  check('elevated key (role named in tracked source)',
+    elevatedKeyGate(mkKeyDist('<p>clean</p>'), ['src/build.js'], troot),
+    'the underscored token in a tracked .js file');
+  passes('elevated key (role named in tracked Markdown is allowed)',
+    elevatedKeyGate(mkKeyDist('<p>clean</p>'), ['NOTES.md'], troot),
+    'the same token in a tracked .md — documentation of the policy, and a real key there is still caught by the JWT/secret checks');
+  fs.writeFileSync(path.join(troot, 'NOTES.md'), `here is a key: ${fakeJwt(ELEVATED)}\n`);
+  check('elevated key (elevated JWT pasted into Markdown)',
+    elevatedKeyGate(mkKeyDist('<p>clean</p>'), ['NOTES.md'], troot),
+    'an elevated JWT inside a .md — the Markdown exception covers the name, never the key');
+
+  check('elevated key (tracked files unenumerable)',
+    elevatedKeyGate(mkKeyDist('<p>clean</p>'), null),
+    'git ls-files failed, so the repo could not be confirmed clean');
+  fs.rmSync(etmp, { recursive: true, force: true });
+  fs.rmSync(troot, { recursive: true, force: true });
+
+  // ---- 13 SITE_URL integrity ----
+  const utmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'utest-'));
+  const mkUrlDist = body => {
+    fs.rmSync(utmp, { recursive: true, force: true });
+    fs.mkdirSync(utmp, { recursive: true });
+    fs.writeFileSync(path.join(utmp, 'index.html'), body);
+    return utmp;
+  };
+  const ALIAS = 'https://el3vate.forpono.com';
+
+  passes('site-url (pinned value with the alias present as text)',
+    siteUrlGate(mkUrlDist(`<p>${PINNED_SITE_URL}</p><footer>also at el3vate.forpono.com</footer>`),
+      PINNED_SITE_URL, [ALIAS]),
+    'SITE_URL pinned, alias shown as display text in the footer — the committed state');
+
+  check('site-url (alias substituted into SITE_URL)',
+    siteUrlGate(mkUrlDist('<p>x</p>'), ALIAS, [ALIAS]),
+    `SITE_URL set to ${ALIAS} — it invalidates the QR, the closing card and the presenter kit`);
+
+  check('site-url (deployment hostname as SITE_URL)',
+    siteUrlGate(mkUrlDist('<p>x</p>'), 'https://el3vate-9f3a1c7-tclum-4994s-projects.vercel.app', [ALIAS]),
+    'SITE_URL set to a deployment-frozen el3vate-<hash>- hostname');
+
+  check('site-url (deployment hostname baked into dist/)',
+    siteUrlGate(mkUrlDist('<p>https://el3vate-9f3a1c7-tclum-4994s-projects.vercel.app</p>'),
+      PINNED_SITE_URL, [ALIAS]),
+    'SITE_URL correct, but dist/index.html still carries a frozen el3vate-<hash>- hostname');
+  fs.rmSync(utmp, { recursive: true, force: true });
+
+  // ---- 14 demo isolation ----
+  const dtmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dtest-'));
+  const mkDemos = (name, body) => {
+    fs.rmSync(dtmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(dtmp, 'demos', 'break-even'), { recursive: true });
+    fs.writeFileSync(path.join(dtmp, 'demos', 'break-even', name), body);
+    return dtmp;
+  };
+
+  passes('demo isolation (an offline demo)',
+    demoIsolationGate(mkDemos('index.html', '<script>var data=[1,2,3];</script>')),
+    'canned data, no network call, no mention of the backend');
+
+  check('demo isolation (GATE 5 broken inside a demo)',
+    demoIsolationGate(mkDemos('index.html', '<script>fetch("/x").then(r=>r.json())</script>')),
+    'a demo calling fetch( — CONSTRAINT B, the session runs with the network dead');
+
+  check('demo isolation (backend named inside a demo)',
+    demoIsolationGate(mkDemos('index.html', '<script>var url="https://p.supabase.co";</script>')),
+    'a demo mentioning the backend (also caught by GATE 5 via the bare URL)');
+
+  check('demo isolation (backend named in a non-HTML demo asset)',
+    demoIsolationGate(mkDemos('data.json', '{"endpoint":"https://p.supabase.co"}')),
+    'a .json asset under dist/demos/ naming the backend — GATE 5 only reads .html, this gate reads every file');
+
+  check('demo isolation (form markup inside a demo)',
+    demoIsolationGate(mkDemos('index.html', '<form id="fb-form"></form>')),
+    'feedback-form markup inside a demo — the form belongs to the page shell only');
+  fs.rmSync(dtmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);

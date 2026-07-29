@@ -222,16 +222,42 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
   specifies a gate that fails if the underscored `service` + `_role` token
   "appears anywhere in `dist/` or in any tracked file, regardless of switch
   state". `src/build.js` is a tracked file, so the mandated comment is exactly
-  the input the mandated gate rejects. Resolved in favour of the gate, because
-  the gate is the load-bearing security property and the comment is prose: every
-  mention across `src/build.js`, `src/validate.js`, `db/001_feedback.sql`,
-  `REPORT.md` and this file is written **`service-role`** with a hyphen, which
-  reads identically and keeps the gate absolute — no allowlist, no prose
-  exemption, no file it skips. `src/validate.js` assembles the needle from
-  fragments (`'service' + '_' + 'role'`) for the same reason: the gate scans the
-  tracked file it lives in. If Tim wants the underscored spelling in the comment,
-  the gate has to grow an exemption list, and an exemption list is the thing that
-  eventually lets a real key through.
+  the input the mandated gate rejects. And it is not only the comment:
+  `AGENT-BRIEF-3.md` is itself tracked and names the token twice, in the course of
+  specifying this very gate. A literally absolute gate would fail on Tim's own
+  brief.
+
+  **What GATE 12 actually does, and where the one exception is.** The gate splits
+  the question in two, because "is this a key?" and "does this *name* a key?" are
+  different questions and only the first can be answered absolutely:
+
+  - *Is this a key* — every JWT-shaped string in `dist/` **or any tracked file**
+    is base64url-decoded and its role claim read; an elevated one fails.
+    Supabase's newer non-JWT `sb_secret_…` format is matched separately. **No
+    exceptions, no skipped file, no file type carve-out.** This is the check that
+    would actually catch a leak, and it has no holes. It also distinguishes an
+    anon JWT from an elevated one, which matters because with the switch on a
+    legitimate anon key is *supposed* to be in `dist/`.
+  - *Does this name the role* — barred from `dist/` outright, and from every
+    tracked file **except `.md`**. That is the exception, and it is the whole of
+    it. Markdown in this repo is specification and record: the brief that
+    mandates the gate, this file, and `REPORT.md`. Documentation of a policy is
+    not a credential, and a real key pasted into a `.md` is still caught by the
+    checks above, which have no exception at all.
+
+  Everything that is not Markdown — `src/build.js`, `src/validate.js`,
+  `db/001_feedback.sql` — spells it **`service-role`** with a hyphen. It reads
+  identically. `src/validate.js` assembles its needles from fragments
+  (`'service' + '_' + 'role'`, and likewise the `sb_secret_` selftest fixture)
+  because the gate scans the tracked file it lives in. That is not hypothetical:
+  the `sb_secret_` fixture was first written as a literal and **the gate failed
+  the build on it**, which is the most direct evidence available that this check
+  works on real input rather than only on fixtures.
+
+  If Tim wants the underscored spelling in the `src/build.js` comment, the name
+  check has to grow a per-file exemption list. The key checks would be unaffected,
+  but an exemption list is the thing that eventually lets a real key through, so
+  the hyphen is the better trade.
 - **Nothing in phases 13–17 was applied to a database.** `db/001_feedback.sql` is
   authored and committed, never executed; no credentials were requested, held or
   used. The verification query in `REPORT.md` is what confirms the applied state,
