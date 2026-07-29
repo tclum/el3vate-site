@@ -658,7 +658,7 @@ function sectionLiveBuild(d) {
   const filled = d.liveBuild && String(d.liveBuild).trim();
   const inner = filled
     ? `<p class="tag">Built live in session</p><p style="color:#2A3A33">${esc(d.liveBuild)}</p>`
-    : `<p class="tag">Reserved &middot; live build</p><p>This space is intentionally empty. During the Day 8 session it will be filled in live &mdash; fill the <code>liveBuild</code> field in <code>content/${esc(d.slug)}.json</code> and rebuild.</p>`;
+    : `<p class="tag">Reserved &middot; live build</p><p>This space is intentionally empty. During the Day 8 session it gets filled in live with whatever this room asks for.</p>`;
   return `<section class="sec" id="live-build">
     <div class="livebuild">${inner}</div>
   </section>`;
