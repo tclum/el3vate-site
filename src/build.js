@@ -52,6 +52,44 @@ const SUPABASE_ANON_KEY = '';            // filled by Tim — anon key ONLY, nev
 const SUPABASE_ON =
   USE_SUPABASE && String(SUPABASE_URL).trim() !== '' && String(SUPABASE_ANON_KEY).trim() !== '';
 
+// ---- phase 19: live-build fetch kill switch ----
+// A SECOND, INDEPENDENT switch. It shares the two credentials with
+// USE_SUPABASE and shares nothing else: either can be on with the other off,
+// and killing one does not touch the other. That is the point. Tim must be able
+// to run the live-build fetch with the feedback form still off — which is
+// exactly the combination he is most likely to want at 9am — and to kill either
+// one on its own without a second thought about what else moves.
+//
+// Same credential interlock as USE_SUPABASE: if SUPABASE_URL or
+// SUPABASE_ANON_KEY is empty, this behaves as OFF no matter what the flag says,
+// so a half-configured build can never ship a fetch that points nowhere.
+//
+// WHAT THIS DOES NOT CHANGE, ever:
+//   * The build-time `liveBuild` field in content/<slug>.json is still read and
+//     still rendered into the HTML, byte for byte as before. `./fill.sh <slug>
+//     "text"` keeps working, on or off, fetch path healthy or dead.
+//   * The demos and the presenter kit gain nothing. GATE 5, GATE 14 and the new
+//     GATE 18 all fail the build if a network call or this table's name reaches
+//     dist/demos/ or dist/presenter/.
+//   * SITE_URL. The QR, the closing card and the presenter kit are generated
+//     from it and it is pinned by GATE 13.
+//
+// The fetch is a layer on top of the baked text, never a replacement for it:
+// the section is rendered complete before any script runs, and the script only
+// ever overwrites it with something better. See sectionLiveBuild().
+const USE_LIVE_FETCH = false;   // independent of USE_SUPABASE; controls only the live-build fetch
+
+const LIVE_FETCH_ON =
+  USE_LIVE_FETCH && String(SUPABASE_URL).trim() !== '' && String(SUPABASE_ANON_KEY).trim() !== '';
+
+// The table and the poll schedule, in one place so the gates and the report can
+// quote the same numbers the emitted script uses.
+const LIVE_TABLE = 'el3vate_live';
+const LIVE_TIMEOUT_MS = 8000;        // per request; a hang must not leave the section indeterminate
+const LIVE_POLL_MS = 20000;          // text appears without a faculty member refreshing
+const LIVE_MAX_MS = 15 * 60 * 1000;  // hard stop: this is a session, not a daemon
+const LIVE_QUIET_MS = 5 * 60 * 1000; // stop this long after the last change, once something has landed
+
 // The Day 10 challenge, in one sentence, for the closing card. Nothing in the
 // repo or either brief records what it is, so this was written to follow from
 // the session: it asks for the one artifact the whole site is built around — a
@@ -654,14 +692,160 @@ function sectionRelated(d, bySlug) {
     <div class="related">${cards}</div>
   </section>`;
 }
+// ---- phase 19: the live-build section, in three states ----
+//
+// The two strings below are the whole reason a faculty member cannot tell which
+// path produced the text. State 2 (baked) and state 3 (fetched) must be
+// pixel-identical, so the heading and the body colour are single constants used
+// by BOTH the markup builder here and the emitted script in liveFetchJs(). They
+// cannot drift, because there is only one of each.
+//
+// The three states, in fallback order — CONSTRAINT B:
+//   3. FETCHED   the script replaced the text at runtime. Heading:
+//                LIVE_TAG_FILLED. Only reachable when LIVE_FETCH_ON.
+//   2. BAKED     content/<slug>.json had a non-empty `liveBuild`, written by
+//                ./fill.sh. Heading: LIVE_TAG_FILLED. This is what shows when
+//                the fetch fails, times out, errors, returns empty, or the
+//                switch is off — and it is what shows to a faculty member with
+//                JavaScript disabled, always.
+//   1. RESERVED  nothing was baked. The phase-1 placeholder, unchanged.
+//
+// States 1 and 2 are both complete markup emitted at build time. The section is
+// never empty, never a spinner, never an error — GATE 19 fails the build on it.
+const LIVE_TAG_FILLED = 'Built live in session';
+const LIVE_BODY_COLOR = '#2A3A33';
+
 function sectionLiveBuild(d) {
   const filled = d.liveBuild && String(d.liveBuild).trim();
+  // The ids are emitted in every build, on or off, so the served markup does not
+  // change shape with the switch. They name nothing about the backend.
   const inner = filled
-    ? `<p class="tag">Built live in session</p><p style="color:#2A3A33">${esc(d.liveBuild)}</p>`
-    : `<p class="tag">Reserved &middot; live build</p><p>This space is intentionally empty. During the Day 8 session it gets filled in live with whatever this room asks for.</p>`;
+    ? `<p class="tag" id="lb-tag">${esc(LIVE_TAG_FILLED)}</p><p id="lb-body" style="color:${LIVE_BODY_COLOR}">${esc(d.liveBuild)}</p>`
+    : `<p class="tag" id="lb-tag">Reserved &middot; live build</p><p id="lb-body">This space is intentionally empty. During the Day 8 session it gets filled in live with whatever this room asks for.</p>`;
   return `<section class="sec" id="live-build">
     <div class="livebuild">${inner}</div>
   </section>`;
+}
+
+// The live-build fetch, emitted only when LIVE_FETCH_ON. With the switch off
+// this string is never built, so neither the table name, the REST path nor the
+// key reaches dist/ — GATE 15 is what proves that rather than asserting it.
+//
+// No SDK, no dependency, one fetch written out inline. It lives in the
+// discipline page shell and nowhere else: not in a demo, not in the presenter
+// kit, not in the hub. CONSTRAINT C.
+//
+// EVERY EXIT LEAVES THE PAGE AS IT WAS. There is no branch in here that clears
+// the section, shows a spinner, prints an error into the DOM, or changes the
+// layout. The only mutation is a textContent assignment with a non-empty
+// server-provided string, and the only thing that assignment can do is replace
+// good text with better text.
+//
+// TREAT THE VALUE AS UNTRUSTED. Tim wrote it, but it arrives over the network
+// from a public REST endpoint and is rendered on a page shown to a room. It goes
+// in via textContent and never innerHTML/outerHTML/insertAdjacentHTML/
+// document.write — GATE 17 fails the build if that ever stops being true.
+//
+// NO ANIMATION, prefers-reduced-motion respected by construction: the swap is a
+// textContent assignment with no class change, no transition, no animation and
+// no requestAnimationFrame. There is nothing to suppress under reduced motion,
+// and the site-wide `@media (prefers-reduced-motion:reduce){*{transition:none
+// !important;animation:none!important}}` rule in CSS covers the section anyway.
+// GATE 17 additionally fails the build if an animation primitive appears in
+// here, so "a quiet content swap only" is enforced rather than promised.
+function liveFetchJs(d) {
+  if (!LIVE_FETCH_ON) return '';
+  const endpoint = `${String(SUPABASE_URL).trim().replace(/\/+$/, '')}/rest/v1/${LIVE_TABLE}` +
+    `?slug=eq.${encodeURIComponent(d.slug)}&select=body`;
+  const key = String(SUPABASE_ANON_KEY).trim();
+  return `
+/* live-build fetch: begin */
+(function(){
+  var tag=document.getElementById('lb-tag'), box=document.getElementById('lb-body');
+  if(!tag||!box)return;
+  if(typeof fetch!=='function')return;               // no fetch: the baked text stands
+  var EP=${JSON.stringify(endpoint)}, KEY=${JSON.stringify(key)};
+  var TAG=${JSON.stringify(LIVE_TAG_FILLED)}, INK=${JSON.stringify(LIVE_BODY_COLOR)};
+  var TIMEOUT=${LIVE_TIMEOUT_MS}, POLL=${LIVE_POLL_MS}, MAX=${LIVE_MAX_MS}, QUIET=${LIVE_QUIET_MS};
+  var started=Date.now(), landed=0, lastChange=0, shown=null;
+  var timer=null, inflight=false, stopped=false, noted=false;
+
+  // Exactly one console.debug for the whole lifetime of the page, whatever
+  // happens and however many polls fail. Anything more is noise in a console
+  // someone may be looking at from the front of a room.
+  function note(why){ if(noted)return; noted=true; try{console.debug('live-build: '+why);}catch(e){} }
+  function stop(){ stopped=true; if(timer){clearTimeout(timer);timer=null;} }
+
+  // The only mutation this script performs. textContent, never innerHTML.
+  // Heading and colour are set to the same values the baked state uses, so the
+  // fetched state and the ./fill.sh state are indistinguishable on screen.
+  function apply(text){
+    if(text===shown)return;
+    shown=text;
+    tag.textContent=TAG;
+    box.textContent=text;
+    box.style.color=INK;
+    lastChange=Date.now();
+  }
+
+  // 8-second per-request ceiling. AbortSignal.timeout where it exists, an
+  // AbortController + setTimeout equivalent where it does not. A hang cannot
+  // leave the section indeterminate — there is no indeterminate state to be in,
+  // the baked text is already on screen — but it must not stack requests, which
+  // is what the inflight guard below is for.
+  function guard(){
+    try{
+      if(typeof AbortSignal!=='undefined'&&typeof AbortSignal.timeout==='function')
+        return {s:AbortSignal.timeout(TIMEOUT),c:null};
+      if(typeof AbortController!=='undefined'){
+        var ac=new AbortController();
+        return {s:ac.signal,c:setTimeout(function(){try{ac.abort();}catch(e){}},TIMEOUT)};
+      }
+    }catch(e){}
+    return {s:undefined,c:null};
+  }
+
+  function poll(){
+    if(inflight)return;
+    inflight=true;
+    var g=guard();
+    var clear=function(){ if(g.c)clearTimeout(g.c); inflight=false; };
+    fetch(EP,{
+      method:'GET',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Accept':'application/json'},
+      signal:g.s,
+      cache:'no-store'
+    }).then(function(r){
+      if(!r.ok){ clear(); note('status '+r.status); return; }
+      return r.json().then(function(j){
+        clear();
+        var row = (j&&j.length&&j[0]) ? j[0] : null;
+        var t = (row&&typeof row.body==='string') ? row.body : null;
+        if(t===null||t.replace(/\\s+/g,'')===''){ note('nothing published yet'); return; }
+        if(!landed){ landed=Date.now(); lastChange=landed; }
+        apply(t);
+      },function(){ clear(); note('unreadable response'); });
+    }).catch(function(){
+      clear(); note('unreachable or timed out');
+    });
+  }
+
+  // Poll every 20s so text appears on a faculty member's screen without them
+  // refreshing. Two stop conditions, because this is a session and not a daemon:
+  // a hard 15-minute ceiling from page load, and — once something has actually
+  // landed — five minutes with no further change.
+  function tick(){
+    if(stopped)return;
+    var now=Date.now();
+    if(now-started>=MAX){ stop(); return; }
+    if(landed&&now-lastChange>=QUIET){ stop(); return; }
+    poll();
+    timer=setTimeout(tick,POLL);
+  }
+  tick();
+})();
+/* live-build fetch: end */
+`;
 }
 
 function renderDiscipline(d, all, bySlug) {
@@ -698,7 +882,7 @@ ${jumpMenu(all, '../')}
 `;
   return page(`${d.name} · EL3vate 2026 Day 8`,
     `Prototyping assignment for ${d.name}: a 90-minute version, ${planWeeks(d)}-week plan, rubric, budget, and a real annotated AI output.`,
-    body, COPY_JS + feedbackJs());
+    body, COPY_JS + feedbackJs() + liveFetchJs(d));
 }
 
 // ---- handout ----
@@ -1594,5 +1778,10 @@ budget and three sizes.</p>
   console.log(`ALIASES = ${ALIASES.join(', ') || '(none)'}  [display only — never SITE_URL]`);
   console.log(`USE_SUPABASE = ${USE_SUPABASE}  url=${SUPABASE_URL ? 'set' : 'empty'}  key=${SUPABASE_ANON_KEY ? 'set' : 'empty'}` +
     `  ->  feedback backend ${SUPABASE_ON ? 'ON (form emitted)' : 'OFF (mailto only)'}`);
+  console.log(`USE_LIVE_FETCH = ${USE_LIVE_FETCH}  (same two credentials, independent switch)` +
+    `  ->  live-build fetch ${LIVE_FETCH_ON ? `ON (polling ${LIVE_TABLE} every ${LIVE_POLL_MS / 1000}s)` : 'OFF (build-time liveBuild only)'}`);
+  const baked = all.filter(d => d.liveBuild && String(d.liveBuild).trim()).length;
+  console.log(`liveBuild baked at build time: ${baked}/${all.length} disciplines` +
+    `  (${all.length - baked} showing the reserved placeholder)`);
 }
 main();
