@@ -5,6 +5,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONTENT = path.join(ROOT, 'content');
@@ -708,6 +709,353 @@ function demoIsolationGate(distDir) {
   return { pass: problems.length === 0, problems, files: all.length, gate5: off.pass };
 }
 
+// ============================================================================
+// phase 20 gates — the live-build fetch
+// ============================================================================
+// The brief numbers these 1-5; they are GATE 15-19 here so the numbering across
+// the whole suite stays a single sequence. The mapping is:
+//   brief 1 live-fetch kill switch     -> GATE 15
+//   brief 2 independence of the two    -> GATE 16
+//   brief 3 no innerHTML on fetched    -> GATE 17
+//   brief 4 demo/presenter isolation   -> GATE 18
+//   brief 5 fallback presence          -> GATE 19
+
+const LIVE_TABLE = 'el3vate_live';
+const LIVE_REST_PATH = '/rest/v1/' + LIVE_TABLE;
+const FEEDBACK_REST_PATH = '/rest/v1/el3vate_feedback';
+// The sentinels src/build.js wraps the emitted script in. GATE 17 reads the
+// region between them rather than the whole page, so it is scanning the fetch
+// script specifically and not, say, an unrelated innerHTML in COPY_JS.
+const LIVE_BEGIN = '/* live-build fetch: begin */';
+const LIVE_END = '/* live-build fetch: end */';
+
+// ---------- GATE 15: live-fetch kill switch ----------
+// The counterpart of GATE 11, for the second switch. With USE_LIVE_FETCH off,
+// dist/ must carry no trace of the live-build layer.
+//
+// Four separate checks, and the scoping of the fourth is the part worth reading:
+//
+//   (a) the table name `el3vate_live`, anywhere in dist/
+//   (b) the REST path `/rest/v1/el3vate_live`, anywhere in dist/
+//   (c) the IDENTIFIERS `SUPABASE_URL` / `SUPABASE_ANON_KEY`. src/build.js emits
+//       credential VALUES, never these names, so a name in dist/ means source
+//       leaked into output regardless of which switch is on.
+//   (d) the credential VALUES — but only when USE_SUPABASE is ALSO off. When the
+//       feedback form is on, those values are legitimately baked into dist/ and
+//       failing on them here would be this gate reporting on a different
+//       feature. GATE 11 owns that case.
+//
+// (d) is why this gate takes both switches rather than just its own.
+function liveKillSwitchGate(distDir, cfg) {
+  const problems = [];
+  const files = readAll(distDir);
+
+  if (cfg.liveOn) {
+    // Switched on: the layer is expected. What must still hold is that every
+    // discipline page that carries the script also carries a complete section
+    // for it to fall back to, and that the endpoint baked in is the one in
+    // src/build.js rather than something hand-edited into the output.
+    const pages = files.filter(f => /^[^/]+\/index\.html$/.test(f.name));
+    const withScript = pages.filter(f => f.text.includes(LIVE_BEGIN));
+    if (!withScript.length) problems.push('USE_LIVE_FETCH is on but no discipline page carries the fetch');
+    for (const f of withScript) {
+      if (!f.text.includes(LIVE_REST_PATH))
+        problems.push(`dist/${f.name} has the fetch script but not the ${LIVE_REST_PATH} endpoint`);
+      if (cfg.url && !f.text.includes(String(cfg.url).trim().replace(/\/+$/, '')))
+        problems.push(`dist/${f.name} has the fetch script but not the SUPABASE_URL from src/build.js`);
+    }
+    if (!cfg.url || !cfg.key)
+      problems.push('USE_LIVE_FETCH is true but a credential is empty — LIVE_FETCH_ON should have forced it off');
+    return { pass: problems.length === 0, problems, liveOn: cfg.liveOn, files: files.length };
+  }
+
+  for (const f of files) {
+    for (const needle of [LIVE_TABLE, LIVE_REST_PATH, 'SUPABASE_URL', 'SUPABASE_ANON_KEY']) {
+      const i = f.text.indexOf(needle);
+      if (i !== -1) problems.push(
+        `dist/${f.name}:${f.text.slice(0, i).split('\n').length} contains "${needle}" with USE_LIVE_FETCH off ` +
+        `(...${f.text.slice(Math.max(0, i - 30), i + 40).replace(/\s+/g, ' ')}...)`);
+    }
+  }
+  // (d) — only meaningful when the other switch is off too; see the note above.
+  if (!cfg.on) {
+    for (const [label, val] of [['SUPABASE_URL', cfg.url], ['SUPABASE_ANON_KEY', cfg.key]]) {
+      if (!val) continue;   // empty in the committed state
+      for (const f of files) {
+        if (f.text.includes(val))
+          problems.push(`dist/${f.name} contains the ${label} value with both switches off`);
+      }
+    }
+  }
+  return { pass: problems.length === 0, problems, liveOn: cfg.liveOn, files: files.length };
+}
+
+// ---------- GATE 16: independence of the two switches ----------
+// Builds the site four times, once per combination of USE_SUPABASE and
+// USE_LIVE_FETCH, and asserts each artifact contains exactly what that
+// combination implies AND NOTHING MORE. The "nothing more" half is the point:
+// it is what would catch the two switches having been quietly wired together.
+//
+// The build is run from a throwaway copy of src/build.js in a temp directory,
+// with content/, demos/ and assets/ symlinked in and dist/ landing under the
+// temp root. Nothing in the repo is written to, so a crash mid-gate cannot leave
+// src/build.js edited or the real dist/ in a fixture state.
+//
+// The fixture credentials are deliberately not Supabase-shaped: the values must
+// be non-empty to clear the credential interlock, and nothing here should look
+// like a real key to GATE 12 or to a reader.
+const FIXTURE_URL = 'https://fixture-project.example-backend.co';
+const FIXTURE_KEY = 'fixture-anon-key-not-a-real-credential';
+
+function buildVariant(useSupabase, useLive, rootDir) {
+  const root = rootDir || ROOT;
+  const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'combo-'));
+  fs.mkdirSync(path.join(tmp, 'src'));
+  for (const d of ['content', 'demos', 'assets']) {
+    const s = path.join(root, d);
+    if (fs.existsSync(s)) fs.symlinkSync(s, path.join(tmp, d));
+  }
+  let src = fs.readFileSync(path.join(root, 'src', 'build.js'), 'utf8');
+  const sub = (name, literal) => {
+    const re = new RegExp(`^const ${name}\\s*=\\s*[^;]*;`, 'm');
+    if (!re.test(src)) throw new Error(`buildVariant: no \`const ${name} = ...;\` in src/build.js`);
+    src = src.replace(re, `const ${name} = ${literal};`);
+  };
+  sub('USE_SUPABASE', String(useSupabase));
+  sub('USE_LIVE_FETCH', String(useLive));
+  sub('SUPABASE_URL', `'${FIXTURE_URL}'`);
+  sub('SUPABASE_ANON_KEY', `'${FIXTURE_KEY}'`);
+  fs.writeFileSync(path.join(tmp, 'src', 'build.js'), src);
+  // stdio:'pipe' so the child's `git rev-parse` failing in a non-repo temp dir
+  // (which is expected, and harmless — the build stamps "nogit") stays out of
+  // the gate's output.
+  execFileSync(process.execPath, [path.join(tmp, 'src', 'build.js')], { stdio: 'pipe' });
+  return { tmp, dist: path.join(tmp, 'dist') };
+}
+
+function independenceGate(rootDir) {
+  const problems = [];
+  const rows = [];
+  const combos = [
+    { s: false, l: false }, { s: true, l: false }, { s: false, l: true }, { s: true, l: true },
+  ];
+  for (const c of combos) {
+    const label = `USE_SUPABASE=${c.s} USE_LIVE_FETCH=${c.l}`;
+    let built;
+    try { built = buildVariant(c.s, c.l, rootDir); }
+    catch (e) { problems.push(`${label}: build failed — ${String(e.message).slice(0, 200)}`); continue; }
+    try {
+      const files = readAll(built.dist);
+      const blob = files.map(f => f.text).join('\n');
+      // What each token's presence means, and which switch owns it.
+      const seen = {
+        'the feedback form (id="fb-form")':        blob.includes('id="fb-form"'),
+        [`the feedback endpoint (${FEEDBACK_REST_PATH})`]: blob.includes(FEEDBACK_REST_PATH),
+        'the live-fetch script (sentinel)':        blob.includes(LIVE_BEGIN),
+        [`the live table (${LIVE_TABLE})`]:        blob.includes(LIVE_TABLE),
+        [`the live endpoint (${LIVE_REST_PATH})`]: blob.includes(LIVE_REST_PATH),
+      };
+      const want = {
+        'the feedback form (id="fb-form")':        c.s,
+        [`the feedback endpoint (${FEEDBACK_REST_PATH})`]: c.s,
+        'the live-fetch script (sentinel)':        c.l,
+        [`the live table (${LIVE_TABLE})`]:        c.l,
+        [`the live endpoint (${LIVE_REST_PATH})`]: c.l,
+      };
+      for (const k of Object.keys(want)) {
+        if (seen[k] && !want[k]) problems.push(`${label}: dist/ contains ${k}, which that combination does not imply`);
+        if (!seen[k] && want[k]) problems.push(`${label}: dist/ is missing ${k}, which that combination requires`);
+      }
+      // The credential is baked in when either switch is on, and must be absent
+      // when neither is.
+      const wantCred = c.s || c.l;
+      const hasCred = blob.includes(FIXTURE_KEY);
+      if (hasCred && !wantCred) problems.push(`${label}: the anon key is in dist/ with both switches off`);
+      if (!hasCred && wantCred) problems.push(`${label}: the anon key is absent from dist/ with a switch on`);
+
+      // CONSTRAINT C, in every combination: the demos and the presenter kit
+      // never learn about either backend.
+      for (const sub of ['demos', 'presenter']) {
+        const dir = path.join(built.dist, sub);
+        if (!fs.existsSync(dir)) continue;
+        for (const f of readAll(dir)) {
+          for (const needle of [LIVE_TABLE, LIVE_REST_PATH, FEEDBACK_REST_PATH, 'id="fb-form"', FIXTURE_KEY]) {
+            if (f.text.includes(needle))
+              problems.push(`${label}: dist/${sub}/${f.name} contains "${needle}"`);
+          }
+        }
+      }
+      rows.push({ label, seen });
+    } finally {
+      fs.rmSync(built.tmp, { recursive: true, force: true });
+    }
+  }
+  return { pass: problems.length === 0, problems, rows };
+}
+
+// ---------- GATE 17: no innerHTML on fetched content ----------
+// The fetched body is untrusted input rendered on a page shown to a room. It
+// goes in as text or it does not go in. This reads the sentinel-delimited fetch
+// script out of the served HTML — not the whole page — so it is scanning the
+// code that touches network data and nothing else.
+//
+// Two clauses:
+//   (a) no HTML-injecting sink: innerHTML, outerHTML, insertAdjacentHTML,
+//       document.write / document.writeln.
+//   (b) no animation primitive. "A quiet content swap only" and
+//       prefers-reduced-motion are enforced here rather than promised in a
+//       comment: if a future edit animates the swap, this fails.
+// Plus one positive assertion — the script must actually use textContent —
+// so a script that stopped writing to the DOM at all could not pass by default.
+//
+// The region is scanned as a blob, comments included. That is deliberate and it
+// is the same call GATE 12 makes: a comment inside the emitted script naming a
+// markup-writing sink trips this gate, so src/build.js does not name them there.
+// The alternative is a JavaScript comment stripper that has to get string
+// literals and regex literals right to avoid a blind spot, which is more code
+// and more ways to be wrong than the convention costs. (This fired for real on
+// the first run, on the comment "textContent, never innerHTML".)
+const HTML_SINKS = [/\binnerHTML\b/, /\bouterHTML\b/, /\binsertAdjacentHTML\b/, /\bdocument\s*\.\s*write(ln)?\b/];
+const MOTION_PRIMS = [/\brequestAnimationFrame\b/, /\banimate\s*\(/, /\bstyle\s*\.\s*transition\b/,
+  /\bstyle\s*\.\s*animation\b/, /\bclassList\b/];
+
+function fetchedContentGate(distDir) {
+  const problems = [];
+  let scanned = 0;
+  for (const f of walk(distDir, '.html')) {
+    const text = fs.readFileSync(f, 'utf8');
+    let from = text.indexOf(LIVE_BEGIN);
+    while (from !== -1) {
+      const to = text.indexOf(LIVE_END, from);
+      if (to === -1) {
+        problems.push(`dist/${path.relative(distDir, f)}: fetch script opens but never closes — cannot be scanned`);
+        break;
+      }
+      const region = text.slice(from, to + LIVE_END.length);
+      scanned++;
+      const rel = path.relative(distDir, f);
+      for (const re of HTML_SINKS) {
+        const m = region.match(re);
+        if (m) problems.push(`dist/${rel}: the fetch script assigns fetched data through ${m[0]} — ` +
+          'the value is untrusted input and must go in via textContent');
+      }
+      for (const re of MOTION_PRIMS) {
+        const m = region.match(re);
+        if (m) problems.push(`dist/${rel}: the fetch script uses ${m[0]} — the swap must be quiet, ` +
+          'with no animation to suppress under prefers-reduced-motion');
+      }
+      if (!/\btextContent\b/.test(region))
+        problems.push(`dist/${rel}: the fetch script never assigns textContent — it is either not rendering ` +
+          'the fetched value or rendering it some other way');
+      from = text.indexOf(LIVE_BEGIN, to);
+    }
+  }
+  return { pass: problems.length === 0, problems, scanned };
+}
+
+// ---------- GATE 18: demo and presenter isolation ----------
+// CONSTRAINT C. GATE 5 and GATE 14 are re-asserted rather than assumed — the
+// demos must still make no network call at all — and the live-build layer is
+// additionally barred from dist/demos/ and dist/presenter/ outright.
+//
+// The presenter kit is the stricter of the two: it is deliberately
+// self-contained with zero subresources so it works with the network dead, and
+// it is what the session is driven from. It gains no fetch, ever.
+function livePresenterIsolationGate(distDir) {
+  const problems = [];
+  const dirs = [];
+
+  const demoDir = path.join(distDir, 'demos');
+  if (!fs.existsSync(demoDir)) problems.push('dist/demos/ not found');
+  else dirs.push(['demos', demoDir]);
+
+  const presDir = path.join(distDir, 'presenter');
+  if (!fs.existsSync(presDir)) problems.push('dist/presenter/ not found');
+  else dirs.push(['presenter', presDir]);
+
+  // GATE 5, re-asserted on the demos
+  let gate5 = false, gate14 = false;
+  if (fs.existsSync(demoDir)) {
+    const htmlDemos = walk(demoDir, '.html')
+      .map(p => ({ name: path.relative(distDir, p), text: fs.readFileSync(p, 'utf8') }));
+    const off = offlineGate(htmlDemos);
+    gate5 = off.pass;
+    if (!off.pass) for (const h of off.hits) problems.push(`GATE 5 no longer holds: ${h}`);
+    const di = demoIsolationGate(distDir);
+    gate14 = di.pass;
+    if (!di.pass) for (const p of di.problems) problems.push(`GATE 14 no longer holds: ${p}`);
+  }
+
+  let files = 0;
+  for (const [label, dir] of dirs) {
+    for (const f of readAll(dir)) {
+      files++;
+      for (const needle of [LIVE_TABLE, LIVE_REST_PATH, LIVE_BEGIN]) {
+        const i = f.text.indexOf(needle);
+        if (i !== -1) problems.push(
+          `dist/${label}/${f.name}:${f.text.slice(0, i).split('\n').length} contains "${needle}" — ` +
+          'the live-build fetch lives in the discipline page shell only');
+      }
+    }
+  }
+  return { pass: problems.length === 0, problems, files, gate5, gate14 };
+}
+
+// ---------- GATE 19: fallback presence ----------
+// A faculty member with JavaScript disabled, or on dead conference wifi, must
+// see a complete page. So the live-build section must be non-empty in the SERVED
+// HTML, before any script runs — either baked content or the reserved
+// placeholder, never nothing and never a placeholder-for-the-placeholder.
+//
+// Checked on the rendered markup, not on the content JSON, because the question
+// is what arrives at the browser.
+const LIVE_MIN_CHARS = 20;
+
+function fallbackPresenceGate(distDir, docs) {
+  const problems = [];
+  const rows = [];
+  for (const d of docs) {
+    const p = path.join(distDir, d.slug, 'index.html');
+    if (!fs.existsSync(p)) { problems.push(`${d.slug}: no built page`); continue; }
+    const html = fs.readFileSync(p, 'utf8');
+
+    const m = html.match(/<section class="sec" id="live-build">([\s\S]*?)<\/section>/);
+    if (!m) { problems.push(`${d.slug}: no live-build section in the served HTML`); continue; }
+    const inner = m[1];
+
+    const tagM = inner.match(/id="lb-tag"[^>]*>([\s\S]*?)<\/p>/);
+    const bodyM = inner.match(/id="lb-body"[^>]*>([\s\S]*?)<\/p>/);
+    if (!tagM) { problems.push(`${d.slug}: live-build section has no heading element`); continue; }
+    if (!bodyM) { problems.push(`${d.slug}: live-build section has no body element`); continue; }
+
+    const strip = s => s.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+    const heading = strip(tagM[1]);
+    const body = strip(bodyM[1]);
+
+    if (!heading) problems.push(`${d.slug}: live-build heading is empty in the served HTML`);
+    if (!body) problems.push(`${d.slug}: live-build body is empty in the served HTML — a reader with ` +
+      'JavaScript disabled would see an empty box');
+    else if (body.length < LIVE_MIN_CHARS)
+      problems.push(`${d.slug}: live-build body is ${body.length} chars ("${body}"), under the ` +
+        `${LIVE_MIN_CHARS}-char floor — that is a stub, not content or a placeholder`);
+
+    // No spinner, no error text, no "loading" state may be what ships.
+    if (/\bloading\b|\bplease wait\b|\bspinner\b|&hellip;\s*$|…\s*$/i.test(body))
+      problems.push(`${d.slug}: live-build body reads like a loading state ("${body.slice(0, 60)}") — ` +
+        'the served markup must be the finished fallback, not a waiting state');
+
+    const baked = !!(d.liveBuild && String(d.liveBuild).trim());
+    rows.push({ slug: d.slug, state: baked ? 'baked' : 'reserved', heading, chars: body.length });
+    // The heading must match the state: baked content claims "Built live in
+    // session"; an unfilled section must not.
+    if (baked && !/built live in session/i.test(heading))
+      problems.push(`${d.slug}: liveBuild is filled but the heading reads "${heading}"`);
+    if (!baked && /built live in session/i.test(heading))
+      problems.push(`${d.slug}: nothing is baked but the heading already claims "${heading}"`);
+  }
+  return { pass: problems.length === 0, problems, rows };
+}
+
 // ---------- runner ----------
 function runAll() {
   const docs = loadDocs(CONTENT);
@@ -813,6 +1161,76 @@ function runAll() {
     `  (GATE 5 re-asserted: ${di.gate5 ? 'holds' : 'BROKEN'}; ${di.files} files under dist/demos/)`);
   di.problems.forEach(p => console.log('     ' + p));
   results.push(['demo-isolation', di.pass]);
+
+  // ---- phase 20 ----
+  cfg.liveFlag = buildBoolean('USE_LIVE_FETCH');
+  cfg.liveOn = cfg.liveFlag && cfg.url.trim() !== '' && cfg.key.trim() !== '';
+
+  const lks = liveKillSwitchGate(DIST, cfg);
+  console.log('\n[15] LIVE-FETCH KILL SWITCH  ' + (lks.pass ? 'PASS' : 'FAIL') +
+    `  (USE_LIVE_FETCH=${cfg.liveFlag}, url=${cfg.url ? 'set' : 'empty'}, key=${cfg.key ? 'set' : 'empty'}` +
+    ` -> live fetch ${lks.liveOn ? 'ON' : 'OFF'}; ${lks.files} files in dist/ scanned)`);
+  if (!lks.liveOn) console.log(`     switch is OFF: dist/ must contain no "${LIVE_TABLE}", no "${LIVE_REST_PATH}",` +
+    ' and neither credential identifier');
+  lks.problems.forEach(p => console.log('     ' + p));
+  results.push(['live-kill-switch', lks.pass]);
+
+  const ind = independenceGate();
+  console.log('\n[16] SWITCH INDEPENDENCE  ' + (ind.pass ? 'PASS' : 'FAIL') +
+    `  (${ind.rows.length}/4 combinations built and inspected)`);
+  for (const r of ind.rows) {
+    const on = Object.keys(r.seen).filter(k => r.seen[k]);
+    console.log(`     ${r.label}  ->  ${on.length ? on.join(' + ') : 'neither backend, nothing baked in'}`);
+  }
+  ind.problems.forEach(p => console.log('     ' + p));
+  results.push(['switch-independence', ind.pass]);
+
+  // GATE 17 and GATE 19 are run TWICE: against the committed build, and against a
+  // freshly built USE_LIVE_FETCH=true variant.
+  //
+  // Without the second run GATE 17 would be vacuous in the committed state —
+  // the switch is off, no fetch script is emitted, and a gate that scans nothing
+  // passes for the wrong reason. The variant run is what actually inspects the
+  // script the site would ship with the switch flipped, which is the artifact the
+  // gate exists to police. GATE 19 gets the same treatment so "the section is
+  // complete before any script runs" is proven in the state where a script runs.
+  let live = null, liveErr = null;
+  try { live = buildVariant(false, true); }
+  catch (e) { liveErr = String(e.message).slice(0, 200); }
+
+  const fc = fetchedContentGate(DIST);
+  const fcLive = live ? fetchedContentGate(live.dist)
+    : { pass: false, problems: [`could not build a USE_LIVE_FETCH=true variant to scan: ${liveErr}`], scanned: 0 };
+  const fcPass = fc.pass && fcLive.pass && (live ? fcLive.scanned > 0 : false);
+  console.log('\n[17] NO innerHTML ON FETCHED CONTENT  ' + (fcPass ? 'PASS' : 'FAIL') +
+    `  (committed build: ${fc.scanned} script(s)${fc.scanned === 0 ? ', switch off as expected' : ''};` +
+    ` USE_LIVE_FETCH=true variant: ${fcLive.scanned} script(s) scanned)`);
+  if (live && fcLive.scanned === 0)
+    console.log('     the live-on variant emitted no fetch script at all — nothing was inspected');
+  fc.problems.forEach(p => console.log('     committed: ' + p));
+  fcLive.problems.forEach(p => console.log('     live-on variant: ' + p));
+  results.push(['fetched-content', fcPass]);
+
+  const lpi = livePresenterIsolationGate(DIST);
+  console.log('\n[18] DEMO + PRESENTER ISOLATION  ' + (lpi.pass ? 'PASS' : 'FAIL') +
+    `  (GATE 5: ${lpi.gate5 ? 'holds' : 'BROKEN'}, GATE 14: ${lpi.gate14 ? 'holds' : 'BROKEN'};` +
+    ` ${lpi.files} files under dist/demos/ + dist/presenter/)`);
+  lpi.problems.forEach(p => console.log('     ' + p));
+  results.push(['live-demo-presenter-isolation', lpi.pass]);
+
+  const fp = fallbackPresenceGate(DIST, docs);
+  const fpLive = live ? fallbackPresenceGate(live.dist, docs)
+    : { pass: false, problems: [`could not build a USE_LIVE_FETCH=true variant to check: ${liveErr}`], rows: [] };
+  if (live) fs.rmSync(live.tmp, { recursive: true, force: true });
+  const bakedN = fp.rows.filter(r => r.state === 'baked').length;
+  const fpPass = fp.pass && fpLive.pass && fpLive.rows.length === docs.length;
+  console.log('\n[19] FALLBACK PRESENCE  ' + (fpPass ? 'PASS' : 'FAIL') +
+    `  (committed build: ${fp.rows.length}/${docs.length} sections complete —` +
+    ` ${bakedN} baked, ${fp.rows.length - bakedN} reserved placeholder;` +
+    ` USE_LIVE_FETCH=true variant: ${fpLive.rows.length}/${docs.length})`);
+  fp.problems.forEach(p => console.log('     committed: ' + p));
+  fpLive.problems.forEach(p => console.log('     live-on variant: ' + p));
+  results.push(['fallback-presence', fpPass]);
 
   const failed = results.filter(r => !r[1]).map(r => r[0]);
   console.log('\n' + (failed.length ? 'VALIDATION FAILED: ' + failed.join(', ') : 'ALL GATES PASS'));
@@ -1145,6 +1563,209 @@ function selftest() {
     demoIsolationGate(mkDemos('index.html', '<form id="fb-form"></form>')),
     'feedback-form markup inside a demo — the form belongs to the page shell only');
   fs.rmSync(dtmp, { recursive: true, force: true });
+
+  // ==========================================================================
+  // phase 20 gates — the live-build fetch. Same contract: a deliberately broken
+  // fixture per failure mode, plus a negative control wherever a gate has an
+  // "allowed" branch that would otherwise never be exercised.
+  // ==========================================================================
+
+  // ---- 15 live-fetch kill switch ----
+  const ltmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ltest-'));
+  const mkLiveDist = files => {
+    fs.rmSync(ltmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(ltmp, 'law'), { recursive: true });
+    for (const [rel, body] of Object.entries(files)) fs.writeFileSync(path.join(ltmp, rel), body);
+    return ltmp;
+  };
+  const BOTH_OFF = { flag: false, url: '', key: '', on: false, liveFlag: false, liveOn: false };
+
+  passes('live kill-switch (clean off-state build)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>clean</p>', 'law/index.html': '<p>reserved</p>' }), BOTH_OFF),
+    'both switches off, no live-build reference anywhere in dist/ — the committed state');
+
+  check('live kill-switch (table name survives the revert)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>x</p>',
+      'law/index.html': `<script>var t="${LIVE_TABLE}";</script>` }), BOTH_OFF),
+    `switch off but dist/law/index.html still contains "${LIVE_TABLE}"`);
+
+  check('live kill-switch (REST path survives the revert)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>x</p>',
+      'law/index.html': `<script>fetch("https://p.example.co${LIVE_REST_PATH}?slug=eq.law")</script>` }), BOTH_OFF),
+    `switch off but the ${LIVE_REST_PATH} endpoint is still in dist/law/index.html`);
+
+  check('live kill-switch (credential identifier leaked into output)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<script>var k=SUPABASE_ANON_KEY;</script>',
+      'law/index.html': '<p>x</p>' }), BOTH_OFF),
+    'the identifier SUPABASE_ANON_KEY in dist/index.html — source leaked into built output');
+
+  check('live kill-switch (credential value survives, both switches off)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>key sk-fixture-1234 left behind</p>',
+      'law/index.html': '<p>x</p>' }),
+      { flag: false, url: '', key: 'sk-fixture-1234', on: false, liveFlag: false, liveOn: false }),
+    'the SUPABASE_ANON_KEY value still in dist/index.html with both switches off');
+
+  passes('live kill-switch (same value allowed when the FEEDBACK switch is on)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>key sk-fixture-1234 legitimately baked in</p>',
+      'law/index.html': '<p>x</p>' }),
+      { flag: true, url: 'https://p.example.co', key: 'sk-fixture-1234', on: true, liveFlag: false, liveOn: false }),
+    'USE_SUPABASE on, USE_LIVE_FETCH off: the key belongs in dist/ and GATE 11 owns it, not this gate');
+
+  check('live kill-switch (switch on but no page carries the fetch)',
+    liveKillSwitchGate(mkLiveDist({ 'index.html': '<p>x</p>', 'law/index.html': '<p>no script here</p>' }),
+      { flag: false, url: FIXTURE_URL, key: FIXTURE_KEY, on: false, liveFlag: true, liveOn: true }),
+    'USE_LIVE_FETCH on but not one discipline page emitted the fetch');
+  fs.rmSync(ltmp, { recursive: true, force: true });
+
+  // ---- 16 switch independence ----
+  // The real four-combination build is the gate itself and runs in runAll(). The
+  // fixture here is a repo whose two switches have been WIRED TOGETHER — the
+  // exact regression this gate exists to catch — built by copying src/build.js
+  // and making the live-fetch emission depend on SUPABASE_ON as well.
+  const itmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'itest-'));
+  fs.mkdirSync(path.join(itmp, 'src'), { recursive: true });
+  for (const dir of ['content', 'demos', 'assets']) fs.symlinkSync(path.join(ROOT, dir), path.join(itmp, dir));
+  const wired = fs.readFileSync(path.join(ROOT, 'src', 'build.js'), 'utf8')
+    .replace(/^const LIVE_FETCH_ON\s*=[\s\S]*?;$/m,
+      'const LIVE_FETCH_ON = SUPABASE_ON && USE_LIVE_FETCH && String(SUPABASE_URL).trim() !== \'\';');
+  fs.writeFileSync(path.join(itmp, 'src', 'build.js'), wired);
+  check('switch independence (the two switches wired together)', independenceGate(itmp),
+    'LIVE_FETCH_ON redefined to depend on SUPABASE_ON, so USE_SUPABASE=false + ' +
+    'USE_LIVE_FETCH=true silently emits no fetch');
+  fs.rmSync(itmp, { recursive: true, force: true });
+
+  // ---- 17 no innerHTML on fetched content ----
+  const ftmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'ftest-'));
+  const mkFetchDist = scriptBody => {
+    fs.rmSync(ftmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(ftmp, 'law'), { recursive: true });
+    fs.writeFileSync(path.join(ftmp, 'law', 'index.html'),
+      `<html><body><script>${LIVE_BEGIN}\n${scriptBody}\n${LIVE_END}</script></body></html>`);
+    return ftmp;
+  };
+  const GOOD_SWAP = 'box.textContent = t;';
+
+  passes('fetched content (textContent swap)', fetchedContentGate(mkFetchDist(GOOD_SWAP)),
+    'the emitted script writes the fetched value with textContent and does nothing else');
+
+  for (const [sink, code] of [
+    ['innerHTML', 'box.innerHTML = t;'],
+    ['outerHTML', 'box.outerHTML = t;'],
+    ['insertAdjacentHTML', "box.insertAdjacentHTML('beforeend', t);"],
+    ['document.write', 'document.write(t);'],
+  ]) {
+    check(`fetched content (${sink})`, fetchedContentGate(mkFetchDist(GOOD_SWAP + '\n' + code)),
+      `the emitted fetch script passing the fetched body through ${sink}`);
+  }
+
+  check('fetched content (animated swap)',
+    fetchedContentGate(mkFetchDist(GOOD_SWAP + "\nrequestAnimationFrame(function(){box.classList.add('in');});")),
+    'the swap animated with requestAnimationFrame + a class change — prefers-reduced-motion ' +
+    'asks for a quiet swap and there must be nothing to suppress');
+
+  check('fetched content (script renders nothing)',
+    fetchedContentGate(mkFetchDist('var t = json[0].body;  /* and then never used */')),
+    'a fetch script with no textContent assignment at all');
+
+  check('fetched content (unterminated script region)', (() => {
+    fs.rmSync(ftmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(ftmp, 'law'), { recursive: true });
+    fs.writeFileSync(path.join(ftmp, 'law', 'index.html'), `<script>${LIVE_BEGIN}\nbox.textContent=t;`);
+    return fetchedContentGate(ftmp);
+  })(), 'the begin sentinel with no matching end sentinel — the region cannot be scanned');
+  fs.rmSync(ftmp, { recursive: true, force: true });
+
+  // ---- 18 demo + presenter isolation ----
+  const ptmp2 = fs.mkdtempSync(path.join(require('os').tmpdir(), 'p2test-'));
+  const mkIso = (rel, body) => {
+    fs.rmSync(ptmp2, { recursive: true, force: true });
+    fs.mkdirSync(path.join(ptmp2, 'demos', 'break-even'), { recursive: true });
+    fs.mkdirSync(path.join(ptmp2, 'presenter'), { recursive: true });
+    fs.writeFileSync(path.join(ptmp2, 'demos', 'break-even', 'index.html'), '<script>var d=[1,2,3];</script>');
+    fs.writeFileSync(path.join(ptmp2, 'presenter', 'index.html'), '<p>offline kit</p>');
+    if (rel) fs.writeFileSync(path.join(ptmp2, rel), body);
+    return ptmp2;
+  };
+
+  passes('live isolation (clean demos + presenter)', livePresenterIsolationGate(mkIso(null)),
+    'canned demo data and a self-contained presenter kit, neither naming the live table');
+
+  check('live isolation (live table named in a demo)',
+    livePresenterIsolationGate(mkIso(path.join('demos', 'break-even', 'index.html'),
+      `<script>var t="${LIVE_TABLE}";</script>`)),
+    `a demo naming ${LIVE_TABLE}`);
+
+  check('live isolation (live REST path in a demo asset)',
+    livePresenterIsolationGate(mkIso(path.join('demos', 'break-even', 'data.json'),
+      `{"endpoint":"https://p.example.co${LIVE_REST_PATH}"}`)),
+    `a .json asset under dist/demos/ carrying the ${LIVE_REST_PATH} endpoint`);
+
+  check('live isolation (fetch script in the presenter kit)',
+    livePresenterIsolationGate(mkIso(path.join('presenter', 'index.html'),
+      `<script>${LIVE_BEGIN} box.textContent=t; ${LIVE_END}</script>`)),
+    'the live-build fetch emitted into the presenter kit, which must work with the network dead');
+
+  check('live isolation (GATE 5 broken inside a demo)',
+    livePresenterIsolationGate(mkIso(path.join('demos', 'break-even', 'index.html'),
+      '<script>fetch("/x").then(function(r){return r.json();})</script>')),
+    'a demo calling fetch( — GATE 5 re-asserted here rather than assumed');
+
+  check('live isolation (presenter directory missing)', (() => {
+    const t = mkIso(null);
+    fs.rmSync(path.join(t, 'presenter'), { recursive: true, force: true });
+    return livePresenterIsolationGate(t);
+  })(), 'dist/presenter/ absent — the gate cannot confirm the kit is clean');
+  fs.rmSync(ptmp2, { recursive: true, force: true });
+
+  // ---- 19 fallback presence ----
+  const btmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'btest-'));
+  const mkLive = inner => {
+    fs.rmSync(btmp, { recursive: true, force: true });
+    fs.mkdirSync(path.join(btmp, 'law'), { recursive: true });
+    fs.writeFileSync(path.join(btmp, 'law', 'index.html'),
+      `<main><section class="sec" id="live-build"><div class="livebuild">${inner}</div></section></main>`);
+    return btmp;
+  };
+  const RESERVED = '<p class="tag" id="lb-tag">Reserved &middot; live build</p>' +
+    '<p id="lb-body">This space is intentionally empty. During the Day 8 session it gets filled in live.</p>';
+  const BAKED_IN = '<p class="tag" id="lb-tag">Built live in session</p>' +
+    '<p id="lb-body" style="color:#2A3A33">The room asked for a two-week variant, so here it is.</p>';
+  const unfilled = [{ slug: 'law', name: 'Law' }];
+  const filled = [{ slug: 'law', name: 'Law', liveBuild: 'The room asked for a two-week variant, so here it is.' }];
+
+  passes('fallback presence (reserved placeholder, nothing baked)',
+    fallbackPresenceGate(mkLive(RESERVED), unfilled),
+    'nothing baked, so the section carries the reserved placeholder — a complete page with JS off');
+
+  passes('fallback presence (baked content after ./fill.sh)',
+    fallbackPresenceGate(mkLive(BAKED_IN), filled),
+    'liveBuild filled, heading reads "Built live in session" — the ./fill.sh path, unchanged');
+
+  check('fallback presence (empty section)',
+    fallbackPresenceGate(mkLive('<p class="tag" id="lb-tag">Reserved</p><p id="lb-body"></p>'), unfilled),
+    'an empty lb-body — a reader with JavaScript disabled would see an empty box');
+
+  check('fallback presence (section removed entirely)',
+    fallbackPresenceGate(mkLive(RESERVED).replace(/$/, '') && (() => {
+      fs.writeFileSync(path.join(btmp, 'law', 'index.html'), '<main><p>no live-build section at all</p></main>');
+      return btmp;
+    })(), unfilled),
+    'the live-build section deleted from the served HTML');
+
+  check('fallback presence (a loading state shipped as the fallback)',
+    fallbackPresenceGate(mkLive('<p class="tag" id="lb-tag">Reserved</p>' +
+      '<p id="lb-body">Loading the live build&hellip;</p>'), unfilled),
+    'the served markup carrying "Loading the live build…" — a waiting state, not a finished fallback');
+
+  check('fallback presence (stub too short to be content)',
+    fallbackPresenceGate(mkLive('<p class="tag" id="lb-tag">Reserved</p><p id="lb-body">TBD</p>'), unfilled),
+    `a 3-character lb-body against the ${LIVE_MIN_CHARS}-char floor`);
+
+  check('fallback presence (heading claims content that is not there)',
+    fallbackPresenceGate(mkLive('<p class="tag" id="lb-tag">Built live in session</p>' +
+      '<p id="lb-body">This space is intentionally empty. It gets filled in live.</p>'), unfilled),
+    'nothing baked, but the heading already claims "Built live in session"');
+  fs.rmSync(btmp, { recursive: true, force: true });
 
   console.log('\n' + (allOk ? 'SELFTEST PASS: every gate rejected its broken fixture.' : 'SELFTEST FAILED: a gate did not catch its fixture.'));
   process.exit(allOk ? 0 : 1);
