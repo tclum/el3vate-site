@@ -265,3 +265,62 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
 - **`USE_SUPABASE` is committed `false` and the credentials are committed empty.**
   That is deliberate and is the state the site is presented from. Everything in
   phase 15 is unreachable until all three constants change together.
+
+## Fourth run — phases 18 through 21 (live-build fetch)
+
+- **`db/002_live_build.sql` has not been applied, and nothing in this run held
+  database credentials.** Same posture as `001_feedback.sql`: authored to be read
+  line by line and run by hand in the Supabase SQL editor. The six-row
+  verification query at the bottom of the file is what confirms the applied state,
+  and only Tim can run it. The SQL has been reviewed for syntax by eye only — a
+  syntax error surviving that review is possible, the SQL editor will say so
+  immediately, and `begin`/`commit` means a failure rolls back whole.
+- **The live-build fetch has never completed against a real endpoint.** No request
+  left this machine in this run. Every success path was driven by a stub `fetch`
+  in `src/livefallback.js`. What is unverified is the live round trip: CORS on the
+  real project, whether the anon key is accepted, whether the `SELECT` policy
+  returns the row, and whether PostgREST's response shape is the `[{body: ...}]`
+  the script expects. Step 6 of the enable procedure in `REPORT.md` is what closes
+  this and it cannot be delegated.
+- **`USE_LIVE_FETCH` is committed `false` and both credentials are committed
+  empty.** Deliberate, and the state the site is presented from. Everything in
+  phase 19 is unreachable until the flag and both credentials change together —
+  the interlock means the flag alone does nothing.
+- **`force row level security` is deliberately NOT used on `el3vate_live`, though
+  `001_feedback.sql` uses it on `el3vate_feedback`.** The verification query
+  expects `relforcerowsecurity=false` and that is a PASS, not a slip. Reasoning is
+  in the migration header: FORCE protects nothing on a table that is
+  world-readable by design, and it would subject the owning role to a policy set
+  with no UPDATE policy — putting Tim's 9am row edit one role-configuration
+  surprise away from failing. If anyone later "fixes" this by adding FORCE, they
+  should test an authenticated row update in the dashboard first.
+- **`el3vate_live.updated_at` is not maintained by a trigger.** It is set by its
+  default at insert and will still read the seed time after Tim edits a row.
+  Intentional for a one-day artifact — nothing in the site reads it — and stated
+  in the migration. Do not assume it is accurate.
+- **GATE 17 scans the emitted fetch script as a blob, comments included, so
+  `src/build.js` must not name `innerHTML`, `outerHTML`, `insertAdjacentHTML` or
+  `document.write` even in a comment inside that template literal.** This is the
+  same trade GATE 12 already forces with the hyphenated `service-role` spelling.
+  It fired for real on the first run of the gate, on the comment `textContent,
+  never innerHTML`, which was reworded. The alternative is a JavaScript comment
+  stripper that has to get string and regex literals right to avoid a blind spot —
+  more code, and more ways to be silently wrong, than the convention costs. Both
+  `src/build.js` and `src/validate.js` carry a note saying so at the relevant line.
+- **A runtime text change in the live-build section is not announced to a screen
+  reader.** There is no `aria-live` on the section, so a faculty member using
+  VoiceOver or NVDA with the page *already open* when Tim publishes a row will not
+  be told the text changed. On page load — the common case — the fetch fires
+  immediately and the content is simply there. The fix is one attribute,
+  `aria-live="polite"` on the `livebuild` div in `sectionLiveBuild()`, and
+  `apply()` already guards on `text === shown` so it would fire once per real
+  change rather than on every poll. **Not made**, because the brief specified this
+  section's behaviour precisely and adding unrequested markup across all four
+  switch combinations is Tim's call.
+- **No browser has executed the live-build fetch script.** `src/interact.js` drives
+  the demos and the presenter kit in a real Chromium, but the script is only
+  emitted when the switch is on and the switch is committed off, so the 212
+  interaction assertions do not cover it. `src/livefallback.js` is a faithful
+  stand-in for the four DOM operations the script performs and nothing more; it
+  does not prove browser behaviour around `AbortSignal.timeout`, `cache:
+  'no-store'` or CORS preflight.

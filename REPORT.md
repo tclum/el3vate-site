@@ -1257,3 +1257,886 @@ All five phases are complete and every phase's gate executed. Phase 14 is the on
 that needs qualifying: its deliverable was *authored SQL*, which exists and is
 committed, but "the migration works" is not a claim this run can make, and
 nothing in this report should be read as making it.
+
+---
+
+# FOURTH RUN — phases 18 through 21
+
+From `AGENT-BRIEF-4.md` rev 4.0. One capability added: the live-build section on
+each discipline page can fetch its content at page load, so Tim can change what
+the room sees by editing a database row instead of running a deploy.
+
+Reproduce the whole thing with one command:
+
+```
+npm run check     # build -> handout PDFs -> 19 gates -> gate selftest -> fallback chain -> demo interaction tests
+```
+
+or a stage at a time (the new one is `fallback`):
+
+```
+node src/build.js                 # emits dist/                       (zero dependencies)
+node src/validate.js              # the 19 gates                      (zero dependencies)
+node src/validate.js --selftest   # 73 fixtures, proves every gate can fail
+node src/livefallback.js          # CONSTRAINT B, branch by branch    (zero dependencies)
+node src/interact.js              # drives the 8 demos + presenter kit (needs playwright)
+```
+
+## The bottom line, from build output rather than intent
+
+Both switches are committed `false`, both credentials are committed empty, and
+`dist/` contains no backend reference of any kind. That is not a claim about
+what the code intends — it is what the build printed and what a scan of all 59
+files in `dist/` found:
+
+```
+$ grep -nE "^const (USE_SUPABASE|USE_LIVE_FETCH|SUPABASE_URL|SUPABASE_ANON_KEY) " src/build.js
+45:const USE_SUPABASE = false;              // master switch for everything in phases 13-17
+46:const SUPABASE_URL = '';                 // filled by Tim
+47:const SUPABASE_ANON_KEY = '';            // filled by Tim — anon key ONLY, never the service-role key
+80:const USE_LIVE_FETCH = false;   // independent of USE_SUPABASE; controls only the live-build fetch
+
+$ node src/build.js
+built 15 discipline pages + hub into dist/ (build 76d397d 2026-07-29T10:00:58.719Z)
+SITE_URL = https://el3vate.vercel.app
+FEEDBACK_EMAIL = tclum@hawaii.edu
+ALIASES = https://el3vate.forpono.com  [display only — never SITE_URL]
+USE_SUPABASE = false  url=empty  key=empty  ->  feedback backend OFF (mailto only)
+USE_LIVE_FETCH = false  (same two credentials, independent switch)  ->  live-build fetch OFF (build-time liveBuild only)
+liveBuild baked at build time: 0/15 disciplines  (15 showing the reserved placeholder)
+```
+
+Every string that could betray a backend, counted across all 59 files in `dist/`:
+
+| searched for | files in `dist/` |
+|---|---|
+| `supabase` | 0 |
+| `el3vate_live` | 0 |
+| `rest/v1` | 0 |
+| `SUPABASE_URL` | 0 |
+| `SUPABASE_ANON_KEY` | 0 |
+| `el3vate_feedback` | 0 |
+| `fb-form` | 0 |
+| `live-build fetch` (the script sentinel) | 0 |
+
+Gate results on that build: **19/19 PASS**. Selftest: **73 cases, 0 BAD**.
+`npm run check`: **6/6 stages green**, including the 212 real browser
+interaction tests, which are unchanged from the third run.
+
+## The four constraints, and how each is held
+
+**CONSTRAINT A — `./fill.sh` keeps working, unchanged.** `fill.sh` is not
+touched by this run; `git log` shows its last change was the previous commit.
+The build-time `liveBuild` field is read and rendered exactly as before, and the
+fetch is a layer on top: `sectionLiveBuild()` emits complete markup for the
+baked state whether or not the switch is on, and the script can only ever
+*replace* that text with something non-empty. Proven by the last two lines of
+`node src/livefallback.js`, which build with `USE_LIVE_FETCH=false` and a baked
+`liveBuild`, then assert the section still shows the baked text and that no
+fetch script was emitted at all.
+
+**CONSTRAINT B — three-deep fallback, every step exercised.** GATE 19 proves the
+static half (the section is complete in the served HTML before any script runs).
+`src/livefallback.js` proves the runtime half by extracting the emitted script
+out of a real built page — it is not retyped — and driving it through fourteen
+branches against a stub DOM and a stub fetch. Full output below.
+
+**CONSTRAINT C — demos and presenter kit untouched.** GATE 18 re-asserts GATE 5
+and GATE 14 and additionally bars `el3vate_live`, the REST path and the script
+sentinel from `dist/demos/` and `dist/presenter/`. GATE 16 re-checks both
+directories in all four switch combinations. The presenter kit is still 916 KB
+self-contained with zero subresources (GATE 9, unchanged).
+
+**CONSTRAINT D — `SITE_URL` does not change.** Still
+`https://el3vate.vercel.app`, still pinned by GATE 13, still the value
+`assets/qr.json` encodes. Not edited this run.
+
+## What shipped
+
+### `db/002_live_build.sql` — authored, NOT applied
+
+One table, `el3vate_live`, with fifteen rows seeded `body` NULL so that during
+the session Tim only ever *edits* a row and never creates one. RLS enabled with
+exactly one policy: **anonymous SELECT** — deliberately the inverse of
+`el3vate_feedback`. The full file and its verification query are reproduced
+below.
+
+### `USE_LIVE_FETCH` in `src/build.js` — a second, independent switch
+
+```js
+const USE_LIVE_FETCH = false;   // independent of USE_SUPABASE; controls only the live-build fetch
+
+const LIVE_FETCH_ON =
+  USE_LIVE_FETCH && String(SUPABASE_URL).trim() !== '' && String(SUPABASE_ANON_KEY).trim() !== '';
+```
+
+It shares the two credentials with `USE_SUPABASE` and the same interlock — an
+empty `SUPABASE_URL` or `SUPABASE_ANON_KEY` forces it off regardless of the flag
+— and shares nothing else. GATE 16 builds all four combinations and confirms it.
+The combination Tim is most likely to want, `USE_SUPABASE=false` with
+`USE_LIVE_FETCH=true`, produces a build with the live fetch and no feedback form:
+
+```
+[16] SWITCH INDEPENDENCE  PASS  (4/4 combinations built and inspected)
+     USE_SUPABASE=false USE_LIVE_FETCH=false  ->  neither backend, nothing baked in
+     USE_SUPABASE=true USE_LIVE_FETCH=false  ->  the feedback form (id="fb-form") + the feedback endpoint (/rest/v1/el3vate_feedback)
+     USE_SUPABASE=false USE_LIVE_FETCH=true  ->  the live-fetch script (sentinel) + the live table (el3vate_live) + the live endpoint (/rest/v1/el3vate_live)
+     USE_SUPABASE=true USE_LIVE_FETCH=true  ->  the feedback form (id="fb-form") + the feedback endpoint (/rest/v1/el3vate_feedback) + the live-fetch script (sentinel) + the live table (el3vate_live) + the live endpoint (/rest/v1/el3vate_live)
+```
+
+### The fetch itself
+
+One inline script per discipline page, no SDK and no dependency. It:
+
+- `GET`s `<SUPABASE_URL>/rest/v1/el3vate_live?slug=eq.<slug>&select=body` with
+  the anon key in both `apikey` and `Authorization: Bearer`, and
+  `Accept: application/json`.
+- Applies an 8-second per-request ceiling via `AbortSignal.timeout`, falling back
+  to `AbortController` + `setTimeout` where that is missing, plus an `inflight`
+  guard so a hung request cannot stack up behind itself.
+- On a 200 with a non-empty `body`, replaces the section's text via
+  `textContent`. **Never** `innerHTML`, `outerHTML`, `insertAdjacentHTML` or
+  `document.write` — GATE 17 fails the build on any of them.
+- On anything else, leaves the build-time content untouched: no error text, no
+  layout change, and **at most one `console.debug` for the whole lifetime of the
+  page**, however many polls fail.
+- Polls every 20 s, hard-stops at 15 minutes, and quiet-stops 5 minutes after the
+  last change once something has landed.
+- Does not animate. The swap is a `textContent` assignment with no class change,
+  no transition and no `requestAnimationFrame`, so there is nothing for
+  `prefers-reduced-motion` to suppress; the site-wide
+  `@media (prefers-reduced-motion:reduce)` rule covers the section regardless.
+  GATE 17 fails the build if an animation primitive appears in the emitted
+  script, so this is enforced rather than promised.
+
+**A faculty member cannot tell which path produced the text.** The heading string
+and the body colour are single constants, `LIVE_TAG_FILLED = 'Built live in
+session'` and `LIVE_BODY_COLOR = '#2A3A33'`, used by *both* the markup builder
+and the emitted script. They cannot drift because there is only one of each.
+
+## Phase 18 — the full migration SQL
+
+`db/002_live_build.sql`, exactly as committed. **It has not been applied.** No
+credentials were requested, held or used at any point in this run.
+
+```sql
+-- ============================================================================
+-- 002_live_build.sql — EL3vate 2026 Day 8 live-build content
+-- ============================================================================
+-- Authored 2026-07-28 for the EL3vate Day 8 site (https://el3vate.vercel.app).
+--
+-- THIS FILE HAS NOT BEEN APPLIED. Like 001_feedback.sql it was written to be
+-- read line by line and run by hand in the Supabase SQL editor. Nothing in the
+-- site's build or deploy path executes it, and no automated process holds
+-- credentials for this project. Run the verification query at the bottom
+-- immediately afterwards; it is the only thing that confirms the applied state
+-- matches the intent here.
+--
+-- WHAT THIS BACKS
+-- Each of the fifteen discipline pages has a "live build" section. Today its
+-- text is baked in at build time from the `liveBuild` field in
+-- content/<slug>.json — `./fill.sh <slug> "text"` sets that field and ships.
+-- That path does not change and is not replaced.
+--
+-- This table adds a second, faster path on top of it: with USE_LIVE_FETCH true
+-- in src/build.js, each discipline page fetches its own row from here at page
+-- load and every 20 seconds after, so Tim can change what the room is looking
+-- at by editing one row in the dashboard instead of running a deploy. If the
+-- fetch fails, times out, errors, or comes back empty, the page keeps showing
+-- what was baked at build time. If nothing was baked, it keeps showing the
+-- reserved placeholder. A faculty member never sees a spinner or an error.
+--
+-- ============================================================================
+-- THE SECURITY MODEL — DELIBERATELY THE OPPOSITE OF 001_feedback.sql
+-- ============================================================================
+-- 001 is INSERT-ONLY for `anon` and has no select policy, because it holds
+-- `contact_email` — a real address volunteered by a colleague — and anything
+-- `anon` can read, the entire internet can read, since the key authorising
+-- `anon` ships inside a public web page.
+--
+-- This table is SELECT-ONLY for `anon`, and that is correct rather than a
+-- relaxation, for one reason:
+--
+--   THIS TABLE HOLDS CONTENT TIM WROTE, FOR THE EXPLICIT PURPOSE OF DISPLAYING
+--   IT ON A PUBLIC PAGE. World-readable is the intended property, not a leak.
+--   Publishing it is the whole feature. There is no version of this working
+--   where the text stays private.
+--
+-- Two obligations follow from that, and they are the reason this paragraph
+-- exists rather than a one-line comment:
+--
+--   * IT CONTAINS NO PERSONAL DATA AND NONE MAY EVER BE ADDED TO IT. No email
+--     addresses, no names of attendees, no free-text a third party gave Tim in
+--     confidence. If something like that ever needs storing, it goes in a
+--     different table with 001's shape, not this one. Adding a column here is
+--     the moment to re-read this paragraph.
+--   * Whatever is typed into `body` is on the public internet the moment it is
+--     saved. There is no draft state and no preview. The dashboard editor IS
+--     the publish button.
+--
+-- `el3vate_feedback` is entirely unaffected by this file. It remains
+-- insert-only, RLS on and forced, with no select policy for `anon`. Nothing
+-- below touches it, and the two tables share no privileges.
+--
+-- NO WRITE POLICY FOR `anon`, EVER
+-- There is no insert, update or delete policy for `anon`, and none may be
+-- added. Tim writes rows through the Supabase dashboard, authenticated as
+-- himself. A write policy here would let anyone on conference wifi retype what
+-- fifteen faculty pages say, live, during the session.
+--
+-- WHY `force row level security` IS NOT USED HERE, THOUGH 001 USES IT
+-- A deliberate difference, called out so it does not read as an oversight.
+-- On 001, FORCE is protective: it stops a future connection as the owning role
+-- from reading email addresses through the API. Here there is nothing to
+-- protect — the table is world-readable by design — and FORCE would subject the
+-- owning role to a policy set that contains no UPDATE policy at all. The single
+-- operation this whole feature depends on is Tim updating a row at 9am. FORCE
+-- buys nothing here and puts that operation one role-configuration surprise
+-- away from failing in the room. Enabled, not forced, is the right setting for
+-- a table whose contents are intended to be public.
+--
+-- WHY THE GRANTS ARE STATED AND THEN REVOKED EXPLICITLY
+-- Supabase ships ALTER DEFAULT PRIVILEGES for the `public` schema that grant
+-- `anon` and `authenticated` full table privileges on newly created tables.
+-- So a bare `create table` here may arrive with INSERT, UPDATE and DELETE
+-- already granted to `anon`. RLS with no matching policy would still block
+-- those, but relying on one layer when two are available is not a security
+-- model. The revoke below removes the privilege as well as the policy, so an
+-- accidentally added write policy in future still hits a missing grant.
+--
+-- ABUSE CONTROL
+-- `anon` can only read. There is no insert path for `anon` to flood, which is
+-- the one respect in which this table is materially safer than 001. Read volume
+-- is bounded by the dashboard's REST rate limiting (Project Settings -> API),
+-- which should be reviewed before the session the same way it is for 001.
+--
+-- If something goes wrong mid-session, the fastest kill is not in this file at
+-- all: set USE_LIVE_FETCH back to false in src/build.js and run
+-- `./ship.sh prod`. That removes the fetch and the key from the site inside two
+-- minutes and every page falls back to its baked `liveBuild` text. `./fill.sh`
+-- keeps working throughout, unchanged, and is unaffected by the state of this
+-- table.
+--
+-- RUN ONCE
+-- The whole migration is wrapped in begin/commit. `create table if not exists`
+-- and the seeding `on conflict do nothing` are both idempotent, but
+-- `alter table ... add constraint` is not — Postgres has no
+-- `add constraint if not exists` — so a second run errors on the first
+-- constraint and the transaction rolls back whole. That is a safe failure, not
+-- a partial apply, but it means the right response to "did that go through?" is
+-- the verification query below, not running the file again.
+--
+-- REVERSIBILITY
+--   drop table if exists public.el3vate_live;   -- takes the policy with it
+-- The site does not break when this table disappears: every page falls back to
+-- its build-time `liveBuild` text, and then to the reserved placeholder.
+-- ============================================================================
+
+begin;
+
+-- ---------------------------------------------------------------------------
+-- table
+-- ---------------------------------------------------------------------------
+-- `slug` is the primary key, not a surrogate id, on purpose: there is exactly
+-- one live-build row per discipline for the whole session, the page fetches by
+-- slug, and Tim edits by slug. A surrogate key would add a lookup step to every
+-- one of those and buy nothing.
+create table if not exists public.el3vate_live (
+  slug        text        primary key,
+  body        text,
+  updated_at  timestamptz not null default now()
+);
+
+comment on table public.el3vate_live is
+  'EL3vate 2026 Day 8 live-build content, one row per discipline. PUBLIC BY DESIGN: anon SELECT only, RLS on, no write policy for anon. Contains no personal data and none may be added. Written via the dashboard.';
+comment on column public.el3vate_live.slug is
+  'Discipline page slug. Constrained to the same 15 slugs as el3vate_feedback.discipline. One row per discipline, all 15 seeded by this migration.';
+comment on column public.el3vate_live.body is
+  'The text shown in that page''s live-build section. NULL means "nothing written yet" — the page then shows whatever was baked in at build time from content/<slug>.json liveBuild, and failing that the reserved placeholder. Public the moment it is saved.';
+comment on column public.el3vate_live.updated_at is
+  'Set by default on insert. NOT maintained by a trigger — see the note by the seed below. Informational only; nothing in the site reads it.';
+
+-- ---------------------------------------------------------------------------
+-- check constraints — bounded size, known slugs
+-- ---------------------------------------------------------------------------
+-- Added separately (rather than inline) so each one has its own name and can be
+-- dropped or adjusted without rewriting the table definition.
+
+-- 4000 characters, matching el3vate_feedback's text bound. This is a paragraph
+-- read off a projector by a room of faculty, so the real limit is closer to a
+-- few hundred; 4000 is the point past which something has clearly gone wrong
+-- (a paste of an entire transcript, or a junk write) rather than a style guide.
+-- NULL is allowed and is the seeded state — see the seed below.
+alter table public.el3vate_live
+  add constraint el3vate_live_body_len
+  check (body is null or char_length(body) <= 4000);
+
+-- The fifteen slugs are the fifteen files in content/ (excluding claims.json,
+-- which is the claim audit, not a discipline). This list is identical to
+-- el3vate_feedback_discipline_known in 001_feedback.sql. If a sixteenth
+-- discipline is ever added, BOTH lists must be extended.
+alter table public.el3vate_live
+  add constraint el3vate_live_slug_known
+  check (slug in (
+    'bioinformatics',
+    'comparative-philosophy',
+    'english-literature',
+    'entrepreneurship',
+    'family-business',
+    'finance',
+    'law',
+    'learning-design',
+    'marketing',
+    'marriage-family-therapy',
+    'nutrition',
+    'planetary-science',
+    'political-science',
+    'teacher-education',
+    'urban-planning'
+  ));
+
+-- ---------------------------------------------------------------------------
+-- row-level security
+-- ---------------------------------------------------------------------------
+-- Enabled, not forced. See the header for why the difference from 001 is
+-- deliberate.
+alter table public.el3vate_live enable row level security;
+
+-- EXACTLY ONE POLICY. Anonymous SELECT, nothing else.
+--
+-- There is deliberately no policy for insert, update or delete, for `anon` or
+-- for `authenticated`. Do not add one. With RLS enabled and no matching policy,
+-- a write through the anon key affects nothing.
+--
+-- `using (true)` is correct here and is not a hole: every row in this table is
+-- content written for public display, so there is no per-row visibility concept
+-- to predicate on. What bounds the contents is the CHECK constraints above and
+-- the fact that only Tim can write.
+drop policy if exists el3vate_live_anon_select on public.el3vate_live;
+create policy el3vate_live_anon_select
+  on public.el3vate_live
+  for select
+  to anon
+  using (true);
+
+-- The REST endpoint needs the schema and the select privilege on top of the
+-- policy: RLS filters, grants admit. `anon` gets SELECT and nothing more.
+grant usage  on schema public              to anon;
+grant select on table  public.el3vate_live to anon;
+
+-- Explicit, because Supabase's default privileges on the public schema may
+-- already have granted these — see the header. Removing the privilege as well
+-- as withholding the policy means a mistakenly added write policy in future
+-- still hits a missing grant.
+revoke insert, update, delete, truncate, references, trigger
+  on table public.el3vate_live from anon;
+
+-- ---------------------------------------------------------------------------
+-- seed: all fifteen rows, body NULL
+-- ---------------------------------------------------------------------------
+-- Every discipline gets a row now so that during the session Tim only ever
+-- EDITS a row, never creates one. In the Supabase table editor, clicking a
+-- cell and typing is a few seconds; inserting a row means a dialog, a slug
+-- typed by hand (which the check constraint will reject if mistyped), and a
+-- save. At 9am the difference matters.
+--
+-- `body` is NULL, not '', deliberately: NULL is "nothing written yet", and the
+-- page's fallback treats NULL, an empty string and a whitespace-only string
+-- identically, so a row in this state is invisible to the site.
+--
+-- `on conflict (slug) do nothing` makes re-seeding safe and, importantly, means
+-- re-running the seed alone will never blank a row Tim has already written.
+--
+-- NOTE ON updated_at: it is set by its default at insert and is NOT maintained
+-- by a trigger. Edit a row in the dashboard and updated_at will still read the
+-- seed time. That is intentional for a one-day artifact — a trigger is more
+-- moving parts than the value is worth, and nothing in the site reads it. If it
+-- ever needs to be true, add a before-update trigger; do not assume it is.
+insert into public.el3vate_live (slug)
+select unnest(array[
+  'bioinformatics',
+  'comparative-philosophy',
+  'english-literature',
+  'entrepreneurship',
+  'family-business',
+  'finance',
+  'law',
+  'learning-design',
+  'marketing',
+  'marriage-family-therapy',
+  'nutrition',
+  'planetary-science',
+  'political-science',
+  'teacher-education',
+  'urban-planning'
+])
+on conflict (slug) do nothing;
+
+commit;
+```
+
+### The verification query
+
+Run it in the same SQL editor immediately after the migration. Six rows come
+back; every `verdict` must read `PASS`.
+
+```sql
+-- ============================================================================
+-- VERIFICATION — run this after the migration, in the same SQL editor.
+-- ============================================================================
+-- Same style as 001_feedback.sql: one row per check with a PASS/FAIL verdict
+-- and the actual observed value, so it is readable rather than silent. SIX rows
+-- should come back, and every `verdict` must read PASS. An empty result is
+-- itself a failure: it means the table is not there at all.
+--
+-- Expected output (6 rows, every verdict PASS):
+--
+--   check                                       verdict  observed
+--   ------------------------------------------  -------  --------------------------------------------------
+--   1. table exists                             PASS     public.el3vate_live
+--   2. RLS enabled                              PASS     relrowsecurity=true relforcerowsecurity=false
+--   3. exactly one policy                       PASS     1 policy/policies: el3vate_live_anon_select
+--   4. that policy is SELECT for anon           PASS     el3vate_live_anon_select cmd=SELECT roles={anon}
+--   5. no insert/update/delete policy for anon  PASS     0 non-SELECT policy/policies reachable by anon: none
+--   6. fifteen rows present                     PASS     15 row(s), 15 with body null
+--
+-- Check 2 expects relforcerowsecurity=FALSE. That is not a failure and not a
+-- copy-paste slip from 001 — see "WHY force row level security IS NOT USED
+-- HERE" in the header. What check 2 asserts is `relrowsecurity`, which must be
+-- true.
+--
+-- ONE HONEST LIMITATION, STATED RATHER THAN HIDDEN: checks 1 through 5 read the
+-- system catalogs and so return a row whether or not the table exists, but check
+-- 6 counts rows in `public.el3vate_live` itself. If the migration did not apply
+-- at all, this query does not return "1. table exists FAIL" — it errors with
+--   ERROR: relation "public.el3vate_live" does not exist
+-- and returns nothing. That is unambiguous rather than silent (it is the same
+-- fact check 1 would have reported), but do not read an empty result as a pass.
+-- Read the error, then re-run the migration.
+--
+-- Anything other than six PASS rows means STOP: leave USE_LIVE_FETCH false and
+-- ship without the fetch. The site is fully functional in that state — every
+-- page shows its baked `liveBuild` text, and `./fill.sh` still works.
+--
+-- ("check" is quoted throughout because it is a reserved word in Postgres and an
+-- unquoted column alias by that name is a syntax error.)
+
+select '1. table exists' as "check",
+       case when count(*) = 1 then 'PASS' else 'FAIL' end as verdict,
+       coalesce(string_agg(schemaname || '.' || tablename, ', '), '(no such table)') as observed
+from pg_tables
+where schemaname = 'public' and tablename = 'el3vate_live'
+
+union all
+
+select '2. RLS enabled',
+       case when bool_and(c.relrowsecurity) then 'PASS' else 'FAIL' end,
+       coalesce(string_agg('relrowsecurity=' || c.relrowsecurity ||
+                           ' relforcerowsecurity=' || c.relforcerowsecurity, ', '),
+                '(no such table)')
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relname = 'el3vate_live'
+
+union all
+
+select '3. exactly one policy',
+       case when count(*) = 1 then 'PASS' else 'FAIL' end,
+       count(*) || ' policy/policies: ' ||
+         coalesce(string_agg(policyname, ', '), '(none)')
+from pg_policies
+where schemaname = 'public' and tablename = 'el3vate_live'
+
+union all
+
+select '4. that policy is SELECT for anon',
+       case when count(*) = 1 then 'PASS' else 'FAIL' end,
+       coalesce(string_agg(policyname || ' cmd=' || cmd || ' roles=' || roles::text, ', '),
+                '(no SELECT policy for anon)')
+from pg_policies
+where schemaname = 'public'
+  and tablename  = 'el3vate_live'
+  and cmd        = 'SELECT'
+  and roles::text[] = array['anon']
+
+union all
+
+select '5. no insert/update/delete policy for anon',
+       case when count(*) = 0 then 'PASS' else 'FAIL' end,
+       count(*) || ' non-SELECT policy/policies reachable by anon: ' ||
+         coalesce(string_agg(policyname || ' (' || cmd || ')', ', '), 'none')
+from pg_policies
+where schemaname = 'public'
+  and tablename  = 'el3vate_live'
+  and cmd       <> 'SELECT'
+  and (roles::text[] && array['anon', 'public'])
+
+union all
+
+select '6. fifteen rows present',
+       case when count(*) = 15 then 'PASS' else 'FAIL' end,
+       count(*) || ' row(s), ' || (count(*) filter (where body is null)) || ' with body null'
+from public.el3vate_live
+
+order by 1;
+
+-- Optional second check: confirm the fifteen slugs are exactly the fifteen the
+-- site builds, with nothing missing and nothing extra. Returns zero rows when
+-- correct; any row that comes back names a mismatch.
+--
+--   select coalesce(l.slug, e.slug) as slug,
+--          case when l.slug is null then 'MISSING from el3vate_live'
+--               else 'EXTRA in el3vate_live' end as problem
+--   from public.el3vate_live l
+--   full outer join (
+--     select unnest(array[
+--       'bioinformatics','comparative-philosophy','english-literature',
+--       'entrepreneurship','family-business','finance','law','learning-design',
+--       'marketing','marriage-family-therapy','nutrition','planetary-science',
+--       'political-science','teacher-education','urban-planning']) as slug
+--   ) e on e.slug = l.slug
+--   where l.slug is null or e.slug is null;
+--
+-- Optional third check, once USE_LIVE_FETCH is on and Tim has written a row.
+-- Run it as yourself in the dashboard; it shows what the room is currently
+-- seeing on each page.
+--
+--   select slug, left(body, 80) as body_preview, char_length(body) as len
+--   from public.el3vate_live
+--   where body is not null and btrim(body) <> ''
+--   order by slug;
+```
+
+Two things in there are deliberate and would otherwise read as slips:
+
+- **Check 2 expects `relforcerowsecurity=false`.** `001_feedback.sql` uses
+  `force row level security`; this file does not, and the header says why. On
+  `el3vate_feedback` FORCE is protective — it stops a future connection as the
+  owning role reading colleagues' email addresses through the API. Here there is
+  nothing to protect, because the table is world-readable by design, and FORCE
+  would subject the owning role to a policy set containing no UPDATE policy at
+  all. The single operation this feature depends on is Tim updating a row at 9am.
+  FORCE buys nothing and puts that operation one role-configuration surprise away
+  from failing in the room.
+- **If the table does not exist, the query errors instead of returning
+  "1. table exists FAIL".** Checks 1–5 read system catalogs and return a row
+  either way, but check 6 counts rows in the table itself. A failed migration
+  produces `ERROR: relation "public.el3vate_live" does not exist` and no rows.
+  That is unambiguous rather than silent — it is the same fact check 1 would have
+  reported — but **an empty result is not a pass.** This is stated in the file
+  too, not only here.
+
+## Phase 20 — every new gate's demonstrated failure input
+
+Each gate was fed a deliberately broken fixture, confirmed to catch it, and the
+fixture deleted. Gates with an "allowed" branch also got a negative control — an
+input that is deliberately *right* and must pass — because a gate that fails
+everything is as useless as one that fails nothing. All fixtures live in
+`selftest()` in `src/validate.js` and re-run with `npm run selftest`.
+
+The brief numbers these 1–5; they are GATE 15–19 in the suite so the numbering
+stays one sequence.
+
+### GATE 15 — live-fetch kill switch (brief 1)
+
+| # | failure input | caught by |
+|---|---|---|
+| control | both switches off, no live-build reference anywhere in `dist/` — the committed state | correctly **allowed** |
+| 1 | switch off but `dist/law/index.html` still contains `el3vate_live` | table-name scan |
+| 2 | switch off but the `/rest/v1/el3vate_live` endpoint is still in `dist/law/index.html` | REST-path scan |
+| 3 | the identifier `SUPABASE_ANON_KEY` in `dist/index.html` — source leaked into built output | identifier scan |
+| 4 | the `SUPABASE_ANON_KEY` value still in `dist/index.html` with **both** switches off | value scan |
+| control | the same value present with `USE_SUPABASE` **on** — it belongs there, and GATE 11 owns that case | correctly **allowed** |
+| 5 | `USE_LIVE_FETCH` on but not one discipline page emitted the fetch | on-state check |
+
+The two controls are the interesting pair. The credential *values* are only
+checked when `USE_SUPABASE` is also off; when the feedback form is on those
+values legitimately belong in `dist/`, and failing on them here would be this
+gate reporting on a different feature. That is why the gate takes both switches
+rather than just its own.
+
+### GATE 16 — independence of the two switches (brief 2)
+
+**Failure input:** a copy of `src/build.js` with `LIVE_FETCH_ON` redefined to
+depend on `SUPABASE_ON`:
+
+```js
+const LIVE_FETCH_ON = SUPABASE_ON && USE_LIVE_FETCH && String(SUPABASE_URL).trim() !== '';
+```
+
+That is the exact regression this gate exists to catch — the two switches quietly
+wired together, so `USE_SUPABASE=false` with `USE_LIVE_FETCH=true` silently emits
+no fetch. The gate built all four combinations against the sabotaged source and
+failed on the third, reporting the missing script, the missing table name and the
+missing endpoint. The fixture was deleted.
+
+The gate builds from a throwaway copy of `src/build.js` in a temp directory with
+`content/`, `demos/` and `assets/` symlinked in and `dist/` landing under the temp
+root, so **nothing in the repo is written to** and a crash mid-gate cannot leave
+`src/build.js` edited or the real `dist/` in a fixture state.
+
+### GATE 17 — no markup sink on fetched content (brief 3)
+
+| # | failure input | caught |
+|---|---|---|
+| control | the emitted script writing the fetched value with `textContent` and nothing else | correctly **allowed** |
+| 1 | `box.innerHTML = t;` inside the emitted fetch script | yes |
+| 2 | `box.outerHTML = t;` | yes |
+| 3 | `box.insertAdjacentHTML('beforeend', t);` | yes |
+| 4 | `document.write(t);` | yes |
+| 5 | `requestAnimationFrame(function(){box.classList.add('in');});` — an animated swap | yes |
+| 6 | a fetch script with no `textContent` assignment at all | yes |
+| 7 | the begin sentinel with no matching end sentinel — the region cannot be scanned | yes |
+
+**This gate fired for real on its first run**, on a comment inside the emitted
+script reading `textContent, never innerHTML`. The region is scanned as a blob,
+comments included. That is the same call GATE 12 makes for `service_role`: the
+alternative is a JavaScript comment stripper that has to get string literals and
+regex literals right to avoid a blind spot, which is more code and more ways to
+be wrong than the convention costs. The comment in `src/build.js` was reworded
+and both the gate and the build now carry a note saying why the sinks are not
+named there. **This is a live constraint on future edits**, and it is in
+`BLOCKERS.md`.
+
+**GATE 17 and GATE 19 each run twice** — against the committed build *and*
+against a freshly built `USE_LIVE_FETCH=true` variant. Without the second run
+GATE 17 would pass vacuously in the committed state, scanning zero scripts
+because the switch is off. The variant run inspects the 15 scripts the site
+would actually ship:
+
+```
+[17] NO innerHTML ON FETCHED CONTENT  PASS  (committed build: 0 script(s), switch off as expected; USE_LIVE_FETCH=true variant: 15 script(s) scanned)
+```
+
+### GATE 18 — demo and presenter isolation (brief 4)
+
+| # | failure input | caught |
+|---|---|---|
+| control | canned demo data and a self-contained presenter kit, neither naming the live table | correctly **allowed** |
+| 1 | a demo naming `el3vate_live` | yes |
+| 2 | a `.json` asset under `dist/demos/` carrying the `/rest/v1/el3vate_live` endpoint | yes |
+| 3 | the live-build fetch emitted into the presenter kit | yes |
+| 4 | a demo calling `fetch(` — GATE 5 re-asserted rather than assumed | yes |
+| 5 | `dist/presenter/` absent, so the kit cannot be confirmed clean | yes |
+
+### GATE 19 — fallback presence (brief 5)
+
+| # | failure input | caught |
+|---|---|---|
+| control | nothing baked, section carrying the reserved placeholder | correctly **allowed** |
+| control | `liveBuild` filled, heading reading "Built live in session" — the `./fill.sh` path | correctly **allowed** |
+| 1 | an empty `lb-body` — a reader with JavaScript disabled would see an empty box | yes |
+| 2 | the live-build section deleted from the served HTML | yes |
+| 3 | `Loading the live build…` shipped as the fallback — a waiting state, not a finished one | yes |
+| 4 | a 3-character `lb-body` against the 20-char floor | yes |
+| 5 | nothing baked, but the heading already claiming "Built live in session" | yes |
+
+### The fallback chain itself — `src/livefallback.js`
+
+Not a gate in `src/validate.js`, because it is a runtime behaviour rather than a
+property of the built file, but it is a stage in `npm run check` and it exits
+non-zero on any mismatch. CONSTRAINT B says every step must be **exercised**, and
+this is what exercises it. The script under test is extracted from a real built
+page and cannot drift from what ships.
+
+```
+CONSTRAINT B — the three-deep fallback chain, exercised branch by branch
+The script under test is extracted from a real built page, not retyped here.
+
+  build-time state, nothing baked : "Reserved · live build" / "This space is intentionally empty. During the Day 8 sessio…"
+  build-time state, ./fill.sh ran : "Built live in session" / "Baked by ./fill.sh at 08:52 — the room asked for a rubric row."
+
+  ok   1  200 + text, nothing baked      -> shows FETCHED text
+         1 fetch call(s), 0 debug line(s), 1 timer(s) armed
+  ok   2  200 + text, text WAS baked     -> FETCHED text replaces baked
+         1 fetch call(s), 0 debug line(s), 1 timer(s) armed
+  ok   3  non-200 (500)                  -> keeps BAKED text
+         1 fetch call(s), 1 debug line(s) ["live-build: status 500"], 1 timer(s) armed
+  ok   4  network error                  -> keeps BAKED text
+         1 fetch call(s), 1 debug line(s) ["live-build: unreachable or timed out"], 1 timer(s) armed
+  ok   5  hang, no abort available       -> keeps BAKED text, no stacked requests
+         1 fetch call(s), 0 debug line(s), 1 timer(s) armed
+  ok   5b hang, 8s abort available       -> aborts and polling resumes
+         2 fetch call(s), 1 debug line(s) ["live-build: unreachable or timed out"], 2 timer(s) armed
+  ok   6  200 + empty array (no row)     -> keeps BAKED text
+         1 fetch call(s), 1 debug line(s) ["live-build: nothing published yet"], 1 timer(s) armed
+  ok   7  200 + body null (seeded row)   -> keeps RESERVED placeholder
+         1 fetch call(s), 1 debug line(s) ["live-build: nothing published yet"], 1 timer(s) armed
+  ok   8  200 + whitespace-only body     -> keeps RESERVED placeholder
+         1 fetch call(s), 1 debug line(s) ["live-build: nothing published yet"], 1 timer(s) armed
+  ok   9  200 + unreadable JSON          -> keeps BAKED text
+         1 fetch call(s), 1 debug line(s) ["live-build: unreadable response"], 1 timer(s) armed
+  ok   10 empty twice, text on poll 3    -> appears with no reload
+         4 fetch call(s), 1 debug line(s) ["live-build: nothing published yet"], 1 timer(s) armed
+  ok   11 nothing lands, past 15 minutes -> hard stop, timer disarmed
+         2 fetch call(s), 1 debug line(s) ["live-build: nothing published yet"], 0 timer(s) armed
+  ok   12 one hit, then 5 quiet minutes  -> quiet stop, timer disarmed
+         2 fetch call(s), 0 debug line(s), 0 timer(s) armed
+
+  switch OFF:
+  ok   no fetch script emitted at all
+  ok   the section is still complete: "Built live in session" / "Baked by ./fill.sh at 08:52 — the room asked for a rubric row."
+
+LIVE-FALLBACK PASS: every branch of the fallback chain behaves, and no branch clears the section, shows a spinner or changes the layout.
+```
+
+Read cases 5 and 5b together — they are the reason the 8-second ceiling exists.
+With no abort primitive available, a hung request is held by the `inflight`
+guard and the loop makes **1** call across two poll intervals: safe, but stuck.
+With the abort available it makes **2**: the ceiling fires, the catch runs, the
+guard clears and polling resumes. Case 10 is the one that matters in the room —
+text arriving on the third poll with no reload.
+
+**This exerciser was itself proven failable.** The whitespace guard in
+`src/build.js` was temporarily changed from
+`if(t===null||t.replace(/\s+/g,'')==='')` to `if(t===null)`, and case 8 failed
+with `heading changed to "Built live in session"` and `body changed to "   \n\t  "`
+— i.e. a whitespace-only row would have blanked the placeholder. Exit code 1.
+The change was reverted and `src/build.js` confirmed byte-identical to its
+pre-experiment copy.
+
+## PROCEDURE — turning the live build ON
+
+Do these in order. Steps 1 and 2 are safe to do at any time; nothing changes on
+the live site until step 5.
+
+1. **Apply the migration.** Open the Supabase SQL editor for the project. Paste
+   `db/002_live_build.sql` from `begin;` down to `commit;`. Read it first — it is
+   commented for exactly that. Run it.
+2. **Run the verification query.** It is the second half of the same file, from
+   `select '1. table exists'` onward. **Six rows must come back and every
+   `verdict` must read `PASS`.** Check 2 will read
+   `relforcerowsecurity=false` — that is correct here, see above. If anything
+   reads `FAIL`, or the query errors with `relation ... does not exist`,
+   **STOP**: leave `USE_LIVE_FETCH` false and ship without the fetch. The site
+   is fully functional in that state.
+3. **Fill in the two credentials** in `src/build.js`, lines 46–47:
+   ```js
+   const SUPABASE_URL = 'https://<your-project-ref>.supabase.co';
+   const SUPABASE_ANON_KEY = '<the anon / publishable key>';
+   ```
+   The **anon key only**. Never the elevated key — this is public static HTML and
+   GATE 12 fails the build on the elevated one, decoding every JWT it finds to
+   check the role claim.
+4. **Set the switch**, line 80: `const USE_LIVE_FETCH = true;`
+   Leave `USE_SUPABASE` alone. If it is `false` it stays `false` — GATE 16 proves
+   that combination ships the fetch and no feedback form.
+5. **Ship.** `./ship.sh prod`. It builds, restores the Vercel link, runs all 19
+   gates, scrubs any `.env*` from the deploy root, deploys, then polls the live
+   site up to five times confirming it serves this exact build stamp before
+   opening it. **If a gate fails, it never deploys.**
+6. **Confirm from a real browser** — this is the step nobody can do for you, and
+   it is the only one that proves the round trip works:
+   1. Open `https://el3vate.vercel.app/law/index.html` (or any discipline) and
+      scroll to the live-build section. It should read
+      **Reserved · live build**.
+   2. In the Supabase **table editor**, open `el3vate_live`, find the row with
+      `slug = 'law'`, click its `body` cell, type a sentence, save.
+   3. Go back to the browser tab — **do not reload it** — and wait. Within
+      20 seconds the heading should change to **Built live in session** and your
+      sentence should appear.
+   4. If it does not: open the browser console. A single line beginning
+      `live-build:` tells you which branch was taken —
+      `status 401` means the key or the policy is wrong, `status 404` means the
+      table or the REST path is wrong, `nothing published yet` means the request
+      succeeded and the row is empty (check you saved the right row), and
+      `unreachable or timed out` means it never got there (CORS or the URL).
+      **The page is not broken in any of those cases** — it is showing its
+      fallback, which is the intended behaviour.
+
+## PROCEDURE — turning it back off
+
+1. **Set the switch back**, `src/build.js` line 80:
+   `const USE_LIVE_FETCH = false;`
+   That is the whole edit. Leave the credentials in place or clear them; with the
+   flag false the interlock makes them irrelevant, and GATE 15 fails the build if
+   any trace of the live layer survives into `dist/`.
+2. **Ship.** `./ship.sh prod`.
+
+**Expected wall-clock time: under two minutes**, and the dominant term is
+Vercel, not the build.
+
+Measured on this machine, this run: `node src/build.js` takes **0.09 s** and
+`node src/validate.js` (all 19 gates, including the four variant builds GATE 16
+does and the two GATE 17/19 do) takes a few seconds. The deploy and the live
+stamp check are the rest. The third run measured the same revert for
+`USE_SUPABASE` at the same figure, and this switch is strictly cheaper — it
+touches one boolean and re-runs the same pipeline.
+
+**What Tim gets back after the revert:** every discipline page shows whatever
+`./fill.sh` last baked into it, and the reserved placeholder where nothing was
+baked. `./fill.sh <slug> "text"` keeps working exactly as it did before this run,
+on either side of the switch. Nothing about the revert depends on the database
+being reachable, or on it existing at all.
+
+## What was actually run, and what could not be
+
+**Run, with output seen:**
+
+- `node src/build.js` — the committed off-state build. Output quoted above.
+- `node src/validate.js` — 19/19 gates PASS against that build.
+- `node src/validate.js --selftest` — 73 cases, 0 BAD. Every gate rejected its
+  broken fixture; every negative control was correctly allowed.
+- `node src/livefallback.js` — 14 branches of the fallback chain, plus the
+  switch-off case. Full output quoted above.
+- `npm run check` — all six stages green, including `src/interact.js`'s 212 real
+  browser assertions across the 8 demos, the presenter kit and the closing card.
+- Four full builds in every combination of the two switches (GATE 16), plus two
+  more `USE_LIVE_FETCH=true` builds for GATES 17 and 19, plus three in
+  `src/livefallback.js`. The `USE_SUPABASE=false, USE_LIVE_FETCH=true` artifact
+  was inspected directly and confirmed to carry the live fetch and no feedback
+  form.
+- The emitted script was parsed with `new Function(...)` to confirm it is
+  syntactically valid JavaScript before any behavioural test ran.
+- A demonstration that `src/livefallback.js` can fail: the whitespace guard was
+  temporarily removed, case 8 failed with exit code 1, and `src/build.js` was
+  restored and diffed against a pre-experiment copy to confirm it was byte-identical.
+
+**NOT run, and nobody should read this report as implying otherwise:**
+
+- **The fetch has never completed against a real endpoint.** Not once, from this
+  session. No request left this machine. Every success path above was driven by a
+  stub `fetch` returning a hand-written response object. What is unverified is
+  precisely the live round trip: whether CORS on the real project permits it,
+  whether the anon key is accepted, whether the `SELECT` policy returns the row,
+  and whether PostgREST's response shape is the `[{body: ...}]` the script
+  expects. **Step 6 of the enable procedure is what closes that**, and it is the
+  one step nobody can do for Tim.
+- **`db/002_live_build.sql` has not been applied.** No database credentials were
+  requested, obtained or held at any point. The SQL has been read for syntax by
+  eye only; a syntax error surviving that review is possible. The whole migration
+  is wrapped in `begin`/`commit`, so a failure rolls back whole rather than
+  leaving a partial apply, and the SQL editor will say so immediately.
+- **No browser has run the fetch script.** `src/interact.js` drives the demos and
+  the presenter kit in a real Chromium, but the live-build script is only emitted
+  when the switch is on, and the switch is committed off — so the 212 interaction
+  assertions do not cover it. The stub-DOM harness is a faithful stand-in for the
+  four DOM operations the script performs and nothing more; it does not prove
+  browser behaviour around `AbortSignal.timeout`, `cache: 'no-store'` or CORS
+  preflight.
+- **No screen-reader pass**, same caveat the rest of the site carries. See the
+  known gap below.
+
+## Known gap, flagged rather than silently fixed
+
+**A runtime text change is not announced to a screen reader.** The live-build
+section carries no `aria-live`, so a faculty member using VoiceOver or NVDA who
+has the page already open when Tim publishes a row will not be told the text
+changed. On page load — the overwhelmingly common case — the fetch fires
+immediately and the content is simply there, so this affects only an
+already-open tab.
+
+The one-line change would be `aria-live="polite"` on the `livebuild` div in
+`sectionLiveBuild()`. It was **not** made, because the brief specified this
+section's behaviour precisely and adding unrequested markup to all four switch
+combinations is Tim's call rather than mine. `apply()` already guards on
+`text === shown`, so a polite region would fire once per real change and not on
+every poll — the change is safe if he wants it.
+
+## Doc impact
+
+`db/002_live_build.sql` carries its own header (schema change → migration
+header). This section of `REPORT.md` is the operational record for both
+procedures. `BLOCKERS.md` gains the unresolvables from this run. No runbook under
+`docs/` and no architecture decision doc is affected, because this run added no
+new deploy path — `./ship.sh prod` is unchanged and `./fill.sh` is untouched.

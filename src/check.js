@@ -16,6 +16,10 @@ const STAGES = [
   ['handout PDFs', ['src/pdf.js']],
   ['content gates', ['src/validate.js']],
   ['gate selftest', ['src/validate.js', '--selftest']],
+  // CONSTRAINT B's runtime half: the emitted live-build script, taken out of a
+  // real built page and driven through every branch of the fallback chain
+  // against a stub DOM. Zero-dependency, so it sits above the playwright stage.
+  ['live-build fallback chain', ['src/livefallback.js']],
   ['demo interaction tests', ['src/interact.js']],
 ];
 

@@ -7,6 +7,7 @@
     "build": "node src/build.js",
     "validate": "node src/validate.js",
     "selftest": "node src/validate.js --selftest",
+    "fallback": "node src/livefallback.js",
     "interact": "node src/interact.js",
     "check": "node src/check.js"
   },
