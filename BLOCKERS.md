@@ -213,3 +213,29 @@ on them. Nothing here stopped the build; these are honest caveats and follow-ups
   zero-dependency and still runs the content gates on its own.
 - **Screenshots live in `dist/_screens/`**, which is git-ignored (`dist/`), so
   they are not committed. Regenerate with headless Chrome after `node src/build.js`.
+
+## Feedback backend (phases 13–17)
+
+- **The brief's own phase-13 comment text cannot coexist with its phase-16 gate.**
+  Phase 13 specifies the literal comment `// filled by Tim — anon key ONLY, never
+  service_role` on `SUPABASE_ANON_KEY` in `src/build.js`. Phase 16 gate 2
+  specifies a gate that fails if the underscored `service` + `_role` token
+  "appears anywhere in `dist/` or in any tracked file, regardless of switch
+  state". `src/build.js` is a tracked file, so the mandated comment is exactly
+  the input the mandated gate rejects. Resolved in favour of the gate, because
+  the gate is the load-bearing security property and the comment is prose: every
+  mention across `src/build.js`, `src/validate.js`, `db/001_feedback.sql`,
+  `REPORT.md` and this file is written **`service-role`** with a hyphen, which
+  reads identically and keeps the gate absolute — no allowlist, no prose
+  exemption, no file it skips. `src/validate.js` assembles the needle from
+  fragments (`'service' + '_' + 'role'`) for the same reason: the gate scans the
+  tracked file it lives in. If Tim wants the underscored spelling in the comment,
+  the gate has to grow an exemption list, and an exemption list is the thing that
+  eventually lets a real key through.
+- **Nothing in phases 13–17 was applied to a database.** `db/001_feedback.sql` is
+  authored and committed, never executed; no credentials were requested, held or
+  used. The verification query in `REPORT.md` is what confirms the applied state,
+  and only Tim can run it.
+- **`USE_SUPABASE` is committed `false` and the credentials are committed empty.**
+  That is deliberate and is the state the site is presented from. Everything in
+  phase 15 is unreachable until all three constants change together.

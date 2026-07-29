@@ -16,6 +16,42 @@ const { execSync } = require('child_process');
 const SITE_URL = 'https://el3vate.vercel.app';
 const FEEDBACK_EMAIL = 'tclum@hawaii.edu';
 
+// Additional hostnames that resolve to the same Vercel deployment. These are
+// DISPLAY ONLY — printed as plain text in the hub footer so someone handed the
+// friendlier address can confirm they are in the right place. An alias is never
+// substituted into SITE_URL: assets/qr.svg, dist/closing-card.html and the
+// self-contained presenter kit were all generated from SITE_URL, and the
+// presenter kit carries that QR inlined as a data URI, so changing SITE_URL
+// silently invalidates the artifact the session is presented from.
+const ALIASES = ['https://el3vate.forpono.com'];
+
+// ---- phase 13: feedback backend kill switch ----
+// One boolean is the whole escape hatch. With USE_SUPABASE false the build emits
+// exactly what it emitted before phase 13 — a mailto: feedback link and nothing
+// else: no form markup, no fetch, no credential, no mention of the backend
+// anywhere in dist/. Flipping it back to false and re-running `./ship.sh prod` is
+// the sub-two-minute revert, and GATE 11 in src/validate.js is what proves the
+// emitted site actually has zero references rather than merely intending to.
+//
+// The two credentials are a second, independent interlock: if either is an empty
+// string the switch counts as OFF no matter what USE_SUPABASE says, so a
+// half-configured build can never ship a form that posts nowhere.
+//
+// SUPABASE_ANON_KEY takes the anonymous (publishable) key ONLY — never the
+// service-role key, which bypasses row-level security and would be readable by
+// anyone, since this is public static HTML. Written "service-role" with a hyphen
+// deliberately: GATE 12 fails on the underscored token appearing in any tracked
+// file or anywhere in dist/, and it holds that line with no prose exemption.
+const USE_SUPABASE = false;              // master switch for everything in phases 13-17
+const SUPABASE_URL = '';                 // filled by Tim
+const SUPABASE_ANON_KEY = '';            // filled by Tim — anon key ONLY, never the service-role key
+
+// The effective state. Every phase-15 emission is gated on this one predicate,
+// never on USE_SUPABASE alone, so the credential interlock cannot be bypassed by
+// a caller that forgets to check it.
+const SUPABASE_ON =
+  USE_SUPABASE && String(SUPABASE_URL).trim() !== '' && String(SUPABASE_ANON_KEY).trim() !== '';
+
 // The Day 10 challenge, in one sentence, for the closing card. Nothing in the
 // repo or either brief records what it is, so this was written to follow from
 // the session: it asks for the one artifact the whole site is built around — a
@@ -368,6 +404,15 @@ ${bodyHtml}
 `;
 }
 
+// The one place an alias is allowed to surface: plain text in the hub footer,
+// with the scheme stripped so it reads as an address rather than a link. Not an
+// <a href>, deliberately — the canonical address stays SITE_URL.
+function aliasNote() {
+  if (!ALIASES.length) return '';
+  const hosts = ALIASES.map(a => a.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+  return ` &middot; also at ${esc(hosts.join(', '))}`;
+}
+
 function jumpMenu(all, base) {
   const opts = all.map(d => `<option value="${base}${d.slug}/index.html">${esc(d.name)}</option>`).join('');
   return `<div class="jump"><div class="wrap jump__inner">
@@ -425,7 +470,7 @@ ${jumpMenu(all, '')}
   <div class="cards">${cards}</div>
 </div></main>
 
-<footer><div class="wrap">EL3vate 2026 &middot; Day 8 session resource &middot; Prepared for the faculty cohort &middot; Build ${SHA}</div></footer>
+<footer><div class="wrap">EL3vate 2026 &middot; Day 8 session resource &middot; Prepared for the faculty cohort &middot; Build ${SHA}${aliasNote()}</div></footer>
 `;
   return page('Prototyping Solutions · EL3vate 2026 Day 8',
     'Physical and AI prototyping assignments, one per discipline, for the EL3vate 2026 faculty cohort at the University of Hawaiʻi.',
@@ -1390,5 +1435,8 @@ budget and three sizes.</p>
   console.log(`built ${all.length} discipline pages + hub into dist/ (build ${SHA} ${ISO})`);
   console.log(`SITE_URL = ${SITE_URL}`);
   console.log(`FEEDBACK_EMAIL = ${FEEDBACK_EMAIL}`);
+  console.log(`ALIASES = ${ALIASES.join(', ') || '(none)'}  [display only — never SITE_URL]`);
+  console.log(`USE_SUPABASE = ${USE_SUPABASE}  url=${SUPABASE_URL ? 'set' : 'empty'}  key=${SUPABASE_ANON_KEY ? 'set' : 'empty'}` +
+    `  ->  feedback backend ${SUPABASE_ON ? 'ON (form emitted)' : 'OFF (mailto only)'}`);
 }
 main();
