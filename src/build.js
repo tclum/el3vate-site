@@ -721,7 +721,7 @@ function sectionLiveBuild(d) {
   // change shape with the switch. They name nothing about the backend.
   const inner = filled
     ? `<p class="tag" id="lb-tag">${esc(LIVE_TAG_FILLED)}</p><p id="lb-body" style="color:${LIVE_BODY_COLOR}">${esc(d.liveBuild)}</p>`
-    : `<p class="tag" id="lb-tag">Reserved &middot; live build</p><p id="lb-body">This space is intentionally empty. During the Day 8 session it gets filled in live with whatever this room asks for.</p>`;
+    : `<p class="tag" id="lb-tag">Reserved &middot; live build</p><p id="lb-body">This space is reserved. Ask for something in your field &mdash; during the session, or any time in the ten months after &mdash; and it appears here.</p>`;
   return `<section class="sec" id="live-build">
     <div class="livebuild">${inner}</div>
   </section>`;
