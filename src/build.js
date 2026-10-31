@@ -43,8 +43,8 @@ const ALIASES = ['https://el3vate.forpono.com'];
 // deliberately: GATE 12 fails on the underscored token appearing in any tracked
 // file or anywhere in dist/, and it holds that line with no prose exemption.
 const USE_SUPABASE = false;              // master switch for everything in phases 13-17
-const SUPABASE_URL = '';                 // filled by Tim
-const SUPABASE_ANON_KEY = '';            // filled by Tim — anon key ONLY, never the service-role key
+const SUPABASE_URL = 'https://uduqysdbkcuvxaiqzgpx.supabase.co';                 // filled by Tim
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXF5c2Ria2N1dnhhaXF6Z3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNzk3NzIsImV4cCI6MjEwMDg1NTc3Mn0.F1UXkPo8vXGIa3jDnUJsmbQWAPwUIAznZotUHpUCBwI';            // filled by Tim — anon key ONLY, never the service-role key
 
 // The effective state. Every phase-15 emission is gated on this one predicate,
 // never on USE_SUPABASE alone, so the credential interlock cannot be bypassed by
